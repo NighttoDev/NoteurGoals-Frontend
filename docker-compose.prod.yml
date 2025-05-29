@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: frontend-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./build:/usr/share/nginx/html
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - app
+
+  app:
+    container_name: frontend-react
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=https://api.yourdomain.com 

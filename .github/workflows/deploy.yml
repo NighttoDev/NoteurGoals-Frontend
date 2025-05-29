@@ -1,0 +1,57 @@
+name: Deploy Frontend to cPanel
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and Test
+      run: |
+        docker-compose -f docker-compose.prod.yml build
+        docker-compose -f docker-compose.prod.yml up -d
+        docker-compose -f docker-compose.prod.yml exec -T app npm install
+        docker-compose -f docker-compose.prod.yml exec -T app npm run test
+    
+    - name: Build Production Files
+      run: |
+        docker-compose -f docker-compose.prod.yml exec -T app npm run build
+    
+    - name: Deploy to cPanel
+      uses: SamKirkland/FTP-Deploy-Action@4.3.4
+      with:
+        server: ${{ secrets.FRONTEND_FTP_HOST }}
+        username: ${{ secrets.FRONTEND_FTP_USERNAME }}
+        password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
+        local-dir: ./build/
+        server-dir: /public_html/
+        exclude: |
+          **/.git*
+          **/node_modules/**
+          **/.env
+          **/tests/**
+          **/docker-compose*
+          **/Dockerfile
+    
+    - name: Post-deployment Setup
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.FRONTEND_SSH_HOST }}
+        username: ${{ secrets.FRONTEND_SSH_USERNAME }}
+        key: ${{ secrets.FRONTEND_SSH_KEY }}
+        script: |
+          cd /public_html
+          chmod -R 755 .
+          chown -R www-data:www-data .
+    
+    - name: Notify deployment success
+      run: echo "✅ Frontend deployment completed successfully!" 
