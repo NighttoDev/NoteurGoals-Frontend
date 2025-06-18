@@ -6,6 +6,8 @@ import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import DashboardPage from "../pages/DashboardPage";
+import SocialAuthCallback from "../pages/SocialAuthCallback";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
 // Import các layout và page khác của bạn ở đây
 // import MainLayout from '../layouts/MainLayout';
 // import HomePage from '../pages/HomePage';
@@ -20,8 +22,14 @@ const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
+        path: "/auth/social-callback", element: <SocialAuthCallback />,
+      },
+      {
         path: "/register",
         element: <RegisterPage />,
+      },
+      {
+        path: "/verify-email", element:  <VerifyEmailPage />,
       },
       {
         path: "/forgot-password",
