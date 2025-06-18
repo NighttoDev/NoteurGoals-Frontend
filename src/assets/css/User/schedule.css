@@ -1,0 +1,86 @@
+.schedule-container {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.calendar-header {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-header h2 {
+  font-size: 1.25rem;
+}
+
+.calendar-nav button {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav button:hover {
+  background-color: var(--primary-purple-light);
+  border-color: var(--primary-purple);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day-name {
+  text-align: center;
+  padding: 1rem 0;
+  font-weight: 600;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  border-right: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  height: 120px;
+  padding: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.calendar-day:nth-child(7n) {
+  border-right: none;
+}
+
+.calendar-day.other-month {
+  background-color: #f9fafb;
+  color: #ccc;
+}
+
+.calendar-day:hover {
+  background-color: var(--primary-purple-light);
+}
+
+.calendar-day-number {
+  font-weight: 500;
+}
+
+.calendar-event {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  background-color: var(--blue);
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-red {
+  background-color: var(--red);
+}
