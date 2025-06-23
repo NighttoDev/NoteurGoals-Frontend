@@ -3,17 +3,6 @@ import "../../assets/css/Admin/sidebar.css"; // Chú ý đường dẫn đến f
 import "@fortawesome/fontawesome-free/css/all.min.css"; // Thêm FontAwesome để sử dụng biểu tượng
 import { NavLink } from "react-router-dom"; // Dùng NavLink để tự động có class 'active'
 
-// Dữ liệu mẫu, sau này bạn sẽ lấy từ API hoặc Redux/Zustand
-const userData = {
-  name: "Nguyễn Thành Đô",
-  email: "dont@gmail.com",
-  avatar: "https://i.imgur.com/gghM83s.png",
-  credits: {
-    used: 100,
-    total: 200,
-  },
-};
-
 const Sidebar: React.FC = () => {
   return (
     <aside className="sidebar">
