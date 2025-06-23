@@ -67,7 +67,7 @@ const AddGoals: React.FC = () => {
           </div>
         </div>
         <div className="form-actions">
-          <button type="button" onClick={() => navigate("/goals")}>
+          <button type="button" onClick={() => navigate("/admin/goals")}>
             Hủy
           </button>
           <button type="submit">Thêm mục tiêu</button>

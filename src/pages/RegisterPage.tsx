@@ -2,52 +2,54 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API_BASE_URL = "http://localhost:8080/api";
+
 const RegisterPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    display_name: "",
-    email: "",
-    password: "",
-    confirm_password: "",
-  });
+  // ... các state giữ nguyên
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<any>({}); // Để lưu lỗi validation
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.id]: e.target.value });
-  };
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     setError(null);
-
-    // Kiểm tra xác nhận mật khẩu
-    if (form.password !== form.confirm_password) {
-      setError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
+    setErrors({});
 
     try {
-      await axios.post("http://localhost:8080/register", {
-        display_name: form.display_name,
-        email: form.email,
-        password_hash: form.password,
-        registration_type: "email",
+      // KHÔNG GỬI registration_type nữa, vì backend mới không cần nó trong Validator
+      await axios.post(`${API_BASE_URL}/register`, {
+        display_name: name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
       });
-      navigate("/login");
+
+      navigate("/verify-email", { state: { email } });
     } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        // Xử lý lỗi từ server
-        if (err.response) {
-          setError(err.response.data.detail || "Đã xảy ra lỗi khi đăng ký.");
-        } else {
-          setError("Không thể kết nối đến máy chủ.");
-        }
+      // ... khối catch xử lý lỗi giữ nguyên
+      if (axios.isAxiosError(err) && err.response) {
+        const data = err.response.data;
+        setError(data.message || "Đăng ký thất bại.");
+        if (data.errors) setErrors(data.errors);
       } else {
-        // Xử lý lỗi khác
-        setError("Đã xảy ra lỗi không xác định.");
+        setError("Có lỗi không xác định xảy ra.");
       }
+    } finally {
+      setLoading(false);
     }
   };
+
+  // ... JSX giữ nguyên
+  const getError = (field: string) => (errors[field] ? errors[field][0] : null);
 
   return (
     <div className="form-content">
@@ -56,17 +58,20 @@ const RegisterPage: React.FC = () => {
         Đăng ký để khám phá sức mạnh của bản ghi thông minh
       </p>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleRegister}>
         <div className="form-group">
-          <label htmlFor="display_name">Họ và tên</label>
+          <label htmlFor="name">Họ và tên</label>
           <input
             type="text"
-            id="display_name"
+            id="name"
             placeholder="Nhập họ và tên đầy đủ"
-            value={form.display_name}
-            onChange={handleChange}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
+          {getError("display_name") && (
+            <small style={{ color: "red" }}>{getError("display_name")}</small>
+          )}
         </div>
         <div className="form-group">
           <label htmlFor="email">Email</label>
@@ -74,10 +79,13 @@ const RegisterPage: React.FC = () => {
             type="email"
             id="email"
             placeholder="nhapemail@diachi.com"
-            value={form.email}
-            onChange={handleChange}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
+          {getError("email") && (
+            <small style={{ color: "red" }}>{getError("email")}</small>
+          )}
         </div>
         <div className="form-group">
           <label htmlFor="password">Mật khẩu</label>
@@ -85,39 +93,48 @@ const RegisterPage: React.FC = () => {
             type="password"
             id="password"
             placeholder="Yêu cầu tối thiểu 8 ký tự"
-            value={form.password}
-            onChange={handleChange}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={8}
           />
+          {getError("password") && (
+            <small style={{ color: "red" }}>{getError("password")}</small>
+          )}
         </div>
         <div className="form-group">
-          <label htmlFor="confirm_password">Xác nhận mật khẩu</label>
+          <label htmlFor="confirm-password">Xác nhận mật khẩu</label>
           <input
             type="password"
-            id="confirm_password"
+            id="confirm-password"
             placeholder="Nhập lại mật khẩu"
-            value={form.confirm_password}
-            onChange={handleChange}
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
             required
-            minLength={8}
           />
         </div>
-        {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
+
+        {error && !Object.keys(errors).length && (
+          <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+        )}
 
         <div className="form-options">
           <div className="remember-me">
-            <input type="checkbox" id="terms" required />
+            <input
+              type="checkbox"
+              id="terms"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              required
+            />
             <label htmlFor="terms">
               Tôi đồng ý với <Link to="/terms">Điều khoản dịch vụ</Link>
             </label>
           </div>
         </div>
-        <button type="submit" className="signin-btn">
-          Đăng ký
+        <button type="submit" className="signin-btn" disabled={loading}>
+          {loading ? "Đang xử lý..." : "Đăng ký"}
         </button>
       </form>
-
       <p className="signup-link">
         Bạn đã có tài khoản? <Link to="/login">Đăng nhập</Link>
       </p>

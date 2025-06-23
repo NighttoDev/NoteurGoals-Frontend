@@ -25,6 +25,18 @@ import Account from "../pages/User/Account";
 import Settings from "../pages/User/Settings";
 
 // Admin
+import AdminLayout from "../layouts/Admin/DashboardLayout";
+import AdminDashboardPage from "../pages/Admin/DashboardPage";
+import AdminUserPage from "../pages/Admin/User/ListUserPage";
+import AddUsersPage from "../pages/Admin/User/AddUser";
+
+import AdminGoalsPage from "../pages/Admin/Goals/GoalsPage";
+import AddGoals from "../pages/Admin/Goals/AddGoals";
+
+import AdminNotesPage from "../pages/Admin/Notes/NotesPage";
+import AddNotes from "../pages/Admin/Notes/AddNotes";
+
+import AdminSchedulesPage from "../pages/Admin/Schedules/SchedulesPage";
 
 const router = createBrowserRouter([
   {
@@ -101,6 +113,51 @@ const router = createBrowserRouter([
       // Thêm các trang khác dùng chung layout này ở đây
       // { path: 'goals', element: <GoalsPage /> },
       // { path: 'notes', element: <NotesPage /> },
+    ],
+  },
+
+  // Route cho các trang quản trị viên
+  {
+    element: <AdminLayout />,
+    children: [
+      {
+        path: "admin", // path: '/admin/dashboard'
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: "admin/users",
+        element: <AdminUserPage />,
+        children: [
+          {
+            path: "add", // path: '/admin/users/add'
+            element: <AddUsersPage />,
+          },
+        ],
+      },
+      {
+        path: "admin/goals", // path: '/admin/goals'
+        element: <AdminGoalsPage />,
+        children: [
+          {
+            path: "add",
+            element: <AddGoals />,
+          },
+        ],
+      },
+      {
+        path: "admin/notes",
+        element: <AdminNotesPage />,
+        children: [
+          {
+            path: "add",
+            element: <AddNotes />,
+          },
+        ],
+      },
+      {
+        path: "admin/schedules",
+        element: <AdminSchedulesPage />,
+      },
     ],
   },
 ]);

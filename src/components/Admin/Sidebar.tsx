@@ -15,9 +15,6 @@ const userData = {
 };
 
 const Sidebar: React.FC = () => {
-  const creditUsagePercentage =
-    (userData.credits.used / userData.credits.total) * 100;
-
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -25,35 +22,36 @@ const Sidebar: React.FC = () => {
         <h2>Admin Pro</h2>
       </div>
 
-      <button className="btn-add-new">
-        <i className="fas fa-plus"></i>
-        <span>Thêm mới</span>
-      </button>
-
       <nav className="sidebar-nav">
         <ul>
           <li>
-            <NavLink to="/dashboard">
+            <NavLink to="/admin">
               <i className="fas fa-home"></i>
-              <span>Trang tổng quan</span>
+              <span>Dashboard</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/goals">
+            <NavLink to="/admin/users">
+              <i className="fas fa-users"></i>
+              <span>User Management</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/admin/goals">
               <i className="fas fa-bullseye"></i>
-              <span>Quản lý mục tiêu</span>
+              <span>Goal Management</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/notes">
+            <NavLink to="/admin/notes">
               <i className="fas fa-sticky-note"></i>
-              <span>Quản lý ghi chú</span>
+              <span>Note Management</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/schedule">
-              <i className="fas fa-calendar-alt"></i>
-              <span>Lịch biểu</span>
+            <NavLink to="/admin/schedules">
+              <i className="fas fa-calendar"></i>
+              <span>Event Management</span>
             </NavLink>
           </li>
         </ul>
@@ -64,21 +62,21 @@ const Sidebar: React.FC = () => {
       <nav className="sidebar-nav">
         <ul>
           <li>
-            <NavLink to="/profile">
-              <i className="fas fa-user"></i>
-              <span>Hồ sơ</span>
+            <NavLink to="/admin/premium">
+              <i className="fas fa-gift"></i>
+              <span>Quản lý gói đăng ký</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/friends">
-              <i className="fas fa-users"></i>
-              <span>Bạn bè</span>
+            <NavLink to="/admin/revenue">
+              <i className="fas fa-hand-holding-usd"></i>
+              <span>Quản lý doanh thu</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/settings">
-              <i className="fas fa-cog"></i>
-              <span>Cài đặt</span>
+            <NavLink to="/admin/aicontent">
+              <i className="fas fa-robot"></i>
+              <span>Quản lý nội dung AI</span>
             </NavLink>
           </li>
           <li>
@@ -91,29 +89,7 @@ const Sidebar: React.FC = () => {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="upgrade-card">
-          <button>Nâng cấp</button>
-          <div className="credit-info">
-            <span>Tín dụng</span>
-            <div className="progress-bar">
-              {/* Chuyển style inline thành React style object */}
-              <div
-                className="progress"
-                style={{ width: `${creditUsagePercentage}%` }}
-              ></div>
-            </div>
-            <span>
-              Còn {userData.credits.used}m / {userData.credits.total}m
-            </span>
-          </div>
-        </div>
-        <div className="user-profile">
-          <img src={userData.avatar} alt="User Avatar" />
-          <div className="user-info">
-            <span className="user-name">{userData.name}</span>
-            <span className="user-email">{userData.email}</span>
-          </div>
-        </div>
+        <button className="btn-add-new">Logout</button>
       </div>
     </aside>
   );
