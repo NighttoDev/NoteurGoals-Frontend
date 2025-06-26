@@ -1,20 +1,39 @@
+
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
+// --- Layouts ---
 import AuthLayout from "../layouts/AuthLayout";
+import DashboardLayout from "../layouts/User/DashboardLayout";
+
+// --- Authentication Pages ---
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
-
-import DashboardLayout from "../layouts/DashboardLayout";
-import DashboardPage from "../pages/DashboardPage";
 import SocialAuthCallback from "../pages/SocialAuthCallback";
 import VerifyEmailPage from "../pages/VerifyEmailPage";
-// Import các layout và page khác của bạn ở đây
-// import MainLayout from '../layouts/MainLayout';
-// import HomePage from '../pages/HomePage';
+
+// --- User Pages (sử dụng trong DashboardLayout) ---
+import DashboardPage from "../pages/User/DashboardPage";
+import GoalsPage from "../pages/User/Goals/Goals";
+import NotesPage from "../pages/User/Notes/Notes";
+import Schedule from "../pages/User/Schedule";
+import Friends from "../pages/User/Friends";
+import Account from "../pages/User/Account";
+import Settings from "../pages/User/Settings";
+
+// --- "Admin" Components (được dùng trong các route của User) ---
+// Tên thư mục là "Admin" nhưng chúng đang được dùng trong luồng của User
+import DetailGoalsPage from "../pages/Admin/Goals/DetailGoals";
+import AddGoalsPage from "../pages/Admin/Goals/AddGoals";
+import AddNotePage from "../pages/Admin/Notes/AddNotes";
+import EditNotePage from "../pages/Admin/Notes/EditNotes";
+
 
 const router = createBrowserRouter([
   {
-    // Các route xác thực sẽ dùng chung AuthLayout
+    // =======================================================
+    // --- AUTHENTICATION ROUTES (Login, Register, etc.) ---
+    // =======================================================
     element: <AuthLayout />,
     children: [
       {
@@ -22,14 +41,16 @@ const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
-        path: "/auth/social-callback", element: <SocialAuthCallback />,
-      },
-      {
         path: "/register",
         element: <RegisterPage />,
       },
       {
-        path: "/verify-email", element:  <VerifyEmailPage />,
+        path: "/auth/social-callback", 
+        element: <SocialAuthCallback />,
+      },
+      {
+        path: "/verify-email", 
+        element:  <VerifyEmailPage />,
       },
       {
         path: "/forgot-password",
@@ -37,18 +58,60 @@ const router = createBrowserRouter([
       },
     ],
   },
-  // Route cho các trang sau khi đăng nhập
   {
+    // =======================================================
+    // --- MAIN APPLICATION ROUTES (sau khi đăng nhập) ---
+    // =======================================================
     path: "/",
     element: <DashboardLayout />,
     children: [
       {
-        path: "dashboard", // path: '/dashboard'
+        index: true, // Render tại path "/", thay cho path: "" hoặc path: "dashboard"
         element: <DashboardPage />,
       },
-      // Thêm các trang khác dùng chung layout này ở đây
-      // { path: 'goals', element: <GoalsPage /> },
-      // { path: 'notes', element: <NotesPage /> },
+      {
+        path: "goals", 
+        element: <GoalsPage />,
+        // Route con của "goals" có thể đặt ở đây, nhưng theo cấu trúc của bạn thì không cần
+      },
+      {
+        path: "goals/add", // Route để thêm goal
+        element: <AddGoalsPage />,
+      },
+      {
+        path: "goals/detail/:id", // Route chi tiết goal
+        element: <DetailGoalsPage />,
+      },
+      {
+        path: "notes",
+        element: <NotesPage />,
+        children: [ // Route con của "notes"
+          {
+            path: "add",
+            element: <AddNotePage />,
+          },
+          {
+            path: "edit/:id",
+            element: <EditNotePage />,
+          },
+        ]
+      },
+      {
+        path: "schedule",
+        element: <Schedule />,
+      },
+      {
+        path: "friends",
+        element: <Friends />,
+      },
+      {
+        path: "account",
+        element: <Account />,
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
     ],
   },
 ]);

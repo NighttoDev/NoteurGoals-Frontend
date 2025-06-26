@@ -1,4 +1,4 @@
-// src/pages/VerifyEmailPage.tsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -19,11 +19,12 @@ const VerifyEmailPage: React.FC = () => {
 
     useEffect(() => {
         if (!email) {
+            // Nếu không có email (truy cập trực tiếp), quay lại trang đăng ký
             navigate('/register');
         }
     }, [email, navigate]);
     
-    // Countdown timer for resend button
+    // Bộ đếm thời gian chờ cho nút gửi lại
     useEffect(() => {
         if (resendCooldown > 0) {
             const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
@@ -37,14 +38,22 @@ const VerifyEmailPage: React.FC = () => {
         setError(null);
         
         try {
-            const response = await axios.post(`${API_BASE_URL}/verify-email`, { email, otp });
-            const { token, user } = response.data.data;
-            localStorage.setItem('auth_token', token);
-            localStorage.setItem('user_info', JSON.stringify(user));
-            alert('Đăng ký và xác thực thành công!');
-            navigate('/dashboard');
+            // Vẫn gọi API để xác thực OTP
+            await axios.post(`${API_BASE_URL}/verify-email`, { email, otp });
+            
+            // ======================================================================
+            // --- THAY ĐỔI CỐT LÕI NẰM Ở ĐÂY ---
+            // Thay vì tự động đăng nhập, chúng ta chuyển hướng đến trang đăng nhập
+            // và truyền một thông báo thành công qua state.
+            // ======================================================================
+            navigate('/login', { 
+                state: { 
+                    successMessage: 'Tài khoản đã được xác thực thành công! Vui lòng đăng nhập.' 
+                } 
+            });
+
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Xác thực thất bại.');
+            setError(err.response?.data?.message || 'Xác thực thất bại. Vui lòng kiểm tra lại mã OTP.');
         } finally {
             setLoading(false);
         }
@@ -59,9 +68,10 @@ const VerifyEmailPage: React.FC = () => {
         try {
             const response = await axios.post(`${API_BASE_URL}/resend-verification-email`, { email });
             setSuccessMessage(response.data.message);
-            setResendCooldown(60); // Cooldown 60 seconds
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Có lỗi xảy ra.');
+            setResendCooldown(60); // Đặt thời gian chờ 60 giây
+        } catch (err: any)
+        {
+            setError(err.response?.data?.message || 'Có lỗi xảy ra khi gửi lại mã.');
         } finally {
             setResendLoading(false);
         }
@@ -80,9 +90,10 @@ const VerifyEmailPage: React.FC = () => {
                         id="otp"
                         placeholder="Nhập mã 6 chữ số"
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
+                        onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))} // Chỉ cho phép nhập số
                         maxLength={6}
                         required
+                        autoComplete="one-time-code" // Gợi ý cho trình duyệt tự điền OTP
                     />
                 </div>
                 
