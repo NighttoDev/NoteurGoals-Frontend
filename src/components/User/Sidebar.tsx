@@ -44,6 +44,9 @@ const Sidebar = () => {
         <Link to="/settings">
           <AiOutlineSetting /> SETTING
         </Link>
+        <Link>
+           Login
+        </Link>
       </nav>
 
       {/* PHẦN 3: CÁC NÚT BÊN PHẢI */}
