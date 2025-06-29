@@ -1,49 +1,51 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface Note {
-  note_id: string;
+interface Schedule {
+  event_id: string;
   user_id: string;
   title: string;
-  content: string;
+  description: string;
+  event_time: string;
   created_at: string;
   updated_at: string;
 }
 
-const notesData: Note[] = Array(15)
+const schedulesData: Schedule[] = Array(15)
   .fill(null)
   .map((_, index) => ({
-    note_id: (index + 1).toString(),
+    event_id: (index + 1).toString(),
     user_id: "U" + (index + 1),
-    title: "Ghi chú " + (index + 1),
-    content: "Nội dung ghi chú mẫu số " + (index + 1),
-    created_at: "01/06/2025",
-    updated_at: "05/06/2025",
+    title: "Sự kiện " + (index + 1),
+    description: "Nội dung sự kiện mẫu số " + (index + 1),
+    event_time: "2025-07-0" + ((index % 9) + 1) + " 09:00",
+    created_at: "2025-06-01",
+    updated_at: "2025-06-05",
   }));
 
-const NotesPage: React.FC = () => {
+const SchedulesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [notes] = useState<Note[]>(notesData);
+  const [schedules] = useState<Schedule[]>(schedulesData);
   const [currentPage, setCurrentPage] = useState(1);
-  const notesPerPage = 10;
+  const schedulesPerPage = 10;
 
-  // Lọc notes theo search query
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase())
+  // Lọc schedules theo search query
+  const filteredSchedules = schedules.filter(
+    (schedule) =>
+      schedule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      schedule.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Phân trang
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredNotes.length / notesPerPage)
+    Math.ceil(filteredSchedules.length / schedulesPerPage)
   );
-  const indexOfLastNote = currentPage * notesPerPage;
-  const indexOfFirstNote = indexOfLastNote - notesPerPage;
-  const currentNotes = filteredNotes.slice(indexOfFirstNote, indexOfLastNote);
+  const indexOfLast = currentPage * schedulesPerPage;
+  const indexOfFirst = indexOfLast - schedulesPerPage;
+  const currentSchedules = filteredSchedules.slice(indexOfFirst, indexOfLast);
 
   // Chuyển trang
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
@@ -56,19 +58,22 @@ const NotesPage: React.FC = () => {
   return (
     <div className="goals-main-content">
       <header className="goals-header">
-        <h1>Quản lý ghi chú</h1>
+        <h1>Quản lý sự kiện</h1>
         <div className="search-bar">
           <i className="fas fa-search"></i>
           <input
             type="text"
-            placeholder="Tìm kiếm ghi chú..."
+            placeholder="Tìm kiếm sự kiện..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="btn-add-goal" onClick={() => navigate("/notes/add")}>
+        <button
+          className="btn-add-goal"
+          onClick={() => navigate("/schedules/add")}
+        >
           <i className="fas fa-plus"></i>
-          <span>Thêm ghi chú</span>
+          <span>Thêm sự kiện</span>
         </button>
       </header>
 
@@ -76,31 +81,32 @@ const NotesPage: React.FC = () => {
         <table className="user-table">
           <thead>
             <tr>
-              <th>Note ID</th>
+              <th>Event ID</th>
               <th>User ID</th>
               <th>Tiêu đề</th>
-              <th>Nội dung</th>
+              <th>Mô tả</th>
+              <th>Thời gian</th>
               <th>Ngày tạo</th>
               <th>Cập nhật</th>
-              <th>Thao tác</th>
+              <th>Thao tác</th> {/* Thêm cột thao tác */}
             </tr>
           </thead>
           <tbody>
-            {currentNotes.length === 0 ? (
+            {currentSchedules.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   style={{ textAlign: "center", color: "#64748b" }}
                 >
-                  Không có ghi chú nào.
+                  Không có sự kiện nào.
                 </td>
               </tr>
             ) : (
-              currentNotes.map((note) => (
-                <tr key={note.note_id}>
-                  <td>{note.note_id}</td>
-                  <td>{note.user_id}</td>
-                  <td>{note.title}</td>
+              currentSchedules.map((schedule) => (
+                <tr key={schedule.event_id}>
+                  <td>{schedule.event_id}</td>
+                  <td>{schedule.user_id}</td>
+                  <td>{schedule.title}</td>
                   <td
                     style={{
                       maxWidth: 180,
@@ -109,10 +115,11 @@ const NotesPage: React.FC = () => {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {note.content}
+                    {schedule.description}
                   </td>
-                  <td>{note.created_at}</td>
-                  <td>{note.updated_at}</td>
+                  <td>{schedule.event_time}</td>
+                  <td>{schedule.created_at}</td>
+                  <td>{schedule.updated_at}</td>
                   <td>
                     <button className="btn-action edit" title="Sửa">
                       <i className="fas fa-pen"></i>
@@ -172,4 +179,4 @@ const NotesPage: React.FC = () => {
   );
 };
 
-export default NotesPage;
+export default SchedulesPage;

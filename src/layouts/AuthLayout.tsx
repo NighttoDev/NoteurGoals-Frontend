@@ -1,5 +1,5 @@
 import React from "react";
-import "../assets/css/auth.css";
+import "../assets/css/auth.css"; // Import CSS styles for the layout
 import { Outlet } from "react-router-dom";
 
 const AuthLayout: React.FC = () => {

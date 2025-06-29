@@ -18,7 +18,7 @@ const SocialAuthCallback: React.FC = () => {
       // Bạn có thể tùy chọn lấy user info từ backend sau khi có token
       // axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       // axios.get('/api/user').then(...)
-      navigate('/dashboard'); 
+      navigate('/'); 
     } else if (error) {
       // Thất bại: Hiển thị lỗi và quay về trang login
       alert(`Đăng nhập thất bại: ${decodeURIComponent(message || 'Đã có lỗi xảy ra.')}`);

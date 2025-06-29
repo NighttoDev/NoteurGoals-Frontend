@@ -1,0 +1,9 @@
+.form-error {
+  color: red;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+.form-error::before {
+  content: "*";
+  margin-right: 0.25rem;
+}

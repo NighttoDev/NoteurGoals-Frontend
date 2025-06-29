@@ -70,11 +70,11 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.sidebar-nav a.active {
+.sidebar-nav a.active:focus {
   background-color: var(--card-bg);
   color: var(--text-dark);
 }
-.sidebar-nav a.active::before {
+.sidebar-nav a.active:focus::before {
   content: "";
   position: absolute;
   left: 0;

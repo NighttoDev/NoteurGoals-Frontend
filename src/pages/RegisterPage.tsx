@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// Component trang đăng ký
 const RegisterPage: React.FC = () => {
-    // --- STATE MANAGEMENT ---
+    // --- QUẢN LÝ TRẠNG THÁI (STATE) ---
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [termsAccepted, setTermsAccepted] = useState(false);
     
+    // State cho việc xử lý tải và lỗi
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation từ API
@@ -17,10 +19,11 @@ const RegisterPage: React.FC = () => {
     // --- HOOKS ---
     const navigate = useNavigate();
 
-    // --- API CONFIG ---
+    // --- CẤU HÌNH API ---
+    // Giữ lại URL từ phiên bản HEAD. Hãy đảm bảo nó đúng với backend của bạn.
     const API_BASE_URL = 'http://localhost:8000/api';
 
-    // --- FORM SUBMISSION HANDLER ---
+    // --- HÀM XỬ LÝ GỬI FORM ---
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
@@ -36,28 +39,32 @@ const RegisterPage: React.FC = () => {
                 password_confirmation: passwordConfirmation,
             });
             
-            // Chuyển hướng đến trang xác thực email với email của người dùng
+            // Đăng ký thành công, chuyển hướng đến trang xác thực email
+            // và truyền email qua state để trang đó có thể sử dụng
             navigate('/verify-email', { state: { email } });
 
         } catch (err: any) {
+            // Xử lý lỗi chi tiết từ Axios
             if (axios.isAxiosError(err) && err.response) {
                 const data = err.response.data;
                 // Ưu tiên hiển thị thông báo lỗi chung từ server
                 setError(data.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.');
-                // Nếu có lỗi validation chi tiết, lưu lại để hiển thị
+                // Nếu có lỗi validation chi tiết, lưu lại để hiển thị cho từng trường
                 if (data.errors) {
                     setErrors(data.errors);
                 }
             } else {
+                // Lỗi mạng hoặc lỗi không xác định
                 setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
                 console.error("Lỗi đăng ký không xác định:", err);
             }
         } finally {
+            // Dù thành công hay thất bại, dừng trạng thái loading
             setLoading(false);
         }
     };
     
-    // --- HELPER FUNCTION TO DISPLAY VALIDATION ERRORS ---
+    // --- HÀM HỖ TRỢ HIỂN THỊ LỖI VALIDATION ---
     const getError = (field: string) => errors[field] ? errors[field][0] : null;
 
     // --- RENDER COMPONENT ---
@@ -75,7 +82,7 @@ const RegisterPage: React.FC = () => {
                         placeholder="Nhập họ và tên đầy đủ" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        disabled={loading}
+                        disabled={loading} // Vô hiệu hóa khi đang gửi
                         required 
                     />
                     {getError('display_name') && <small className="form-field-error">{getError('display_name')}</small>}
@@ -123,7 +130,7 @@ const RegisterPage: React.FC = () => {
                     />
                 </div>
                 
-                {/* Hiển thị lỗi chung nếu không có lỗi validation chi tiết */}
+                {/* Chỉ hiển thị lỗi chung khi không có lỗi validation chi tiết */}
                 {error && !Object.keys(errors).length && <p className="form-error">{error}</p>}
 
                 <div className="form-options">
