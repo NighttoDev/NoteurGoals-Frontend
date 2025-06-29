@@ -1,27 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../assets/css/User/schedule.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
   faPlus,
-  faSyncAlt,
   faBullseye,
   faSpinner,
   faCheck,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  linkGoalToEvent,
+  unlinkGoalFromEvent,
+} from "../../services/eventService";
 
 interface Event {
-  id: string;
+  event_id: string;
+  user_id: string;
   title: string;
   description: string;
-  date: string;
-  time: string;
-  type: "work" | "personal";
-  repeat?: "none" | "daily" | "weekly" | "monthly" | "yearly";
-  linkedGoal?: string;
-  reminder?: number;
+  event_time: string; // ISO string
+  linkedGoal?: string; // goal_id nếu có
 }
 
 const Schedule: React.FC = () => {
@@ -38,73 +42,69 @@ const Schedule: React.FC = () => {
     description: "",
     date: "",
     time: "",
-    type: "work",
-    repeat: "none",
     linkedGoal: "",
-    reminder: "none",
   });
-
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
     date: "",
     time: "",
-    type: "work",
-    repeat: "none",
     linkedGoal: "",
-    reminder: "none",
   });
 
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Team Meeting",
-      description:
-        "Weekly sync for Project Alpha. Prepare updates on your tasks.",
-      date: "2025-06-23",
-      time: "10:00",
-      type: "work",
-    },
-    {
-      id: "2",
-      title: "Doctor's Appointment",
-      description: "Annual checkup at City Medical Center.",
-      date: "2025-06-25",
-      time: "14:30",
-      type: "personal",
-    },
-    {
-      id: "3",
-      title: "Finalize Q3 Report",
-      description: "Deadline to submit the quarterly performance report.",
-      date: "2025-06-27",
-      time: "16:00",
-      type: "work",
-    },
-  ]);
+  const [addErrors, setAddErrors] = useState<{ [key: string]: string }>({});
+  const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({});
+  const [events, setEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    fetchEvents();
+    // eslint-disable-next-line
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await getEvents();
+      const rawEvents = Array.isArray(res.data) ? res.data : res.data.data;
+      setEvents(
+        rawEvents.map((item: any) => ({
+          event_id: item.event_id?.toString(),
+          user_id: item.user_id,
+          title: item.title,
+          description: item.description,
+          event_time: item.event_time,
+          linkedGoal: item.goal_id || item.linked_goal || "",
+        }))
+      );
+    } catch {
+      alert("Không thể tải danh sách sự kiện!");
+    }
+  };
+
+  // Validate form
+  const validateForm = (form: typeof addForm) => {
+    const errors: { [key: string]: string } = {};
+    if (!form.title.trim()) errors.title = "Title is required";
+    if (!form.description.trim())
+      errors.description = "Description is required";
+    if (!form.date) errors.date = "Date is required";
+    if (!form.time) errors.time = "Time is required";
+    if (form.linkedGoal && isNaN(Number(form.linkedGoal))) {
+      errors.linkedGoal = "Goal ID must be a number";
+    }
+    return errors;
+  };
 
   // Generate calendar days for the current month
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay();
-
     const days = [];
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDay; i++) {
-      days.push(null);
-    }
-
-    // Add days of the month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-
+    for (let i = 0; i < startingDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
     return days;
   };
 
@@ -125,7 +125,7 @@ const Schedule: React.FC = () => {
     const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1)
       .toString()
       .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
-    return events.filter((event) => event.date === dateStr);
+    return events.filter((event) => event.event_time.startsWith(dateStr));
   };
 
   // Modal logic
@@ -141,27 +141,24 @@ const Schedule: React.FC = () => {
       description: "",
       date: dateStr,
       time: "",
-      type: "work",
-      repeat: "none",
       linkedGoal: "",
-      reminder: "none",
     });
+    setAddErrors({});
     setSelectedDay(day || null);
     setIsAddModalOpen(true);
   };
 
   const openEditModal = (event: Event) => {
+    const [date, time] = event.event_time.split("T");
     setEditingEvent(event);
     setEditForm({
       title: event.title,
       description: event.description,
-      date: event.date,
-      time: event.time,
-      type: event.type,
-      repeat: event.repeat || "none",
+      date: date,
+      time: time ? time.slice(0, 5) : "",
       linkedGoal: event.linkedGoal || "",
-      reminder: event.reminder ? event.reminder.toString() : "none",
     });
+    setEditErrors({});
     setIsEditModalOpen(true);
   };
 
@@ -174,75 +171,96 @@ const Schedule: React.FC = () => {
     setSelectedDay(null);
   };
 
-  // Add Event
-  const handleAddSubmit = (e: React.FormEvent) => {
+  // Add Event (API)
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateForm(addForm);
+    setAddErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      const newEvent: Event = {
-        id: Date.now().toString(),
+    try {
+      const event_time =
+        addForm.date && addForm.time
+          ? `${addForm.date}T${addForm.time}:00`
+          : "";
+      const payload: any = {
         title: addForm.title,
         description: addForm.description,
-        date: addForm.date,
-        time: addForm.time,
-        type: addForm.type as "work" | "personal",
-        repeat: addForm.repeat as Event["repeat"],
-        linkedGoal: addForm.linkedGoal,
-        reminder:
-          addForm.reminder === "none" ? undefined : Number(addForm.reminder),
+        event_time,
       };
-      setEvents([newEvent, ...events]);
+      const res = await createEvent(payload);
+      const item = res.data.event ?? res.data;
+      if (addForm.linkedGoal) {
+        await linkGoalToEvent(item.event_id, { goal_id: addForm.linkedGoal });
+      }
       setIsSubmitting(false);
       closeAddModal();
-    }, 1000);
+      await fetchEvents();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
+      setIsSubmitting(false);
+    }
   };
 
-  // Edit Event
-  const handleEditSubmit = (e: React.FormEvent) => {
+  // Edit Event (API)
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validateForm(editForm);
+    setEditErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     if (!editingEvent) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.id === editingEvent.id
-            ? {
-                ...ev,
-                title: editForm.title,
-                description: editForm.description,
-                date: editForm.date,
-                time: editForm.time,
-                type: editForm.type as "work" | "personal",
-                repeat: editForm.repeat as Event["repeat"],
-                linkedGoal: editForm.linkedGoal,
-                reminder:
-                  editForm.reminder === "none"
-                    ? undefined
-                    : Number(editForm.reminder),
-              }
-            : ev
-        )
-      );
+    try {
+      const event_time =
+        editForm.date && editForm.time
+          ? `${editForm.date}T${editForm.time}:00`
+          : "";
+      const payload: any = {
+        title: editForm.title,
+        description: editForm.description,
+        event_time,
+      };
+      await updateEvent(editingEvent.event_id, payload);
+      if (
+        editForm.linkedGoal &&
+        editForm.linkedGoal !== editingEvent.linkedGoal
+      ) {
+        await linkGoalToEvent(editingEvent.event_id, {
+          goal_id: editForm.linkedGoal,
+        });
+      } else if (!editForm.linkedGoal && editingEvent.linkedGoal) {
+        await unlinkGoalFromEvent(
+          editingEvent.event_id,
+          editingEvent.linkedGoal
+        );
+      }
       setIsSubmitting(false);
       closeEditModal();
-    }, 1000);
+      await fetchEvents();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
+      setIsSubmitting(false);
+    }
   };
 
-  // Delete Event
-  const handleDelete = () => {
+  // Delete Event (API)
+  const handleDelete = async () => {
     setIsDeleting(true);
-    setTimeout(() => {
-      if (window.confirm("Are you sure you want to delete this event?")) {
-        setEvents((prev) => prev.filter((ev) => ev.id !== editingEvent?.id));
+    try {
+      if (editingEvent) {
+        await deleteEvent(editingEvent.event_id);
         closeEditModal();
+        await fetchEvents();
       }
       setIsDeleting(false);
-    }, 500);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
+      setIsDeleting(false);
+    }
   };
 
   const navigateMonth = (direction: "prev" | "next" | "today") => {
     const newDate = new Date(currentDate);
-
     if (direction === "prev") {
       newDate.setMonth(newDate.getMonth() - 1);
     } else if (direction === "next") {
@@ -250,7 +268,6 @@ const Schedule: React.FC = () => {
     } else {
       newDate.setTime(Date.now());
     }
-
     setCurrentDate(newDate);
   };
 
@@ -307,18 +324,14 @@ const Schedule: React.FC = () => {
                     <div className="events-in-day">
                       {dayEvents.map((event) => (
                         <div
-                          key={event.id}
+                          key={event.event_id}
                           className="event-item"
                           onClick={(e) => {
                             e.stopPropagation();
                             openEditModal(event);
                           }}
                         >
-                          {event.type === "work" ? (
-                            <FontAwesomeIcon icon={faSyncAlt} />
-                          ) : (
-                            <FontAwesomeIcon icon={faBullseye} />
-                          )}
+                          <FontAwesomeIcon icon={faBullseye} />
                           {event.title}
                         </div>
                       ))}
@@ -345,19 +358,19 @@ const Schedule: React.FC = () => {
           <div className="agenda-list">
             {events.map((event) => (
               <div
-                key={event.id}
-                className={`agenda-item ${event.type}-event`}
+                key={event.event_id}
+                className="agenda-item"
                 onClick={() => openEditModal(event)}
               >
                 <h4 className="agenda-item-title">{event.title}</h4>
                 <p className="agenda-item-time">
-                  {new Date(event.date).toLocaleDateString("en-US", {
+                  {new Date(event.event_time).toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}{" "}
-                  - {event.time}
+                  - {event.event_time.slice(11, 16)}
                 </p>
                 <p className="agenda-item-desc">{event.description}</p>
               </div>
@@ -389,12 +402,14 @@ const Schedule: React.FC = () => {
                   <input
                     type="text"
                     id="event-title-input-add"
-                    required
                     value={addForm.title}
                     onChange={(e) =>
                       setAddForm((f) => ({ ...f, title: e.target.value }))
                     }
                   />
+                  {addErrors.title && (
+                    <div className="form-error">{addErrors.title}</div>
+                  )}
                 </div>
                 <div className="schedule-modal-group">
                   <label htmlFor="event-description-input-add">
@@ -407,6 +422,10 @@ const Schedule: React.FC = () => {
                       setAddForm((f) => ({ ...f, description: e.target.value }))
                     }
                   />
+                  {/* Hiển thị lỗi nếu có */}
+                  {addErrors.description && (
+                    <div className="form-error">{addErrors.description}</div>
+                  )}
                 </div>
                 <div className="schedule-modal-group-inline">
                   <div className="schedule-modal-group">
@@ -414,91 +433,49 @@ const Schedule: React.FC = () => {
                     <input
                       type="date"
                       id="event-date-input-add"
-                      required
                       value={addForm.date}
                       onChange={(e) =>
                         setAddForm((f) => ({ ...f, date: e.target.value }))
                       }
                     />
+                    {addErrors.date && (
+                      <div className="form-error">{addErrors.date}</div>
+                    )}
                   </div>
                   <div className="schedule-modal-group">
                     <label htmlFor="event-time-input-add">Time</label>
                     <input
                       type="time"
                       id="event-time-input-add"
-                      required
                       value={addForm.time}
                       onChange={(e) =>
                         setAddForm((f) => ({ ...f, time: e.target.value }))
                       }
                     />
+                    {addErrors.time && (
+                      <div className="form-error">{addErrors.time}</div>
+                    )}
                   </div>
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-type-select-add">Type</label>
-                  <select
-                    id="event-type-select-add"
-                    value={addForm.type}
+                  <label htmlFor="event-link-goal-select-add">
+                    Link to Goal
+                  </label>
+                  <input
+                    type="text"
+                    id="event-link-goal-select-add"
+                    value={addForm.linkedGoal}
                     onChange={(e) =>
-                      setAddForm((f) => ({ ...f, type: e.target.value }))
+                      setAddForm((f) => ({
+                        ...f,
+                        linkedGoal: e.target.value,
+                      }))
                     }
-                  >
-                    <option value="work">Work</option>
-                    <option value="personal">Personal</option>
-                  </select>
-                </div>
-                <div className="schedule-modal-group">
-                  <label htmlFor="event-repeat-select-add">Repeat</label>
-                  <select
-                    id="event-repeat-select-add"
-                    value={addForm.repeat}
-                    onChange={(e) =>
-                      setAddForm((f) => ({ ...f, repeat: e.target.value }))
-                    }
-                  >
-                    <option value="none">Does not repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-                <div className="schedule-modal-group-inline">
-                  <div className="schedule-modal-group">
-                    <label htmlFor="event-link-goal-select-add">
-                      Link to Goal
-                    </label>
-                    <select
-                      id="event-link-goal-select-add"
-                      value={addForm.linkedGoal}
-                      onChange={(e) =>
-                        setAddForm((f) => ({
-                          ...f,
-                          linkedGoal: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">None</option>
-                      <option value="goal_1">Launch Project Alpha</option>
-                      <option value="goal_2">Run a 5K Race</option>
-                    </select>
-                  </div>
-                  <div className="schedule-modal-group">
-                    <label htmlFor="event-reminder-select-add">Reminder</label>
-                    <select
-                      id="event-reminder-select-add"
-                      value={addForm.reminder}
-                      onChange={(e) =>
-                        setAddForm((f) => ({ ...f, reminder: e.target.value }))
-                      }
-                    >
-                      <option value="none">None</option>
-                      <option value="5">5 minutes before</option>
-                      <option value="15">15 minutes before</option>
-                      <option value="60">1 hour before</option>
-                      <option value="1440">1 day before</option>
-                    </select>
-                  </div>
+                    placeholder="Goal ID (nếu có)"
+                  />
+                  {addErrors.linkedGoal && (
+                    <div className="form-error">{addErrors.linkedGoal}</div>
+                  )}
                 </div>
                 <div className="schedule-modal-footer">
                   <button
@@ -550,12 +527,14 @@ const Schedule: React.FC = () => {
                   <input
                     type="text"
                     id="event-title-input-edit"
-                    required
                     value={editForm.title}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, title: e.target.value }))
                     }
                   />
+                  {editErrors.title && (
+                    <div className="form-error">{editErrors.title}</div>
+                  )}
                 </div>
                 <div className="schedule-modal-group">
                   <label htmlFor="event-description-input-edit">
@@ -578,91 +557,49 @@ const Schedule: React.FC = () => {
                     <input
                       type="date"
                       id="event-date-input-edit"
-                      required
                       value={editForm.date}
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, date: e.target.value }))
                       }
                     />
+                    {editErrors.date && (
+                      <div className="form-error">{editErrors.date}</div>
+                    )}
                   </div>
                   <div className="schedule-modal-group">
                     <label htmlFor="event-time-input-edit">Time</label>
                     <input
                       type="time"
                       id="event-time-input-edit"
-                      required
                       value={editForm.time}
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, time: e.target.value }))
                       }
                     />
+                    {editErrors.time && (
+                      <div className="form-error">{editErrors.time}</div>
+                    )}
                   </div>
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-type-select-edit">Type</label>
-                  <select
-                    id="event-type-select-edit"
-                    value={editForm.type}
+                  <label htmlFor="event-link-goal-select-edit">
+                    Link to Goal
+                  </label>
+                  <input
+                    type="text"
+                    id="event-link-goal-select-edit"
+                    value={editForm.linkedGoal}
                     onChange={(e) =>
-                      setEditForm((f) => ({ ...f, type: e.target.value }))
+                      setEditForm((f) => ({
+                        ...f,
+                        linkedGoal: e.target.value,
+                      }))
                     }
-                  >
-                    <option value="work">Work</option>
-                    <option value="personal">Personal</option>
-                  </select>
-                </div>
-                <div className="schedule-modal-group">
-                  <label htmlFor="event-repeat-select-edit">Repeat</label>
-                  <select
-                    id="event-repeat-select-edit"
-                    value={editForm.repeat}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, repeat: e.target.value }))
-                    }
-                  >
-                    <option value="none">Does not repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-                <div className="schedule-modal-group-inline">
-                  <div className="schedule-modal-group">
-                    <label htmlFor="event-link-goal-select-edit">
-                      Link to Goal
-                    </label>
-                    <select
-                      id="event-link-goal-select-edit"
-                      value={editForm.linkedGoal}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          linkedGoal: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">None</option>
-                      <option value="goal_1">Launch Project Alpha</option>
-                      <option value="goal_2">Run a 5K Race</option>
-                    </select>
-                  </div>
-                  <div className="schedule-modal-group">
-                    <label htmlFor="event-reminder-select-edit">Reminder</label>
-                    <select
-                      id="event-reminder-select-edit"
-                      value={editForm.reminder}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, reminder: e.target.value }))
-                      }
-                    >
-                      <option value="none">None</option>
-                      <option value="5">5 minutes before</option>
-                      <option value="15">15 minutes before</option>
-                      <option value="60">1 hour before</option>
-                      <option value="1440">1 day before</option>
-                    </select>
-                  </div>
+                    placeholder="Goal ID (nếu có)"
+                  />
+                  {editErrors.linkedGoal && (
+                    <div className="form-error">{editErrors.linkedGoal}</div>
+                  )}
                 </div>
                 <div className="schedule-modal-footer">
                   <button

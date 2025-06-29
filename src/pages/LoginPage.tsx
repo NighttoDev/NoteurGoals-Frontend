@@ -1,47 +1,189 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const LoginPage: React.FC = () => {
+  // --- STATE MANAGEMENT ---
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+
+  // --- HOOKS ---
+  const navigate = useNavigate();
+
+  // --- API & APP CONFIG ---
+  const API_BASE_URL = "http://localhost:8000/api";
+
+  // Validate input
+  const validate = () => {
+    const errors: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
+      errors.email = "Invalid email format";
+    }
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+    return errors;
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        email,
+        password,
+      });
+
+      if (response.data.status === "success") {
+        const { token, user } = response.data.data;
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("user_info", JSON.stringify(user));
+        navigate("/dashboard");
+      } else {
+        setError(response.data.message || "An unknown error occurred.");
+      }
+    } catch (err: any) {
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.message || "Login failed.");
+        if (err.response.data.verification_required) {
+          console.warn(
+            "Account verification required:",
+            err.response.data.user_email
+          );
+        }
+      } else {
+        setError("Cannot connect to server. Please check your network.");
+        console.error("Unknown login error:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+      alert("Config error: Google Client ID is not set.");
+      return;
+    }
+    const laravelCallbackUrl = `${API_BASE_URL}/auth/google/callback-direct`;
+    const scope =
+      "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+
+    const params = new URLSearchParams({
+      client_id: googleClientId,
+      redirect_uri: laravelCallbackUrl,
+      scope,
+      response_type: "code",
+    });
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    window.location.href = googleAuthUrl;
+  };
+
+  const handleFacebookLogin = () => {
+    const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    if (!facebookAppId) {
+      alert("Config error: Facebook App ID is not set.");
+      return;
+    }
+    const laravelCallbackUrl = `${API_BASE_URL}/auth/facebook/callback-direct`;
+    const scope = "email,public_profile";
+
+    const facebookAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${facebookAppId}&redirect_uri=${encodeURIComponent(
+      laravelCallbackUrl
+    )}&scope=${encodeURIComponent(scope)}&response_type=code`;
+    window.location.href = facebookAuthUrl;
+  };
+
   return (
     <div className="form-content">
-      <h2>Đăng nhập</h2>
+      <h2>Sign in</h2>
       <p className="subtitle">
-        Đăng nhập để khám phá sức mạnh của bản ghi thông minh
+        Sign in to discover the power of smart recording
       </p>
 
-      <form action="#">
+      <form onSubmit={handleEmailLogin}>
         <div className="form-group">
           <label htmlFor="email">Email</label>
-          <input type="email" id="email" placeholder="nhapemail@diachi.com" />
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
+          {fieldErrors.email && (
+            <small style={{ color: "red" }}>{fieldErrors.email}</small>
+          )}
         </div>
         <div className="form-group">
-          <label htmlFor="password">Mật khẩu</label>
+          <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
-            placeholder="Yêu cầu tối thiểu 8 ký tự"
+            placeholder="At least 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
           />
+          {fieldErrors.password && (
+            <small style={{ color: "red" }}>{fieldErrors.password}</small>
+          )}
         </div>
+
+        {error && (
+          <p
+            className="form-error"
+            style={{ color: "red", textAlign: "center" }}
+          >
+            {error}
+          </p>
+        )}
+
         <div className="form-options">
           <div className="remember-me">
-            <input type="checkbox" id="remember" />
-            <label htmlFor="remember">Ghi nhớ đăng nhập</label>
+            <input type="checkbox" id="remember" disabled={loading} />
+            <label htmlFor="remember">Remember login</label>
           </div>
           <Link to="/forgot-password" className="forgot-password">
-            Quên mật khẩu?
+            Forgot password?
           </Link>
         </div>
-        <button type="submit" className="signin-btn">
-          Đăng nhập
+
+        <button type="submit" className="signin-btn" disabled={loading}>
+          {loading ? "Processing..." : "Sign in"}
         </button>
       </form>
 
       <div className="separator">
-        <span>HOẶC</span>
+        <span></span>
       </div>
 
       <div className="social-login-buttons">
-        <button type="button" className="social-btn">
+        <button
+          type="button"
+          className="social-btn"
+          onClick={handleGoogleLogin}
+        >
           <svg
             width="20"
             height="20"
@@ -65,9 +207,13 @@ const LoginPage: React.FC = () => {
               fill="#ea4335"
             />
           </svg>
-          <span>Đăng nhập với Google</span>
+          <span>Sign in with Google</span>
         </button>
-        <button type="button" className="social-btn">
+        <button
+          type="button"
+          className="social-btn"
+          onClick={handleFacebookLogin}
+        >
           <svg
             width="20"
             height="20"
@@ -77,12 +223,12 @@ const LoginPage: React.FC = () => {
           >
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
           </svg>
-          <span>Đăng nhập với Facebook</span>
+          <span>Sign in with Facebook</span>
         </button>
       </div>
 
       <p className="signup-link">
-        Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+        Don't have an account? <Link to="/register">Register</Link>
       </p>
     </div>
   );

@@ -2,10 +2,9 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "http://localhost:8000/api";
 
 const RegisterPage: React.FC = () => {
-  // ... các state giữ nguyên
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,60 +13,89 @@ const RegisterPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<any>({}); // Để lưu lỗi validation
+  const [errors, setErrors] = useState<any>({});
 
   const navigate = useNavigate();
 
+  // Client-side validation
+  const validate = () => {
+    const newErrors: any = {};
+    if (!name.trim()) {
+      newErrors.display_name = ["Username is required"];
+    }
+    if (!email.trim()) {
+      newErrors.email = ["Email is required"];
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
+      newErrors.email = ["Invalid email format"];
+    }
+    if (!password) {
+      newErrors.password = ["Password is required"];
+    } else if (password.length < 8) {
+      newErrors.password = ["Password must be at least 8 characters"];
+    }
+    if (!passwordConfirmation) {
+      newErrors.password_confirmation = ["Password confirmation is required"];
+    } else if (password !== passwordConfirmation) {
+      newErrors.password_confirmation = ["Passwords do not match"];
+    }
+    if (!termsAccepted) {
+      newErrors.terms = ["You must accept the Terms of Service"];
+    }
+    return newErrors;
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setErrors({});
+    const clientErrors = validate();
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
+    setLoading(true);
 
     try {
-      // KHÔNG GỬI registration_type nữa, vì backend mới không cần nó trong Validator
       await axios.post(`${API_BASE_URL}/register`, {
         display_name: name,
         email,
         password,
         password_confirmation: passwordConfirmation,
+        registration_type: "email",
       });
 
       navigate("/verify-email", { state: { email } });
     } catch (err: any) {
-      // ... khối catch xử lý lỗi giữ nguyên
       if (axios.isAxiosError(err) && err.response) {
         const data = err.response.data;
-        setError(data.message || "Đăng ký thất bại.");
+        setError(data.message || "Registration failed.");
         if (data.errors) setErrors(data.errors);
       } else {
-        setError("Có lỗi không xác định xảy ra.");
+        setError("An unknown error occurred.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ... JSX giữ nguyên
   const getError = (field: string) => (errors[field] ? errors[field][0] : null);
 
   return (
     <div className="form-content">
-      <h2>Tạo tài khoản</h2>
+      <h2>Create Account</h2>
       <p className="subtitle">
-        Đăng ký để khám phá sức mạnh của bản ghi thông minh
+        Sign up to discover the power of smart recording
       </p>
 
       <form onSubmit={handleRegister}>
         <div className="form-group">
-          <label htmlFor="name">Họ và tên</label>
+          <label htmlFor="name">Username</label>
           <input
             type="text"
             id="name"
-            placeholder="Nhập họ và tên đầy đủ"
+            placeholder="Enter your username"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            required
           />
           {getError("display_name") && (
             <small style={{ color: "red" }}>{getError("display_name")}</small>
@@ -78,39 +106,41 @@ const RegisterPage: React.FC = () => {
           <input
             type="email"
             id="email"
-            placeholder="nhapemail@diachi.com"
+            placeholder="email@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
           {getError("email") && (
             <small style={{ color: "red" }}>{getError("email")}</small>
           )}
         </div>
         <div className="form-group">
-          <label htmlFor="password">Mật khẩu</label>
+          <label htmlFor="password">Password</label>
           <input
             type="password"
             id="password"
-            placeholder="Yêu cầu tối thiểu 8 ký tự"
+            placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
           />
           {getError("password") && (
             <small style={{ color: "red" }}>{getError("password")}</small>
           )}
         </div>
         <div className="form-group">
-          <label htmlFor="confirm-password">Xác nhận mật khẩu</label>
+          <label htmlFor="confirm-password">Confirm Password</label>
           <input
             type="password"
             id="confirm-password"
-            placeholder="Nhập lại mật khẩu"
+            placeholder="Re-enter your password"
             value={passwordConfirmation}
             onChange={(e) => setPasswordConfirmation(e.target.value)}
-            required
           />
+          {getError("password_confirmation") && (
+            <small style={{ color: "red" }}>
+              {getError("password_confirmation")}
+            </small>
+          )}
         </div>
 
         {error && !Object.keys(errors).length && (
@@ -124,19 +154,23 @@ const RegisterPage: React.FC = () => {
               id="terms"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              required
             />
             <label htmlFor="terms">
-              Tôi đồng ý với <Link to="/terms">Điều khoản dịch vụ</Link>
+              I agree to the <Link to="/terms">Terms of Service</Link>
             </label>
+            {getError("terms") && (
+              <small style={{ color: "red", marginLeft: 8 }}>
+                {getError("terms")}
+              </small>
+            )}
           </div>
         </div>
         <button type="submit" className="signin-btn" disabled={loading}>
-          {loading ? "Đang xử lý..." : "Đăng ký"}
+          {loading ? "Processing..." : "Register"}
         </button>
       </form>
       <p className="signup-link">
-        Bạn đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+        Already have an account? <Link to="/login">Sign in</Link>
       </p>
     </div>
   );

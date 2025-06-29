@@ -285,7 +285,6 @@
   margin-bottom: 0.35rem;
   color: var(--text-dark);
   font-size: 0.93rem;
-  display: block;
 }
 .friend-modal-form input[type="text"],
 .friend-modal-form input[type="email"],

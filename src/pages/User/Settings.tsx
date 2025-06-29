@@ -9,7 +9,9 @@ import {
   FaCamera,
   FaCheckCircle,
   FaCogs,
+  FaSignOutAlt,
 } from "react-icons/fa";
+import axios from "axios";
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -81,6 +83,31 @@ const SettingsPage = () => {
       )
     ) {
       alert("Account deleted. (This is a demo)");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Nếu dùng JWT, cần gửi Authorization header
+      const token = localStorage.getItem("auth_token");
+      await axios.post(
+        "http://localhost:8000/api/logout",
+        {},
+        {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_info");
+      window.location.href = "/login";
+    } catch (err: any) {
+      console.error("Logout error:", err, err?.response?.data);
+      alert(
+        err?.response?.data?.message
+          ? `Logout failed: ${err.response.data.message}`
+          : "Logout failed!"
+      );
     }
   };
 
@@ -160,6 +187,28 @@ const SettingsPage = () => {
               >
                 <FaUserShield /> Admin Panel
               </a>
+            </li>
+            <li>
+              <button
+                className="settings-nav-link logout-link"
+                style={{
+                  color: "var(--red)",
+                  marginTop: "2rem",
+                  width: "100%",
+                  textAlign: "left",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0.75rem 1rem",
+                  fontSize: "1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+                onClick={handleLogout}
+              >
+                <FaSignOutAlt /> Logout
+              </button>
             </li>
           </ul>
         </nav>
