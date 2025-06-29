@@ -4,6 +4,11 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
+
+// Home
+import HomeLayout from "../layouts/Home";
+
+// Auth
 import AuthLayout from "../layouts/AuthLayout";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -43,6 +48,11 @@ const RequireAuth = () => {
 };
 
 const router = createBrowserRouter([
+  // Home page route
+  {
+    path: "/",
+    element: <HomeLayout />,
+  },
   {
     element: <AuthLayout />,
     children: [

@@ -88,7 +88,7 @@ const RegisterPage: React.FC = () => {
       </p>
 
       <form onSubmit={handleRegister}>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: "0" }}>
           <label htmlFor="name">Username</label>
           <input
             type="text"
@@ -101,7 +101,7 @@ const RegisterPage: React.FC = () => {
             <small style={{ color: "red" }}>{getError("display_name")}</small>
           )}
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: "0" }}>
           <label htmlFor="email">Email</label>
           <input
             type="email"
@@ -114,7 +114,7 @@ const RegisterPage: React.FC = () => {
             <small style={{ color: "red" }}>{getError("email")}</small>
           )}
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: "0" }}>
           <label htmlFor="password">Password</label>
           <input
             type="password"
@@ -127,7 +127,7 @@ const RegisterPage: React.FC = () => {
             <small style={{ color: "red" }}>{getError("password")}</small>
           )}
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: "0" }}>
           <label htmlFor="confirm-password">Confirm Password</label>
           <input
             type="password"
