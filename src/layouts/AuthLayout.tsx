@@ -1,5 +1,5 @@
 import React from "react";
-import "../assets/css/auth.css";
+import "../assets/css/auth.css"; // Import CSS styles for the layout
 import { Outlet } from "react-router-dom";
 
 const AuthLayout: React.FC = () => {
@@ -72,10 +72,9 @@ const AuthLayout: React.FC = () => {
                 />
               </svg>
               <div>
-                <h3>Chuyển đổi giọng nói liền mạch</h3>
+                <h3>Seamless Speech Conversion</h3>
                 <p>
-                  Chuyển đổi âm thanh thành văn bản dễ dàng với công nghệ AI
-                  tiên tiến của chúng tôi
+                  Convert audio to text easily with our advanced AI technology
                 </p>
               </div>
             </li>
@@ -96,8 +95,8 @@ const AuthLayout: React.FC = () => {
                 />
               </svg>
               <div>
-                <h3>Hỗ trợ đa ngôn ngữ</h3>
-                <p>Chuyển đổi hội thoại nhiều ngôn ngữ một cách dễ dàng</p>
+                <h3>Multilingual Support</h3>
+                <p>Switch conversations to multiple languages ​​easily</p>
               </div>
             </li>
             <li>
@@ -117,10 +116,10 @@ const AuthLayout: React.FC = () => {
                 />
               </svg>
               <div>
-                <h3>Công cụ cộng tác</h3>
+                <h3>Collaboration Tools</h3>
                 <p>
-                  Làm việc nhóm dễ dàng bằng cách chia sẻ và chú thích bản ghi
-                  theo thời gian thực
+                  Collaborate easily by sharing and annotating recordings in
+                  real time
                 </p>
               </div>
             </li>

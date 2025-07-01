@@ -97,7 +97,7 @@ body {
 }
 
 .form-content {
-  width: 400px;
+  width: 450px;
   max-width: 600px; /* THAY ĐỔI: Thu nhỏ chiều rộng tối đa của form */
 }
 
@@ -119,7 +119,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: 15px; /* THAY ĐỔI: Giảm khoảng cách */
+  margin-bottom: 0; /* THAY ĐỔI: Giảm khoảng cách */
 }
 
 .form-group label {

@@ -1,68 +1,81 @@
+// src/components/User/Sidebar.tsx
+
 import React from "react";
-import { Link } from "react-router-dom";
-import "../../assets/css/User/sidebar.css";
-import {
-  AiOutlineHome,
-  AiOutlineSetting,
-  AiOutlineSearch,
-  AiOutlinePlus,
-} from "react-icons/ai";
-import { BsFlag } from "react-icons/bs";
+import { NavLink } from "react-router-dom"; 
+// Loại bỏ import logo
+// import logoImage from "../../assets/images/logo.png"; 
+import { AiOutlineHome, AiOutlineSetting, AiOutlineSearch } from "react-icons/ai";
+import { BsFlag, BsCalendar3 } from "react-icons/bs";
 import { BiNote } from "react-icons/bi";
-import { BsCalendar3 } from "react-icons/bs";
 import { FiUsers } from "react-icons/fi";
 import { CgProfile } from "react-icons/cg";
+import "../../assets/css/User/sidebar.css";
 
-const Sidebar = () => {
+// Định nghĩa kiểu dữ liệu cho props mà Sidebar sẽ nhận từ DashboardLayout
+interface SidebarProps {
+  user: {
+    display_name: string;
+    avatar_url: string | null;
+  } | null; // `user` có thể là `null` trong khi đang tải
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ user }) => {
+  // Hàm này giúp NavLink biết khi nào cần thêm class 'active'
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
+    return isActive ? 'nav-link active' : 'nav-link';
+  };
+
+  // Xác định URL của avatar để hiển thị
+  // Nếu user không tồn tại hoặc không có avatar_url, sẽ dùng ảnh mặc định
+  const avatarUrl = user?.avatar_url || "/default-avatar.png";
+
   return (
     <header className="main-header">
-      {/* PHẦN 1: LOGO (BÊN TRÁI) */}
-      <div className="logo-container">
-        <div className="logo"></div>
+      <div className="header-left">
+        {/* Quay lại sử dụng div chứa chữ cho logo */}
+        <div className="logo">NoteurGoals</div>
+
+        <nav className="main-nav">
+          <NavLink to="/dashboard" end className={getNavLinkClass}>
+            <AiOutlineHome /> HOME
+          </NavLink>
+          <NavLink to="/dashboard/goals" className={getNavLinkClass}>
+            <BsFlag /> GOALS
+          </NavLink>
+          <NavLink to="/dashboard/notes" className={getNavLinkClass}>
+            <BiNote /> NOTES
+          </NavLink>
+          <NavLink to="/dashboard/schedule" className={getNavLinkClass}>
+            <BsCalendar3 /> SCHEDULE
+          </NavLink>
+          <NavLink to="/dashboard/friends" className={getNavLinkClass}>
+            <FiUsers /> FRIENDS
+          </NavLink>
+          <NavLink to="/dashboard/account" className={getNavLinkClass}>
+            <CgProfile /> ACCOUNT
+          </NavLink>
+          <NavLink to="/dashboard/settings" className={getNavLinkClass}>
+            <AiOutlineSetting /> SETTINGS
+          </NavLink>
+        </nav>
       </div>
 
-      {/* PHẦN 2: MENU (CHÍNH GIỮA) */}
-      <nav className="main-nav">
-        <Link to="/" className="active">
-          <AiOutlineHome /> HOME
-        </Link>
-        <Link to="/goals">
-          <BsFlag /> GOALS
-        </Link>
-        <Link to="/notes">
-          <BiNote /> NOTES
-        </Link>
-        <Link to="/schedule">
-          <BsCalendar3 /> SCHEDULE
-        </Link>
-        <Link to="/friends">
-          <FiUsers /> FRIENDS
-        </Link>
-        <Link to="/account">
-          <CgProfile /> ACCOUNT
-        </Link>
-        <Link to="/settings">
-          <AiOutlineSetting /> SETTING
-        </Link>
-        <Link>
-           Login
-        </Link>
-      </nav>
-
-      {/* PHẦN 3: CÁC NÚT BÊN PHẢI */}
       <div className="header-right">
         <div className="search-container">
           <AiOutlineSearch />
-          <input type="text" placeholder="Search tasks..." />
+          <input type="text" placeholder="Search notes..." />
         </div>
-        <button className="add-button">
-          <AiOutlinePlus />
-        </button>
+        <button className="add-button">+</button>
+
+        {/* --- HIỂN THỊ AVATAR CỦA NGƯỜI DÙNG --- */}
         <div className="user-avatars">
-          <img src="https://i.pravatar.cc/40?img=1" alt="User 1" />
-          <img src="https://i.pravatar.cc/40?img=2" alt="User 2" />
-          <img src="https://i.pravatar.cc/40?img=3" alt="User 3" />
-          <img src="https://i.pravatar.cc/40?img=4" alt="User 4" />
+          <img 
+            src={avatarUrl} 
+            alt={user?.display_name || "User Avatar"} 
+            title={user?.display_name || "User"}
+            // onError sẽ xử lý trường hợp URL ảnh bị lỗi (ví dụ: 404)
+            onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }} 
+          />
         </div>
       </div>
     </header>
