@@ -1,4 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  getNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+  linkGoalToNote,
+  unlinkGoalFromNote,
+} from "../../../services/notesService";
+import { getGoals } from "../../../services/goalsService";
 import "../../../assets/css/User/notes.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,8 +19,6 @@ import {
   faEllipsisVertical,
   faBullseye,
   faPaperclip,
-  faFlagCheckered,
-  faCloudUploadAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface NoteCard {
@@ -21,11 +28,19 @@ interface NoteCard {
   updatedDate: string;
   color?: "purple" | "green" | "blue" | "yellow" | "red";
   linkedGoal?: {
-    type: "goal" | "milestone";
+    id: string;
+    type: "goal";
     title: string;
   };
   attachments?: number;
 }
+
+interface GoalOption {
+  id: string;
+  title: string;
+}
+
+const NOTES_CACHE_KEY = "user_notes_cache";
 
 const NotesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -33,177 +48,251 @@ const NotesPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteCard | null>(null);
 
-  const [notes, setNotes] = useState<NoteCard[]>([
-    {
-      id: "1",
-      title: "Project Alpha Kick-off",
-      content:
-        "Meeting summary: Finalized the project scope. Key decision was to use Vue.js for the frontend. The team has been assigned initial tasks.",
-      updatedDate: "Jun 22, 2025",
-      color: "purple",
-      linkedGoal: {
-        type: "goal",
-        title: "Launch Project Alpha",
-      },
-      attachments: 2,
-    },
-    {
-      id: "2",
-      title: "Ideas for Weekend Trip",
-      content:
-        "- Hiking at the national park? Check weather forecast. - Visit the new art museum downtown. - Try that new Italian restaurant everyone is talking about.",
-      updatedDate: "Jun 20, 2025",
-      color: "green",
-    },
-    {
-      id: "3",
-      title: "Database Schema Notes",
-      content:
-        "Remember to add an index to the `user_id` column in the `Goals` table to improve query performance. Also, consider adding a `last_updated_by` field to track changes.",
-      updatedDate: "Jun 18, 2025",
-    },
-    {
-      id: "4",
-      title: "Feedback on UI Mockups",
-      content:
-        "The login page looks great. The main dashboard feels a bit cluttered. Suggestion: use cards to group related information and add more white space.",
-      updatedDate: "Jun 15, 2025",
-      color: "blue",
-      linkedGoal: {
-        type: "milestone",
-        title: "Finalize UI/UX Design",
-      },
-      attachments: 1,
-    },
-  ]);
+  const [notes, setNotes] = useState<NoteCard[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // State cho form Add
-  const [addForm, setAddForm] = useState({
-    title: "",
-    content: "",
-    linkedGoal: "",
-    tag: "",
-    color: "default",
-    attachments: [],
-  });
+  // Goal linking
+  const [goals, setGoals] = useState<GoalOption[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
 
-  // State cho form Edit
-  const [editForm, setEditForm] = useState({
-    title: "",
-    content: "",
-    linkedGoal: "",
-    tag: "",
-    color: "default",
-    attachments: [],
-  });
+  // Form state
+  const [addForm, setAddForm] = useState({ title: "", content: "" });
+  const [editForm, setEditForm] = useState({ title: "", content: "" });
 
-  // Mở modal Add
+  // Lấy cache trước khi fetch API, chỉ loading nếu chưa có cache
+  useEffect(() => {
+    const cached = localStorage.getItem(NOTES_CACHE_KEY);
+    if (cached) setNotes(JSON.parse(cached));
+    fetchNotes();
+    // eslint-disable-next-line
+  }, []);
+
+  // Fetch notes và đồng bộ cache, chỉ cập nhật nếu khác cache
+  const fetchNotes = async () => {
+    try {
+      const res = await getNotes();
+      const rawNotes = Array.isArray(res.data) ? res.data : res.data.data;
+      const mapped = rawNotes.map((item: any) => ({
+        id: item.note_id?.toString() ?? item.id?.toString() ?? "",
+        title: item.title,
+        content: item.content,
+        updatedDate: item.updated_at
+          ? new Date(item.updated_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            })
+          : "",
+        color: item.color,
+        linkedGoal: item.goal
+          ? {
+              id:
+                item.goal.goal_id?.toString() ?? item.goal.id?.toString() ?? "",
+              type: "goal",
+              title: item.goal.title,
+            }
+          : undefined,
+        attachments: item.attachments_count,
+      }));
+      // So sánh dữ liệu mới và cũ, chỉ cập nhật nếu khác
+      if (JSON.stringify(mapped) !== JSON.stringify(notes)) {
+        setNotes(mapped);
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(mapped));
+      }
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      }
+      setNotes([]);
+    }
+  };
+
+  // Fetch goals only when needed
+  const fetchGoalsList = async () => {
+    if (goals.length > 0) return;
+    try {
+      const res = await getGoals();
+      const rawGoals = Array.isArray(res.data) ? res.data : res.data.data;
+      setGoals(
+        rawGoals.map((g: any) => ({
+          id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
+          title: g.title,
+        }))
+      );
+    } catch {}
+  };
+
+  // Open Add Modal
   const openAddModal = () => {
-    setAddForm({
-      title: "",
-      content: "",
-      linkedGoal: "",
-      tag: "",
-      color: "default",
-      attachments: [],
-    });
+    setAddForm({ title: "", content: "" });
+    setSelectedGoalId("");
+    fetchGoalsList();
     setIsAddModalOpen(true);
   };
 
-  // Mở modal Edit
+  // Open Edit Modal
   const openEditModal = (note: NoteCard) => {
     setEditingNote(note);
-    setEditForm({
-      title: note.title,
-      content: note.content,
-      linkedGoal: note.linkedGoal ? note.linkedGoal.title : "",
-      tag: "",
-      color: note.color || "default",
-      attachments: [],
-    });
+    setEditForm({ title: note.title, content: note.content });
+    setSelectedGoalId(note.linkedGoal?.id ?? "");
+    fetchGoalsList();
     setIsEditModalOpen(true);
   };
 
-  // Đóng modal Add
+  // Close Modals
   const closeAddModal = () => setIsAddModalOpen(false);
-
-  // Đóng modal Edit
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setEditingNote(null);
   };
 
-  // Xử lý submit Add
-  const handleAddSubmit = (e: React.FormEvent) => {
+  // Add Note (update state, không fetch lại toàn bộ)
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newNote: NoteCard = {
-      id: Date.now().toString(),
-      title: addForm.title,
-      content: addForm.content,
-      updatedDate: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      }),
-      color:
-        addForm.color !== "default"
-          ? (addForm.color as NoteCard["color"])
-          : undefined,
-      linkedGoal: addForm.linkedGoal
-        ? { type: "goal", title: addForm.linkedGoal }
-        : undefined,
-      attachments:
-        addForm.attachments.length > 0 ? addForm.attachments.length : undefined,
-    };
-    setNotes([newNote, ...notes]);
-    closeAddModal();
+    setLoading(true);
+    try {
+      const payload = { title: addForm.title, content: addForm.content };
+      const res = await createNote(payload);
+      const item = res.data.note ?? res.data;
+      let linkedGoal = undefined;
+      if (selectedGoalId) {
+        await linkGoalToNote(item.note_id ?? item.id, {
+          goal_id: selectedGoalId,
+        });
+        const goal = goals.find((g) => g.id === selectedGoalId);
+        if (goal) {
+          linkedGoal = { id: goal.id, type: "goal", title: goal.title };
+        }
+      }
+      const newNote: NoteCard = {
+        id: item.note_id?.toString() ?? item.id?.toString() ?? "",
+        title: item.title,
+        content: item.content,
+        updatedDate: item.updated_at
+          ? new Date(item.updated_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            })
+          : "",
+        color: item.color,
+        linkedGoal,
+        attachments: item.attachments_count,
+      };
+      setNotes((prev) => {
+        const updated = [newNote, ...prev];
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      closeAddModal();
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      } else if (err.response?.data?.errors) {
+        alert(
+          Object.values(err.response.data.errors)
+            .map((v) => (Array.isArray(v) ? v.join(", ") : v))
+            .join("\n")
+        );
+      } else if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Có lỗi khi thêm note!");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Xử lý submit Edit
-  const handleEditSubmit = (e: React.FormEvent) => {
+  // Edit Note (update state, không fetch lại toàn bộ)
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingNote) return;
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === editingNote.id
-          ? {
-              ...note,
-              title: editForm.title,
-              content: editForm.content,
-              color:
-                editForm.color !== "default"
-                  ? (editForm.color as NoteCard["color"])
-                  : undefined,
-              linkedGoal: editForm.linkedGoal
-                ? { type: "goal", title: editForm.linkedGoal }
-                : undefined,
-              attachments:
-                editForm.attachments.length > 0
-                  ? editForm.attachments.length
-                  : undefined,
-              updatedDate: new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              }),
-            }
-          : note
-      )
-    );
-    closeEditModal();
+    setLoading(true);
+    try {
+      const payload = { title: editForm.title, content: editForm.content };
+      await updateNote(editingNote.id, payload);
+      let linkedGoal = undefined;
+      if (selectedGoalId) {
+        await linkGoalToNote(editingNote.id, { goal_id: selectedGoalId });
+        const goal = goals.find((g) => g.id === selectedGoalId);
+        if (goal) {
+          linkedGoal = { id: goal.id, type: "goal", title: goal.title };
+        }
+      } else if (editingNote.linkedGoal?.id) {
+        await unlinkGoalFromNote(editingNote.id, editingNote.linkedGoal.id);
+      }
+      setNotes((prev) => {
+        const updated = prev.map((note) =>
+          note.id === editingNote.id
+            ? {
+                ...note,
+                title: payload.title,
+                content: payload.content,
+                updatedDate: new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                }),
+                linkedGoal,
+              }
+            : note
+        );
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      closeEditModal();
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      } else if (err.response?.data?.errors) {
+        alert(
+          Object.values(err.response.data.errors)
+            .map((v) => (Array.isArray(v) ? v.join(", ") : v))
+            .join("\n")
+        );
+      } else if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Có lỗi khi sửa note!");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Xử lý xóa note
-  const handleDelete = () => {
+  // Delete Note (update state, không fetch lại toàn bộ)
+  const handleDelete = async () => {
     if (
       window.confirm(
         "Are you sure you want to delete this note? This action cannot be undone."
       )
     ) {
-      setNotes((prev) => prev.filter((note) => note.id !== editingNote?.id));
-      closeEditModal();
+      setLoading(true);
+      try {
+        if (editingNote) {
+          await deleteNote(editingNote.id);
+          setNotes((prev) => {
+            const updated = prev.filter((note) => note.id !== editingNote.id);
+            localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+            return updated;
+          });
+        }
+        closeEditModal();
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+        } else {
+          alert("Có lỗi khi xóa note!");
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  // Chỉ loading khi chưa có cache
+  const showLoading = notes.length === 0 && loading;
 
   return (
     <main className="main-content">
@@ -242,51 +331,56 @@ const NotesPage: React.FC = () => {
         </div>
 
         <div className={`notes-container ${viewMode}-view`} id="notes-list">
-          {notes.map((note) => (
-            <div
-              key={note.id}
-              className={`note-card ${note.color ? `color-${note.color}` : ""}`}
-              onClick={() => openEditModal(note)}
-            >
-              <div className="note-header">
-                <h3 className="note-title">{note.title}</h3>
-                <FontAwesomeIcon
-                  icon={faEllipsisVertical}
-                  className="note-menu"
-                />
-              </div>
-              <div className="note-body">
-                <div className="note-content">{note.content}</div>
-                <div className="note-footer">
-                  <span className="note-date">Updated: {note.updatedDate}</span>
-                  <div className="note-meta">
-                    {note.linkedGoal && (
-                      <span
-                        className="linked-goal"
-                        title={`Linked to ${
-                          note.linkedGoal.type === "goal" ? "Goal" : "Milestone"
-                        }: ${note.linkedGoal.title}`}
-                      >
-                        <FontAwesomeIcon
-                          icon={
-                            note.linkedGoal.type === "goal"
-                              ? faBullseye
-                              : faFlagCheckered
-                          }
-                        />
-                      </span>
-                    )}
-                    {note.attachments && (
-                      <span>
-                        <FontAwesomeIcon icon={faPaperclip} />{" "}
-                        {note.attachments}
-                      </span>
-                    )}
+          {showLoading ? (
+            <div style={{ textAlign: "center", width: "100%" }}>Loading...</div>
+          ) : notes.length === 0 ? (
+            <div style={{ textAlign: "center", width: "100%" }}>
+              No notes found.
+            </div>
+          ) : (
+            notes.map((note) => (
+              <div
+                key={note.id}
+                className={`note-card ${
+                  note.color ? `color-${note.color}` : ""
+                }`}
+                onClick={() => openEditModal(note)}
+              >
+                <div className="note-header">
+                  <h3 className="note-title">{note.title}</h3>
+                  <FontAwesomeIcon
+                    icon={faEllipsisVertical}
+                    className="note-menu"
+                  />
+                </div>
+                <div className="note-body">
+                  <div className="note-content">{note.content}</div>
+                  <div className="note-footer">
+                    <span className="note-date">
+                      Updated: {note.updatedDate}
+                    </span>
+                    <div className="note-meta">
+                      {note.linkedGoal && (
+                        <span
+                          className="linked-goal"
+                          title={`Linked to Goal: ${note.linkedGoal.title}`}
+                        >
+                          <FontAwesomeIcon icon={faBullseye} />{" "}
+                          {note.linkedGoal.title}
+                        </span>
+                      )}
+                      {note.attachments && (
+                        <span>
+                          <FontAwesomeIcon icon={faPaperclip} />{" "}
+                          {note.attachments}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
@@ -334,74 +428,21 @@ const NotesPage: React.FC = () => {
                   ></textarea>
                 </div>
                 <div className="note-modal-group">
-                  <label htmlFor="note-modal-link-select-add">
-                    Link to Goal / Milestone
+                  <label htmlFor="note-modal-goal-select">
+                    Liên kết với Goal
                   </label>
                   <select
-                    id="note-modal-link-select-add"
-                    value={addForm.linkedGoal}
-                    onChange={(e) =>
-                      setAddForm((f) => ({ ...f, linkedGoal: e.target.value }))
-                    }
+                    id="note-modal-goal-select"
+                    value={selectedGoalId}
+                    onChange={(e) => setSelectedGoalId(e.target.value)}
                   >
-                    <option value="">None</option>
-                    <optgroup label="Goals">
-                      <option value="Launch Project Alpha">
-                        Launch Project Alpha
+                    <option value="">-- Không liên kết --</option>
+                    {goals.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title}
                       </option>
-                      <option value="Run a 5K Race">Run a 5K Race</option>
-                    </optgroup>
-                    <optgroup label="Milestones for 'Launch Project Alpha'">
-                      <option value="Finalize UI/UX Design">
-                        Finalize UI/UX Design
-                      </option>
-                      <option value="Deploy to Staging Server">
-                        Deploy to Staging Server
-                      </option>
-                    </optgroup>
+                    ))}
                   </select>
-                </div>
-                <div className="note-modal-group-inline">
-                  <div className="note-modal-group">
-                    <label htmlFor="note-modal-tags-select-add">Tags</label>
-                    <select
-                      id="note-modal-tags-select-add"
-                      value={addForm.tag}
-                      onChange={(e) =>
-                        setAddForm((f) => ({ ...f, tag: e.target.value }))
-                      }
-                    >
-                      <option value="">No tag</option>
-                      <option value="work">Work</option>
-                      <option value="personal">Personal</option>
-                      <option value="study">Study</option>
-                    </select>
-                  </div>
-                  <div className="note-modal-group">
-                    <label htmlFor="note-modal-color-select-add">Color</label>
-                    <select
-                      id="note-modal-color-select-add"
-                      value={addForm.color}
-                      onChange={(e) =>
-                        setAddForm((f) => ({ ...f, color: e.target.value }))
-                      }
-                    >
-                      <option value="default">Default</option>
-                      <option value="purple">Purple</option>
-                      <option value="blue">Blue</option>
-                      <option value="green">Green</option>
-                      <option value="yellow">Yellow</option>
-                      <option value="red">Red</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="note-modal-group">
-                  <label>Attachments</label>
-                  <div className="note-modal-file-upload-area">
-                    <FontAwesomeIcon icon={faCloudUploadAlt} />
-                    <p>Drag & drop files or click to browse</p>
-                    <span>Max file size: 10MB</span>
-                  </div>
                 </div>
                 <div className="note-modal-footer">
                   <button
@@ -465,74 +506,21 @@ const NotesPage: React.FC = () => {
                   ></textarea>
                 </div>
                 <div className="note-modal-group">
-                  <label htmlFor="note-modal-link-select-edit">
-                    Link to Goal / Milestone
+                  <label htmlFor="note-modal-goal-select-edit">
+                    Liên kết với Goal
                   </label>
                   <select
-                    id="note-modal-link-select-edit"
-                    value={editForm.linkedGoal}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, linkedGoal: e.target.value }))
-                    }
+                    id="note-modal-goal-select-edit"
+                    value={selectedGoalId}
+                    onChange={(e) => setSelectedGoalId(e.target.value)}
                   >
-                    <option value="">None</option>
-                    <optgroup label="Goals">
-                      <option value="Launch Project Alpha">
-                        Launch Project Alpha
+                    <option value="">-- Không liên kết --</option>
+                    {goals.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title}
                       </option>
-                      <option value="Run a 5K Race">Run a 5K Race</option>
-                    </optgroup>
-                    <optgroup label="Milestones for 'Launch Project Alpha'">
-                      <option value="Finalize UI/UX Design">
-                        Finalize UI/UX Design
-                      </option>
-                      <option value="Deploy to Staging Server">
-                        Deploy to Staging Server
-                      </option>
-                    </optgroup>
+                    ))}
                   </select>
-                </div>
-                <div className="note-modal-group-inline">
-                  <div className="note-modal-group">
-                    <label htmlFor="note-modal-tags-select-edit">Tags</label>
-                    <select
-                      id="note-modal-tags-select-edit"
-                      value={editForm.tag}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, tag: e.target.value }))
-                      }
-                    >
-                      <option value="">No tag</option>
-                      <option value="work">Work</option>
-                      <option value="personal">Personal</option>
-                      <option value="study">Study</option>
-                    </select>
-                  </div>
-                  <div className="note-modal-group">
-                    <label htmlFor="note-modal-color-select-edit">Color</label>
-                    <select
-                      id="note-modal-color-select-edit"
-                      value={editForm.color}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, color: e.target.value }))
-                      }
-                    >
-                      <option value="default">Default</option>
-                      <option value="purple">Purple</option>
-                      <option value="blue">Blue</option>
-                      <option value="green">Green</option>
-                      <option value="yellow">Yellow</option>
-                      <option value="red">Red</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="note-modal-group">
-                  <label>Attachments</label>
-                  <div className="note-modal-file-upload-area">
-                    <FontAwesomeIcon icon={faCloudUploadAlt} />
-                    <p>Drag & drop files or click to browse</p>
-                    <span>Max file size: 10MB</span>
-                  </div>
                 </div>
                 <div className="note-modal-footer">
                   <button

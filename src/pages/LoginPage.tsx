@@ -1,50 +1,76 @@
 // src/pages/LoginPage.tsx
 
-// Thêm useEffect và useLocation
 import React, { useState, useEffect } from "react";
-// Thêm useLocation
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-
-// ============================================================================
-// --- Component LoginPage: Tích hợp 3 phương thức đăng nhập VỚI CSS EXTERNAL ---
-// ============================================================================
 
 const LoginPage: React.FC = () => {
   // --- STATE MANAGEMENT ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Lỗi chung từ API hoặc từ Social Callback
   const [error, setError] = useState<string | null>(null);
-  // Thêm state mới để hiển thị thông báo thành công
+  // Lỗi validation cho từng trường input
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; }>({});
+  // Thông báo thành công (sau khi xác thực email)
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // --- HOOKS ---
   const navigate = useNavigate();
-  // Thêm hook useLocation để đọc state được truyền qua navigate
   const location = useLocation();
 
   // --- API & APP CONFIG ---
-  const API_BASE_URL = 'http://localhost:8000/api';
-
-  // --- LOGIC MỚI: Kiểm tra và hiển thị thông báo khi component được tải ---
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+  // --- LOGIC XỬ LÝ THÔNG BÁO TỪ CÁC TRANG TRƯỚC ---
   useEffect(() => {
-    // Nếu có successMessage được truyền từ trang trước (VD: VerifyEmailPage)
+    // 1. Kiểm tra thông báo thành công từ trang xác thực email
     if (location.state?.successMessage) {
       setSuccessMessage(location.state.successMessage);
-      // Xóa state khỏi location để không hiển thị lại khi người dùng refresh trang
+      // Xóa state để không hiển thị lại khi refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    
+    // 2. Kiểm tra thông báo lỗi từ trang Social Auth Callback
+    if (location.state?.errorMessage) {
+      setError(location.state.errorMessage);
+      // Xóa state để không hiển thị lại khi refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
 
-  // ==========================================================================
-  // --- PHƯƠNG THỨC 1: ĐĂNG NHẬP BẰNG EMAIL & PASSWORD ---
-  // ==========================================================================
+  // --- VALIDATION PHÍA CLIENT ---
+  const validate = () => {
+    // ... (code giữ nguyên, đã rất tốt)
+    const errors: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      errors.email = "Vui lòng nhập email.";
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
+      errors.email = "Định dạng email không hợp lệ.";
+    }
+    if (!password) {
+      errors.password = "Vui lòng nhập mật khẩu.";
+    } else if (password.length < 8) {
+      errors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
+    }
+    return errors;
+  };
+
+  // --- PHƯƠNG THỨC ĐĂNG NHẬP BẰNG EMAIL & PASSWORD ---
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
+    // Reset tất cả các thông báo cũ
     setError(null);
-    setSuccessMessage(null); // Xóa thông báo thành công khi bắt đầu đăng nhập
+    setFieldErrors({});
+    setSuccessMessage(null);
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      return;
+    }
+    
+    setLoading(true);
 
     try {
       const response = await axios.post(`${API_BASE_URL}/login`, {
@@ -56,8 +82,7 @@ const LoginPage: React.FC = () => {
         const { token, user } = response.data.data;
         localStorage.setItem('auth_token', token);
         localStorage.setItem('user_info', JSON.stringify(user));
-        alert('Đăng nhập thành công!');
-        navigate('/'); // Chuyển hướng về trang chủ
+        navigate('/dashboard'); // Chuyển hướng đến dashboard
       } else {
         setError(response.data.message || 'Có lỗi không xác định xảy ra.');
       }
@@ -65,9 +90,7 @@ const LoginPage: React.FC = () => {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.message || 'Có lỗi xảy ra khi đăng nhập.');
         if (err.response.data.verification_required) {
-          console.warn("Cần xác thực tài khoản:", err.response.data.user_email);
-          // Gợi ý: có thể chuyển hướng đến trang verify-email ở đây
-          // navigate('/verify-email', { state: { email } });
+          navigate('/verify-email', { state: { email } });
         }
       } else {
         setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.");
@@ -78,11 +101,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // ==========================================================================
-  // --- PHƯƠNG THỨC 2: ĐĂNG NHẬP BẰNG GOOGLE ---
-  // ==========================================================================
-  const handleGoogleLogin = () => {
-    // ... code giữ nguyên
+ const handleGoogleLogin = () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!googleClientId) {
       alert("Lỗi cấu hình: Google Client ID chưa được thiết lập.");
@@ -101,11 +120,7 @@ const LoginPage: React.FC = () => {
     window.location.href = googleAuthUrl;
   };
 
-  // ==========================================================================
-  // --- PHƯƠNG THỨC 3: ĐĂNG NHẬP BẰNG FACEBOOK ---
-  // ==========================================================================
   const handleFacebookLogin = () => {
-    // ... code giữ nguyên
     const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
     if (!facebookAppId) {
       alert("Lỗi cấu hình: Facebook App ID chưa được thiết lập.");
@@ -118,9 +133,7 @@ const LoginPage: React.FC = () => {
     window.location.href = facebookAuthUrl;
   };
 
-  // ==========================================================================
-  // --- RENDER COMPONENT ---
-  // ==========================================================================
+
   return (
     <div className="form-content">
       <h2>Đăng nhập</h2>
@@ -128,37 +141,21 @@ const LoginPage: React.FC = () => {
         Đăng nhập để khám phá sức mạnh của bản ghi thông minh
       </p>
 
-      {/* --- PHẦN JSX MỚI: HIỂN THỊ THÔNG BÁO THÀNH CÔNG --- */}
+      {/* Hiển thị thông báo thành công */}
       {successMessage && (
-        <p style={{
-          color: 'green',
-          textAlign: 'center',
-          backgroundColor: '#e8f5e9',
-          padding: '10px',
-          borderRadius: '5px',
-          marginBottom: '1rem',
-          border: '1px solid #c8e6c9'
-        }}>
+        <p className="form-success" style={{color: 'green', textAlign: 'center', backgroundColor: '#e8f5e9', padding: '10px', borderRadius: '5px', marginBottom: '1rem', border: '1px solid #c8e6c9'}}>
           {successMessage}
         </p>
       )}
 
-      {/* --- PHẦN JSX MỚI: HIỂN THỊ THÔNG BÁO LỖI --- */}
+      {/* Hiển thị lỗi chung (từ API hoặc từ Social Login) */}
       {error && (
-        <p className="form-error" style={{
-          color: '#D8000C',
-          backgroundColor: '#FFD2D2',
-          textAlign: 'center',
-          padding: '10px',
-          borderRadius: '5px',
-          marginBottom: '1rem',
-          border: '1px solid #D8000C'
-        }}>
+        <p className="form-error" style={{color: '#D8000C', backgroundColor: '#FFD2D2', textAlign: 'center', padding: '10px', borderRadius: '5px', marginBottom: '1rem', border: '1px solid #D8000C'}}>
           {error}
         </p>
       )}
 
-      <form onSubmit={handleEmailLogin}>
+      <form onSubmit={handleEmailLogin} noValidate> {/* Thêm noValidate để tắt validation mặc định của trình duyệt */}
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
@@ -167,9 +164,11 @@ const LoginPage: React.FC = () => {
             placeholder="nhapemail@diachi.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
             disabled={loading}
           />
+          {fieldErrors.email && (
+            <small style={{ color: "red", marginTop: '4px', display: 'block' }}>{fieldErrors.email}</small>
+          )}
         </div>
         <div className="form-group">
           <label htmlFor="password">Mật khẩu</label>
@@ -179,9 +178,11 @@ const LoginPage: React.FC = () => {
             placeholder="Yêu cầu tối thiểu 8 ký tự"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
             disabled={loading}
           />
+          {fieldErrors.password && (
+            <small style={{ color: "red", marginTop: '4px', display: 'block' }}>{fieldErrors.password}</small>
+          )}
         </div>
         
         <div className="form-options">
@@ -199,6 +200,7 @@ const LoginPage: React.FC = () => {
         </button>
       </form>
 
+      {/* Phần còn lại của JSX không đổi */}
       <div className="separator">
         <span>HOẶC</span>
       </div>

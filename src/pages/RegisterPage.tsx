@@ -1,8 +1,9 @@
-import { useState } from 'react';
+// src/pages/RegisterPage.tsx
+
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// Component trang đăng ký
 const RegisterPage: React.FC = () => {
     // --- QUẢN LÝ TRẠNG THÁI (STATE) ---
     const [name, setName] = useState('');
@@ -14,23 +15,57 @@ const RegisterPage: React.FC = () => {
     // State cho việc xử lý tải và lỗi
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation từ API
+    const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation
 
     // --- HOOKS ---
     const navigate = useNavigate();
 
     // --- CẤU HÌNH API ---
-    // Giữ lại URL từ phiên bản HEAD. Hãy đảm bảo nó đúng với backend của bạn.
     const API_BASE_URL = 'http://localhost:8000/api';
+
+    // --- HÀM VALIDATION PHÍA CLIENT ---
+    const validate = () => {
+        const newErrors: any = {};
+        if (!name.trim()) {
+            newErrors.display_name = ["Vui lòng nhập họ và tên."];
+        }
+        if (!email.trim()) {
+            newErrors.email = ["Vui lòng nhập email."];
+        } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
+            newErrors.email = ["Định dạng email không hợp lệ."];
+        }
+        if (!password) {
+            newErrors.password = ["Vui lòng nhập mật khẩu."];
+        } else if (password.length < 8) {
+            newErrors.password = ["Mật khẩu phải có ít nhất 8 ký tự."];
+        }
+        if (password !== passwordConfirmation) {
+            // Hiển thị lỗi ngay ở trường xác nhận mật khẩu
+            newErrors.password_confirmation = ["Mật khẩu xác nhận không khớp."];
+        }
+        if (!termsAccepted) {
+            // Mặc dù đã có 'required', thêm vào đây để thông báo rõ hơn nếu cần
+            setError("Bạn phải đồng ý với Điều khoản dịch vụ để tiếp tục.");
+        }
+        return newErrors;
+    };
 
     // --- HÀM XỬ LÝ GỬI FORM ---
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setLoading(true);
+        // Reset lỗi trước mỗi lần gửi
         setError(null);
         setErrors({});
 
-        // Backend sẽ xử lý việc kiểm tra password confirmation
+        // Thực hiện validation phía client trước
+        const clientErrors = validate();
+        if (Object.keys(clientErrors).length > 0) {
+            setErrors(clientErrors);
+            return;
+        }
+
+        setLoading(true);
+
         try {
             await axios.post(`${API_BASE_URL}/register`, {
                 display_name: name,
@@ -40,26 +75,20 @@ const RegisterPage: React.FC = () => {
             });
             
             // Đăng ký thành công, chuyển hướng đến trang xác thực email
-            // và truyền email qua state để trang đó có thể sử dụng
             navigate('/verify-email', { state: { email } });
 
         } catch (err: any) {
-            // Xử lý lỗi chi tiết từ Axios
             if (axios.isAxiosError(err) && err.response) {
                 const data = err.response.data;
-                // Ưu tiên hiển thị thông báo lỗi chung từ server
                 setError(data.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.');
-                // Nếu có lỗi validation chi tiết, lưu lại để hiển thị cho từng trường
                 if (data.errors) {
                     setErrors(data.errors);
                 }
             } else {
-                // Lỗi mạng hoặc lỗi không xác định
                 setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
                 console.error("Lỗi đăng ký không xác định:", err);
             }
         } finally {
-            // Dù thành công hay thất bại, dừng trạng thái loading
             setLoading(false);
         }
     };
@@ -82,7 +111,7 @@ const RegisterPage: React.FC = () => {
                         placeholder="Nhập họ và tên đầy đủ" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        disabled={loading} // Vô hiệu hóa khi đang gửi
+                        disabled={loading}
                         required 
                     />
                     {getError('display_name') && <small className="form-field-error">{getError('display_name')}</small>}
@@ -128,10 +157,11 @@ const RegisterPage: React.FC = () => {
                         disabled={loading}
                         required 
                     />
+                    {getError('password_confirmation') && <small className="form-field-error">{getError('password_confirmation')}</small>}
                 </div>
                 
-                {/* Chỉ hiển thị lỗi chung khi không có lỗi validation chi tiết */}
-                {error && !Object.keys(errors).length && <p className="form-error">{error}</p>}
+                {/* Hiển thị lỗi chung (từ server hoặc từ validation điều khoản) */}
+                {error && <p className="form-error">{error}</p>}
 
                 <div className="form-options">
                     <div className="remember-me">

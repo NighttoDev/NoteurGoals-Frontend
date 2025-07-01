@@ -1,659 +1,775 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import "../../../assets/css/User/goals.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
-  faEllipsisV,
   faLock,
-  faUsers,
-  faGlobeAmericas,
   faUserFriends,
+  faGlobeAmericas,
   faCalendarAlt,
   faStickyNote,
   faPaperclip,
   faCheckSquare,
   faBook,
+  faEllipsisV,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  getGoals,
+  createGoal,
+  updateGoal,
+  deleteGoal,
+  addCollaborator,
+  removeCollaborator,
+  updateShareSettings,
+  getGoal,
+  createMilestone,
+  updateMilestone,
+  deleteMilestone,
+} from "../../../services/goalsService";
+
+type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
+type Sharing = "private" | "friends" | "public";
 
 interface Milestone {
-  id: string;
-  description: string;
-  date: string;
-  completed: boolean;
+  milestone_id?: string;
+  goal_id?: string;
+  title: string;
+  deadline: string;
+  is_completed?: boolean;
 }
 
 interface Collaborator {
-  id: string;
-  name: string;
-  avatar: string;
+  collab_id: string;
+  goal_id: string;
+  user_id: string;
+  role: string;
+  name?: string;
+  avatar?: string;
+}
+
+interface GoalShare {
+  share_id: string;
+  goal_id: string;
+  share_type: Sharing;
+}
+
+interface GoalProgress {
+  progress_id: string;
+  goal_id: string;
+  progress_value: number;
 }
 
 interface Goal {
-  id: string;
+  goal_id: string;
+  user_id: string;
   title: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  status: "new" | "in_progress" | "completed" | "cancelled";
-  progress: number;
-  sharingStatus: "private" | "friends" | "public";
-  milestones?: Milestone[];
-  collaborators?: Collaborator[];
+  start_date: string;
+  end_date: string;
+  status: Status;
+  milestones: Milestone[];
+  collaborators: Collaborator[];
+  shares?: GoalShare[];
+  progress?: GoalProgress;
   notesCount?: number;
   attachmentsCount?: number;
-  completedMilestones?: number;
-  totalMilestones?: number;
-  booksRead?: number;
-  totalBooks?: number;
 }
 
+const sharingIcons = {
+  private: faLock,
+  friends: faUserFriends,
+  public: faGlobeAmericas,
+};
+
+const sharingTitles = {
+  private: "Private",
+  friends: "Friends Only",
+  public: "Public",
+};
+
+const statusTags = {
+  in_progress: "In Progress",
+  completed: "Completed",
+  new: "New",
+  cancelled: "Cancelled",
+};
+
+const GoalCard = memo(
+  ({ goal, onEdit }: { goal: Goal; onEdit: (goal: Goal) => void }) => (
+    <div
+      className={`goals-card${
+        goal.status === "cancelled" ? " goals-is-cancelled" : ""
+      } goals-border-${goal.status}`}
+      data-status={goal.status}
+    >
+      <div className="goals-card-header">
+        <div className="goals-title-container">
+          <span
+            className="goals-sharing-status"
+            title={
+              goal.shares?.[0]?.share_type
+                ? sharingTitles[goal.shares[0].share_type]
+                : "Private"
+            }
+          >
+            <FontAwesomeIcon
+              icon={
+                goal.shares?.[0]?.share_type
+                  ? sharingIcons[goal.shares[0].share_type]
+                  : sharingIcons.private
+              }
+            />
+          </span>
+          <h3 className="goals-card-title">{goal.title}</h3>
+        </div>
+        <FontAwesomeIcon
+          icon={faEllipsisV}
+          className="goals-card-menu"
+          onClick={() => onEdit(goal)}
+          style={{ cursor: "pointer" }}
+        />
+      </div>
+      <div className="goals-card-description">{goal.description}</div>
+      <div className="goals-card-dates">
+        <FontAwesomeIcon icon={faCalendarAlt} />
+        <span>
+          {goal.start_date
+            ? new Date(goal.start_date).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })
+            : ""}
+        </span>
+        <span className="goals-date-separator">→</span>
+        <span>
+          {goal.end_date
+            ? new Date(goal.end_date).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })
+            : ""}
+        </span>
+      </div>
+      <div className={`goals-card-status goals-status-tag-${goal.status}`}>
+        {statusTags[goal.status]}
+      </div>
+      <div className="goals-card-progress">
+        <div className="goals-progress-bar">
+          <div
+            className="goals-progress-fill"
+            style={{
+              width: `${goal.progress ? goal.progress.progress_value : 0}%`,
+            }}
+          ></div>
+        </div>
+        <div className="goals-progress-text">
+          <span>Progress</span>
+          <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
+        </div>
+      </div>
+      {goal.milestones && goal.milestones.length > 0 && (
+        <div className="goals-card-milestones">
+          <h4>Milestones</h4>
+          {goal.milestones.map((milestone) => (
+            <div
+              key={milestone.milestone_id || milestone.title}
+              className="goals-milestone-item"
+            >
+              <input
+                type="checkbox"
+                className="goals-milestone-checkbox"
+                id={milestone.milestone_id}
+                checked={milestone.is_completed}
+                readOnly
+              />
+              <label
+                htmlFor={milestone.milestone_id}
+                className="goals-milestone-text"
+              >
+                {milestone.title}
+              </label>
+              <span className="goals-milestone-date">
+                {milestone.deadline
+                  ? new Date(milestone.deadline).toLocaleDateString("en-GB", {
+                      month: "short",
+                      day: "2-digit",
+                    })
+                  : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="goals-card-footer">
+        <div className="goals-card-collaborators">
+          {goal.collaborators && goal.collaborators.length > 0 && (
+            <div className="goals-user-avatars">
+              {goal.collaborators.map((collaborator) => (
+                <img
+                  key={collaborator.collab_id}
+                  src={collaborator.avatar}
+                  alt={collaborator.name}
+                  title={collaborator.name}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="goals-card-stats">
+          {goal.notesCount ? (
+            <span>
+              <FontAwesomeIcon icon={faStickyNote} /> {goal.notesCount}
+            </span>
+          ) : null}
+          {goal.attachmentsCount ? (
+            <span>
+              <FontAwesomeIcon icon={faPaperclip} /> {goal.attachmentsCount}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+);
+
 const GoalsPage: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [filter, setFilter] = useState<Status>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [form, setForm] = useState({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    sharingStatus: "private",
+    start_date: "",
+    end_date: "",
+    sharing_type: "private" as Sharing,
     collaborators: "",
   });
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [deletedMilestoneIds, setDeletedMilestoneIds] = useState<string[]>([]);
+  const [collaboratorInput, setCollaboratorInput] = useState("");
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const highlightRef = useRef<HTMLSpanElement>(null);
+  const filterTabsRef = useRef<HTMLDivElement>(null);
 
-  const [goals, setGoals] = useState<Goal[]>([
-    {
-      id: "1",
-      title: "Learn Advanced SQL",
-      description:
-        "Become proficient in advanced SQL concepts like window functions, CTEs, and query optimization.",
-      startDate: "2025-06-01",
-      endDate: "2025-08-31",
-      status: "in_progress",
-      progress: 40,
-      sharingStatus: "private",
-      milestones: [
-        {
-          id: "m1-1",
-          description: "Master JOIN clauses",
-          date: "2025-06-15",
-          completed: true,
-        },
-        {
-          id: "m1-2",
-          description: "Understand Subqueries",
-          date: "2025-06-30",
-          completed: true,
-        },
-      ],
-      notesCount: 3,
-      attachmentsCount: 1,
-    },
-    {
-      id: "2",
-      title: "Build Portfolio Website",
-      description:
-        "Create a professional portfolio site to showcase projects and skills.",
-      startDate: "2025-03-01",
-      endDate: "2025-05-30",
-      status: "completed",
-      progress: 100,
-      sharingStatus: "friends",
-      collaborators: [
-        {
-          id: "c2-1",
-          name: "Hanh Vy",
-          avatar: "https://i.pravatar.cc/40?img=5",
-        },
-        {
-          id: "c2-2",
-          name: "Duy Manh",
-          avatar: "https://i.pravatar.cc/40?img=3",
-        },
-      ],
-      completedMilestones: 4,
-      totalMilestones: 4,
-    },
-    {
-      id: "3",
-      title: "Run a 5K Race",
-      description:
-        "Train consistently to complete a 5-kilometer race without stopping.",
-      startDate: "2025-07-01",
-      endDate: "2025-09-15",
-      status: "new",
-      progress: 0,
-      sharingStatus: "public",
-    },
-    {
-      id: "4",
-      title: "Learn Guitar",
-      description:
-        "Learn basic chords and songs. Cancelled due to lack of time.",
-      startDate: "2025-02-01",
-      endDate: "2025-06-01",
-      status: "cancelled",
-      progress: 15,
-      sharingStatus: "private",
-    },
-    {
-      id: "5",
-      title: "Read 12 Books",
-      description:
-        "Expand knowledge by reading one book per month across various genres.",
-      startDate: "2025-01-01",
-      endDate: "2025-12-31",
-      status: "in_progress",
-      progress: 58,
-      sharingStatus: "friends",
-      milestones: [
-        {
-          id: "m5-1",
-          description: "Complete Q1 reading (3 books)",
-          date: "2025-03-31",
-          completed: true,
-        },
-        {
-          id: "m5-2",
-          description: "Complete Q2 reading (3 books)",
-          date: "2025-06-30",
-          completed: true,
-        },
-      ],
-      collaborators: [
-        {
-          id: "c5-1",
-          name: "Minh Anh",
-          avatar: "https://i.pravatar.cc/40?img=7",
-        },
-      ],
-      booksRead: 7,
-      totalBooks: 12,
-    },
-  ]);
+  // Fetch goals từ API khi mount
+  useEffect(() => {
+    setLoading(true);
+    getGoals()
+      .then((res) => {
+        const data = (res.data.data || res.data).map((g: Goal) => ({
+          ...g,
+          milestones: g.milestones ?? [],
+          collaborators: g.collaborators ?? [],
+        }));
+        setGoals(data);
+      })
+      .catch(() => setErrorMsg("Failed to load goals."))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const openModal = (mode: "add" | "edit", goal?: Goal) => {
+  // Move highlight bar
+  useEffect(() => {
+    const activeBtn = document.querySelector(
+      ".goals-filter-btn.goals-active"
+    ) as HTMLElement;
+    const highlight = highlightRef.current;
+    const container = filterTabsRef.current;
+    if (activeBtn && highlight && container) {
+      const btnRect = activeBtn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      highlight.style.left = `${btnRect.left - containerRect.left}px`;
+      highlight.style.width = `${btnRect.width}px`;
+    }
+  }, [filter]);
+
+  // Modal open/close logic
+  const openModal = useCallback((mode: "add" | "edit", goal?: Goal) => {
     setModalMode(mode);
     setIsModalOpen(true);
+    setErrors({});
     if (mode === "edit" && goal) {
-      setEditingGoalId(goal.id);
-      setMilestones(goal.milestones ? goal.milestones : []);
-      setFormData({
+      setEditingGoal(goal);
+      setForm({
         title: goal.title,
         description: goal.description,
-        startDate: goal.startDate,
-        endDate: goal.endDate,
-        sharingStatus: goal.sharingStatus,
-        collaborators: goal.collaborators
-          ? goal.collaborators.map((c) => c.name).join(", ")
-          : "",
+        start_date: goal.start_date,
+        end_date: goal.end_date,
+        sharing_type: goal.shares?.[0]?.share_type || "private",
+        collaborators: (goal.collaborators ?? []).map((c) => c.name).join(", "),
       });
+      setMilestones(
+        (goal.milestones ?? []).map((m) => ({
+          milestone_id: m.milestone_id,
+          title: m.title,
+          deadline: m.deadline,
+        }))
+      );
+      setDeletedMilestoneIds([]);
     } else {
-      setEditingGoalId(null);
-      setFormData({
+      setEditingGoal(null);
+      setForm({
         title: "",
         description: "",
-        startDate: "",
-        endDate: "",
-        sharingStatus: "private",
+        start_date: "",
+        end_date: "",
+        sharing_type: "private",
         collaborators: "",
       });
       setMilestones([]);
     }
-  };
+    setCollaboratorInput("");
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false);
-    setMilestones([]);
-    setEditingGoalId(null);
-    setFormData({
-      title: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      sharingStatus: "private",
-      collaborators: "",
+    setErrors({});
+    setEditingGoal(null);
+    setCollaboratorInput("");
+  }, []);
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!form.title.trim()) newErrors.title = "Title is required";
+    if (!form.description.trim())
+      newErrors.description = "Description is required";
+    if (!form.start_date) newErrors.start_date = "Start date is required";
+    if (!form.end_date) newErrors.end_date = "End date is required";
+    if (form.start_date && form.end_date && form.start_date > form.end_date)
+      newErrors.end_date = "End date must be after start date";
+    milestones.forEach((m, idx) => {
+      if (!m.title.trim())
+        newErrors[`milestone-title-${idx}`] = "Milestone title required";
+      if (!m.deadline)
+        newErrors[`milestone-deadline-${idx}`] = "Milestone deadline required";
     });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleFormChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (modalMode === "add") {
-      const newGoal: Goal = {
-        id: Date.now().toString(),
-        title: formData.title,
-        description: formData.description,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        status: "new",
-        progress: 0,
-        sharingStatus: formData.sharingStatus as Goal["sharingStatus"],
-        milestones: milestones,
-        collaborators: formData.collaborators
-          ? formData.collaborators.split(",").map((name, idx) => ({
-              id: `c-${Date.now()}-${idx}`,
-              name: name.trim(),
-              avatar: `https://i.pravatar.cc/40?img=${Math.floor(
-                Math.random() * 10 + 1
-              )}`,
-            }))
-          : [],
-      };
-      setGoals([newGoal, ...goals]);
-    } else if (modalMode === "edit" && editingGoalId) {
-      setGoals((prev) =>
-        prev.map((goal) =>
-          goal.id === editingGoalId
-            ? {
-                ...goal,
-                title: formData.title,
-                description: formData.description,
-                startDate: formData.startDate,
-                endDate: formData.endDate,
-                sharingStatus: formData.sharingStatus as Goal["sharingStatus"],
-                milestones: milestones,
-                collaborators: formData.collaborators
-                  ? formData.collaborators.split(",").map((name, idx) => ({
-                      id: `c-${Date.now()}-${idx}`,
-                      name: name.trim(),
-                      avatar: `https://i.pravatar.cc/40?img=${Math.floor(
-                        Math.random() * 10 + 1
-                      )}`,
-                    }))
-                  : [],
-              }
-            : goal
-        )
-      );
-    }
-    closeModal();
-  };
-
-  const handleDelete = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this goal? This action cannot be undone."
-      )
-    ) {
-      setGoals((prev) => prev.filter((goal) => goal.id !== editingGoalId));
-      closeModal();
-    }
-  };
-
-  const addMilestone = () => {
-    const newMilestone: Milestone = {
-      id: `m-${Date.now()}`,
-      description: "",
-      date: "",
-      completed: false,
-    };
-    setMilestones([...milestones, newMilestone]);
-  };
-
-  const removeMilestone = (id: string) => {
-    setMilestones(milestones.filter((milestone) => milestone.id !== id));
-  };
-
-  const updateMilestone = (
-    id: string,
-    field: keyof Milestone,
-    value: string | boolean
-  ) => {
-    setMilestones(
-      milestones.map((milestone) =>
-        milestone.id === id ? { ...milestone, [field]: value } : milestone
-      )
-    );
-  };
-
-  const getSharingIcon = (status: Goal["sharingStatus"]) => {
-    switch (status) {
-      case "private":
-        return faLock;
-      case "friends":
-        return faUserFriends;
-      case "public":
-        return faGlobeAmericas;
-      default:
-        return faUsers;
-    }
-  };
-
-  const getSharingTitle = (status: Goal["sharingStatus"]) => {
-    switch (status) {
-      case "private":
-        return "Private";
-      case "friends":
-        return "Friends Only";
-      case "public":
-        return "Public";
-      default:
-        return "Shared with friends";
-    }
-  };
-
+  // Filter logic
   const filteredGoals = goals.filter(
-    (goal) => activeFilter === "all" || activeFilter === goal.status
+    (g) => filter === "all" || g.status === filter
   );
 
+  // Milestone handlers (API riêng)
+  const addMilestone = useCallback(() => {
+    setMilestones((prev) => [...prev, { title: "", deadline: "" }]);
+  }, []);
+
+  const updateMilestoneHandler = useCallback(
+    async (idx: number, field: "title" | "deadline", value: string) => {
+      setMilestones((prev) => {
+        const next = prev.map((m, i) =>
+          i === idx ? { ...m, [field]: value } : m
+        );
+        return next;
+      });
+
+      if (editingGoal && milestones[idx]?.milestone_id) {
+        setLoading(true);
+        try {
+          const milestoneId = milestones[idx].milestone_id!;
+          await updateMilestone(milestoneId, {
+            ...milestones[idx],
+            [field]: value,
+          });
+          const updatedGoal = await getGoal(editingGoal.goal_id);
+          setEditingGoal(updatedGoal.data);
+          setMilestones(
+            (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
+              milestone_id: m.milestone_id,
+              title: m.title,
+              deadline: m.deadline,
+            }))
+          );
+        } catch {
+          setErrorMsg("Failed to update milestone.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    },
+    [editingGoal, milestones]
+  );
+
+  const removeMilestone = useCallback((idx: number) => {
+    setMilestones((prev) => {
+      const removed = prev[idx];
+      if (removed.milestone_id) {
+        setDeletedMilestoneIds((ids) =>
+          ids.includes(removed.milestone_id!)
+            ? ids
+            : [...ids, removed.milestone_id!]
+        );
+      }
+      return prev.filter((_, i) => i !== idx);
+    });
+  }, []);
+  // Form submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setLoading(true);
+    try {
+      if (modalMode === "add") {
+        // Khi tạo mới goal, gửi milestones luôn
+        const res = await createGoal({
+          title: form.title,
+          description: form.description,
+          start_date: form.start_date,
+          end_date: form.end_date,
+          sharing_type: form.sharing_type,
+          collaborators: form.collaborators,
+          milestones: milestones.map((m) => ({
+            title: m.title,
+            deadline: m.deadline
+              ? new Date(m.deadline).toISOString().slice(0, 10)
+              : "",
+          })),
+        });
+        setGoals((prev) => [...prev, res.data.data || res.data]);
+      } else if (modalMode === "edit" && editingGoal) {
+        // Xóa milestones thực tế nếu có
+        if (deletedMilestoneIds.length > 0) {
+          for (const id of deletedMilestoneIds) {
+            try {
+              await deleteMilestone(id);
+            } catch (err: any) {
+              if (err?.response?.status !== 404) throw err;
+            }
+          }
+        }
+        // Thêm các milestone mới (chưa có milestone_id)
+        const newMilestones = milestones.filter((m) => !m.milestone_id);
+        for (const m of newMilestones) {
+          console.log("Tạo milestone:", {
+            goal_id: editingGoal.goal_id,
+            title: m.title,
+            deadline: m.deadline
+              ? new Date(m.deadline).toISOString().slice(0, 10)
+              : "",
+          });
+          try {
+            await createMilestone(editingGoal.goal_id, {
+              title: m.title,
+              deadline: m.deadline
+                ? new Date(m.deadline).toISOString().slice(0, 10)
+                : "",
+            });
+          } catch (err: any) {
+            setErrorMsg(
+              err?.response?.data?.message || "Failed to create milestone."
+            );
+            console.error("Create milestone error:", err?.response?.data, err);
+            setLoading(false);
+            return;
+          }
+        }
+        // Reload lại goal để đồng bộ milestones
+        const updatedGoal = await getGoal(editingGoal.goal_id);
+        setEditingGoal(updatedGoal.data);
+        setMilestones(
+          (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
+            milestone_id: m.milestone_id,
+            title: m.title,
+            deadline: m.deadline,
+          }))
+        );
+        // Cập nhật goal (KHÔNG gửi milestones)
+        const res = await updateGoal(editingGoal.goal_id, {
+          title: form.title,
+          description: form.description,
+          start_date: form.start_date,
+          end_date: form.end_date,
+          sharing_type: form.sharing_type,
+          collaborators: form.collaborators,
+        });
+        setGoals((prev) =>
+          prev.map((g) =>
+            g.goal_id === editingGoal.goal_id ? res.data.data || res.data : g
+          )
+        );
+      }
+      setIsModalOpen(false);
+      setErrors({});
+    } catch (err: any) {
+      setErrorMsg(err?.response?.data?.message || "Failed to save goal.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Delete goal
+  const handleDelete = async () => {
+    if (!editingGoal) return;
+    setLoading(true);
+    try {
+      await deleteGoal(editingGoal.goal_id);
+      setGoals((prev) => prev.filter((g) => g.goal_id !== editingGoal.goal_id));
+      setIsModalOpen(false);
+      setErrors({});
+    } catch (err) {
+      setErrorMsg("Failed to delete goal.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Collaborator handlers
+  const handleAddCollaborator = async () => {
+    if (!editingGoal || !collaboratorInput.trim()) return;
+    setLoading(true);
+    try {
+      await addCollaborator(editingGoal.goal_id, {
+        email: collaboratorInput.trim(),
+      });
+      const res = await getGoal(editingGoal.goal_id);
+      setEditingGoal(res.data);
+      setGoals((prev) =>
+        prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+      );
+      setCollaboratorInput("");
+    } catch {
+      setErrorMsg("Failed to add collaborator.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveCollaborator = async (userId: string) => {
+    if (!editingGoal) return;
+    setLoading(true);
+    try {
+      await removeCollaborator(editingGoal.goal_id, userId);
+      const res = await getGoal(editingGoal.goal_id);
+      setEditingGoal(res.data);
+      setGoals((prev) =>
+        prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+      );
+    } catch {
+      setErrorMsg("Failed to remove collaborator.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sharing handler
+  const handleChangeSharing = async (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setForm((f) => ({ ...f, sharing_type: e.target.value as Sharing }));
+    if (editingGoal) {
+      setLoading(true);
+      try {
+        await updateShareSettings(editingGoal.goal_id, {
+          share_type: e.target.value,
+        });
+        const res = await getGoal(editingGoal.goal_id);
+        setEditingGoal(res.data);
+        setGoals((prev) =>
+          prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+        );
+      } catch {
+        setErrorMsg("Failed to update sharing.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
-    <main className="main-content">
+    <main className="goals-main-content">
       <section className="goals-section">
-        <div className="content-header">
-          <h1 className="page-title">My Goals</h1>
-          <div className="action-buttons">
-            <div className="filter-buttons">
-              <button
-                className={`filter-btn ${
-                  activeFilter === "all" ? "active" : ""
-                }`}
-                onClick={() => setActiveFilter("all")}
-              >
-                All
-              </button>
-              <button
-                className={`filter-btn ${
-                  activeFilter === "in_progress" ? "active" : ""
-                }`}
-                onClick={() => setActiveFilter("in_progress")}
-              >
-                In Progress
-              </button>
-              <button
-                className={`filter-btn ${
-                  activeFilter === "completed" ? "active" : ""
-                }`}
-                onClick={() => setActiveFilter("completed")}
-              >
-                Completed
-              </button>
-              <button
-                className={`filter-btn ${
-                  activeFilter === "new" ? "active" : ""
-                }`}
-                onClick={() => setActiveFilter("new")}
-              >
-                New
-              </button>
+        <div className="goals-header">
+          <div className="goals-actions">
+            <div className="goals-filter-tabs" ref={filterTabsRef}>
+              <span
+                className="goals-filter-highlight"
+                ref={highlightRef}
+              ></span>
+              {(["all", "in_progress", "completed", "new"] as Status[]).map(
+                (s) => (
+                  <button
+                    key={s}
+                    className={`goals-filter-btn${
+                      filter === s ? " goals-active" : ""
+                    }`}
+                    data-filter={s}
+                    onClick={() => setFilter(s)}
+                    type="button"
+                  >
+                    {s === "all"
+                      ? "All"
+                      : s === "in_progress"
+                      ? "In Progress"
+                      : s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                )
+              )}
             </div>
             <button
-              className="btn btn-primary"
+              className="goals-btn goals-btn-primary"
+              id="add-goal-btn"
               onClick={() => openModal("add")}
+              type="button"
             >
               <FontAwesomeIcon icon={faPlus} /> New Goal
             </button>
           </div>
         </div>
-
+        {loading && <div className="goals-loading">Loading...</div>}
+        {errorMsg && <div className="form-error">{errorMsg}</div>}
         <div className="goals-grid">
-          {filteredGoals.map((goal) => (
+          {filteredGoals.length === 0 && !loading && (
             <div
-              key={goal.id}
-              className={`goal-card ${
-                goal.status === "cancelled" ? "is-cancelled" : ""
-              }`}
-              data-status={goal.status}
+              style={{ textAlign: "center", color: "#888", marginTop: "2rem" }}
             >
-              <div className="goal-header">
-                <div className="goal-title-container">
-                  <span
-                    className="goal-sharing-status"
-                    title={getSharingTitle(goal.sharingStatus)}
-                  >
-                    <FontAwesomeIcon
-                      icon={getSharingIcon(goal.sharingStatus)}
-                    />
-                  </span>
-                  <h3 className="goal-title">{goal.title}</h3>
-                </div>
-                <FontAwesomeIcon
-                  icon={faEllipsisV}
-                  className="goal-menu"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openModal("edit", goal);
-                  }}
-                />
-              </div>
-              <div className="goal-description">{goal.description}</div>
-              <div className="goal-dates">
-                <FontAwesomeIcon icon={faCalendarAlt} />
-                <span>
-                  {goal.startDate
-                    ? new Date(goal.startDate).toLocaleDateString("en-GB")
-                    : ""}
-                </span>
-                <span className="date-separator">→</span>
-                <span>
-                  {goal.endDate
-                    ? new Date(goal.endDate).toLocaleDateString("en-GB")
-                    : ""}
-                </span>
-              </div>
-              <div
-                className={`goal-status status-${goal.status.replace(
-                  "_",
-                  "-"
-                )}`}
-              >
-                {goal.status === "in_progress"
-                  ? "In Progress"
-                  : goal.status === "completed"
-                  ? "Completed"
-                  : goal.status === "new"
-                  ? "New"
-                  : "Cancelled"}
-              </div>
-              <div className="goal-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${goal.progress}%` }}
-                  ></div>
-                </div>
-                <div className="progress-text">
-                  <span>Progress</span>
-                  <span>{goal.progress}%</span>
-                </div>
-              </div>
-
-              {goal.milestones && goal.milestones.length > 0 && (
-                <div className="milestones">
-                  <h4>Milestones</h4>
-                  {goal.milestones.map((milestone) => (
-                    <div key={milestone.id} className="milestone-item">
-                      <input
-                        type="checkbox"
-                        className="milestone-checkbox"
-                        id={milestone.id}
-                        checked={milestone.completed}
-                        readOnly
-                      />
-                      <label htmlFor={milestone.id} className="milestone-text">
-                        {milestone.description}
-                      </label>
-                      <span className="milestone-date">
-                        {milestone.date
-                          ? new Date(milestone.date).toLocaleDateString("en-GB")
-                          : ""}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="goal-footer">
-                <div className="collaborators">
-                  {goal.collaborators && goal.collaborators.length > 0 && (
-                    <div className="user-avatars">
-                      {goal.collaborators.map((collaborator) => (
-                        <img
-                          key={collaborator.id}
-                          src={collaborator.avatar}
-                          alt={collaborator.name}
-                          title={collaborator.name}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="goal-stats">
-                  {goal.notesCount && (
-                    <span>
-                      <FontAwesomeIcon icon={faStickyNote} /> {goal.notesCount}
-                    </span>
-                  )}
-                  {goal.attachmentsCount && (
-                    <span>
-                      <FontAwesomeIcon icon={faPaperclip} />{" "}
-                      {goal.attachmentsCount}
-                    </span>
-                  )}
-                  {goal.completedMilestones && goal.totalMilestones && (
-                    <span>
-                      <FontAwesomeIcon icon={faCheckSquare} />{" "}
-                      {goal.completedMilestones}/{goal.totalMilestones}
-                    </span>
-                  )}
-                  {goal.booksRead && goal.totalBooks && (
-                    <span>
-                      <FontAwesomeIcon icon={faBook} /> {goal.booksRead}/
-                      {goal.totalBooks}
-                    </span>
-                  )}
-                </div>
-              </div>
+              No goals found.
             </div>
+          )}
+          {filteredGoals.map((goal) => (
+            <GoalCard
+              key={goal.goal_id}
+              goal={goal}
+              onEdit={() => openModal("edit", goal)}
+            />
           ))}
         </div>
       </section>
-
-      {/* Add/Edit Goal Modal */}
       {isModalOpen && (
-        <div className="goal-modal-overlay" onClick={closeModal}>
+        <div
+          className="goals-modal-overlay"
+          style={{ display: "flex" }}
+          onClick={closeModal}
+        >
           <div
-            className="goal-modal-content"
+            className="goals-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <form
-              className="goal-modal-form"
-              id="goal-modal-form"
-              onSubmit={handleSubmit}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-              }}
-            >
-              <div className="goal-modal-header">
-                <h2>{modalMode === "add" ? "Add New Goal" : "Edit Goal"}</h2>
-                <button
-                  className="goal-modal-close-btn"
-                  onClick={closeModal}
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="goal-modal-body" style={{ flex: 1 }}>
-                <div className="goal-modal-group">
-                  <label htmlFor="goal-modal-title">Title</label>
+            <div className="goals-modal-header">
+              <h2 id="goal-modal-title">
+                {modalMode === "add" ? "Add New Goal" : "Edit Goal"}
+              </h2>
+              <button className="goals-modal-close" onClick={closeModal}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <div className="goals-modal-body">
+              <form
+                className="goals-form"
+                id="goal-form"
+                onSubmit={handleSubmit}
+                noValidate
+              >
+                <div className="goals-form-group">
+                  <label htmlFor="goal-title-input">Title</label>
                   <input
                     type="text"
-                    id="goal-modal-title"
-                    name="title"
+                    id="goal-title-input"
                     placeholder="e.g., Learn a new programming language"
-                    required
-                    value={formData.title}
-                    onChange={handleFormChange}
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, title: e.target.value }))
+                    }
                   />
+                  {errors.title && (
+                    <div className="form-error">{errors.title}</div>
+                  )}
                 </div>
-                <div className="goal-modal-group">
-                  <label htmlFor="goal-modal-description">Description</label>
+                <div className="goals-form-group">
+                  <label htmlFor="goal-description-input">Description</label>
                   <textarea
-                    id="goal-modal-description"
-                    name="description"
+                    id="goal-description-input"
                     placeholder="Describe your goal and why it's important..."
-                    value={formData.description}
-                    onChange={handleFormChange}
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, description: e.target.value }))
+                    }
                   ></textarea>
+                  {errors.description && (
+                    <div className="form-error">{errors.description}</div>
+                  )}
                 </div>
-                <div className="goal-modal-group-inline">
-                  <div className="goal-modal-group">
-                    <label htmlFor="goal-modal-start-date">Start Date</label>
+                <div className="goals-form-group-inline">
+                  <div className="goals-form-group">
+                    <label htmlFor="goal-start-date">Start Date</label>
                     <input
                       type="date"
-                      id="goal-modal-start-date"
-                      name="startDate"
-                      required
-                      value={formData.startDate}
-                      onChange={handleFormChange}
-                      placeholder="nn/mm/yyyy"
+                      id="goal-start-date"
+                      value={form.start_date}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, start_date: e.target.value }))
+                      }
                     />
+                    {errors.start_date && (
+                      <div className="form-error">{errors.start_date}</div>
+                    )}
                   </div>
-                  <div className="goal-modal-group">
-                    <label htmlFor="goal-modal-end-date">End Date</label>
+                  <div className="goals-form-group">
+                    <label htmlFor="goal-end-date">End Date</label>
                     <input
                       type="date"
-                      id="goal-modal-end-date"
-                      name="endDate"
-                      required
-                      value={formData.endDate}
-                      onChange={handleFormChange}
-                      placeholder="nn/mm/yyyy"
+                      id="goal-end-date"
+                      value={form.end_date}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, end_date: e.target.value }))
+                      }
                     />
+                    {errors.end_date && (
+                      <div className="form-error">{errors.end_date}</div>
+                    )}
                   </div>
                 </div>
-                <div className="goal-modal-group">
+                <div className="goals-form-group">
                   <label>Milestones</label>
-                  <div className="goal-modal-milestones">
-                    {milestones.map((milestone) => (
+                  <div id="goal-form-milestones-container">
+                    {milestones.map((m, idx) => (
                       <div
-                        key={milestone.id}
-                        className="goal-modal-milestone-item"
+                        key={m.milestone_id || idx}
+                        className="goals-form-milestone"
                       >
                         <input
                           type="text"
-                          placeholder="Milestone description"
-                          value={milestone.description}
+                          placeholder="Milestone title"
+                          value={m.title}
                           onChange={(e) =>
-                            updateMilestone(
-                              milestone.id,
-                              "description",
-                              e.target.value
-                            )
+                            updateMilestoneHandler(idx, "title", e.target.value)
                           }
-                          required
                         />
+                        {errors[`milestone-title-${idx}`] && (
+                          <div className="form-error">
+                            {errors[`milestone-title-${idx}`]}
+                          </div>
+                        )}
                         <input
                           type="date"
-                          value={milestone.date}
+                          value={m.deadline}
                           onChange={(e) =>
-                            updateMilestone(
-                              milestone.id,
-                              "date",
+                            updateMilestoneHandler(
+                              idx,
+                              "deadline",
                               e.target.value
                             )
                           }
-                          required
-                          placeholder="nn/mm/yyyy"
                         />
+                        {errors[`milestone-deadline-${idx}`] && (
+                          <div className="form-error">
+                            {errors[`milestone-deadline-${idx}`]}
+                          </div>
+                        )}
                         <button
                           type="button"
-                          className="goal-modal-remove-milestone"
+                          className="goals-form-remove-milestone"
                           title="Remove milestone"
-                          onClick={() => removeMilestone(milestone.id)}
+                          onClick={() => removeMilestone(idx)}
                         >
                           <FontAwesomeIcon icon={faTimes} />
                         </button>
@@ -662,34 +778,80 @@ const GoalsPage: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className="btn btn-secondary"
-                    onClick={addMilestone}
+                    className="goals-btn goals-btn-secondary"
+                    id="add-milestone-btn"
                     style={{ marginTop: "0.5rem" }}
+                    onClick={addMilestone}
                   >
                     <FontAwesomeIcon icon={faPlus} /> Add Milestone
                   </button>
                 </div>
-                <div className="goal-modal-group-inline">
-                  <div className="goal-modal-group">
-                    <label htmlFor="goal-modal-collaborators">
-                      Collaborators
-                    </label>
-                    <input
-                      type="text"
-                      id="goal-modal-collaborators"
-                      name="collaborators"
-                      placeholder="Add people by email..."
-                      value={formData.collaborators}
-                      onChange={handleFormChange}
-                    />
+                <div className="goals-form-group-inline">
+                  <div className="goals-form-group">
+                    <label htmlFor="goal-collaborators">Collaborators</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="text"
+                        id="goal-collaborators"
+                        placeholder="Add people by email..."
+                        value={collaboratorInput}
+                        onChange={(e) => setCollaboratorInput(e.target.value)}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        className="goals-btn goals-btn-secondary"
+                        onClick={handleAddCollaborator}
+                        disabled={
+                          loading || !editingGoal || !collaboratorInput.trim()
+                        }
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {editingGoal &&
+                      editingGoal.collaborators &&
+                      editingGoal.collaborators.length > 0 && (
+                        <ul
+                          style={{
+                            margin: "8px 0 0 0",
+                            padding: 0,
+                            listStyle: "none",
+                          }}
+                        >
+                          {editingGoal.collaborators.map((c) => (
+                            <li
+                              key={c.user_id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <span>{c.name || c.user_id}</span>
+                              <button
+                                type="button"
+                                className="goals-btn goals-btn-danger"
+                                style={{ padding: "2px 8px", fontSize: 12 }}
+                                onClick={() =>
+                                  handleRemoveCollaborator(c.user_id)
+                                }
+                                disabled={loading}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
-                  <div className="goal-modal-group">
-                    <label htmlFor="goal-modal-sharing">Sharing</label>
+                  <div className="goals-form-group">
+                    <label htmlFor="goal-sharing-select">Sharing</label>
                     <select
-                      id="goal-modal-sharing"
-                      name="sharingStatus"
-                      value={formData.sharingStatus}
-                      onChange={handleFormChange}
+                      id="goal-sharing-select"
+                      value={form.sharing_type}
+                      onChange={handleChangeSharing}
+                      disabled={loading}
                     >
                       <option value="private">Private (Only me)</option>
                       <option value="friends">Friends Only</option>
@@ -697,33 +859,37 @@ const GoalsPage: React.FC = () => {
                     </select>
                   </div>
                 </div>
-              </div>
-              <div className="goal-modal-footer">
-                {modalMode === "edit" && (
+                <div className="goals-modal-footer">
+                  {modalMode === "edit" && (
+                    <button
+                      className="goals-btn goals-btn-danger"
+                      id="delete-goal-btn"
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={loading}
+                    >
+                      Delete Goal
+                    </button>
+                  )}
                   <button
-                    className="btn btn-danger"
-                    onClick={handleDelete}
+                    className="goals-btn goals-btn-secondary"
+                    id="cancel-goal-btn"
                     type="button"
+                    onClick={closeModal}
+                    disabled={loading}
                   >
-                    Delete Goal
+                    Cancel
                   </button>
-                )}
-                <button
-                  className="btn btn-secondary"
-                  onClick={closeModal}
-                  type="button"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{ minWidth: 110 }}
-                >
-                  Save Goal
-                </button>
-              </div>
-            </form>
+                  <button
+                    type="submit"
+                    className="goals-btn goals-btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? "Saving..." : "Save Goal"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
