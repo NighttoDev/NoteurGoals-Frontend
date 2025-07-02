@@ -5,6 +5,8 @@ import {
   Outlet,
 } from "react-router-dom";
 
+import CheckoutPage from "../pages/User/Checkout";
+import UpgradePage from "../pages/User/Update";
 // Home
 import HomeLayout from "../layouts/Home";
 
@@ -76,6 +78,8 @@ const router = createBrowserRouter([
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
           { path: "settings", element: <Settings /> },
+          { path: "checkout", element: <CheckoutPage /> },
+          { path: "upgrade", element: <UpgradePage /> },
         ],
       },
     ],

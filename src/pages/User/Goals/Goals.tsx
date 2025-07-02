@@ -9,8 +9,6 @@ import {
   faCalendarAlt,
   faStickyNote,
   faPaperclip,
-  faCheckSquare,
-  faBook,
   faEllipsisV,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
@@ -359,45 +357,18 @@ const GoalsPage: React.FC = () => {
     (g) => filter === "all" || g.status === filter
   );
 
-  // Milestone handlers (API riêng)
+  // Milestone handlers
   const addMilestone = useCallback(() => {
     setMilestones((prev) => [...prev, { title: "", deadline: "" }]);
   }, []);
 
   const updateMilestoneHandler = useCallback(
-    async (idx: number, field: "title" | "deadline", value: string) => {
-      setMilestones((prev) => {
-        const next = prev.map((m, i) =>
-          i === idx ? { ...m, [field]: value } : m
-        );
-        return next;
-      });
-
-      if (editingGoal && milestones[idx]?.milestone_id) {
-        setLoading(true);
-        try {
-          const milestoneId = milestones[idx].milestone_id!;
-          await updateMilestone(milestoneId, {
-            ...milestones[idx],
-            [field]: value,
-          });
-          const updatedGoal = await getGoal(editingGoal.goal_id);
-          setEditingGoal(updatedGoal.data);
-          setMilestones(
-            (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
-              milestone_id: m.milestone_id,
-              title: m.title,
-              deadline: m.deadline,
-            }))
-          );
-        } catch {
-          setErrorMsg("Failed to update milestone.");
-        } finally {
-          setLoading(false);
-        }
-      }
+    (idx: number, field: "title" | "deadline", value: string) => {
+      setMilestones((prev) =>
+        prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m))
+      );
     },
-    [editingGoal, milestones]
+    []
   );
 
   const removeMilestone = useCallback((idx: number) => {
@@ -413,6 +384,7 @@ const GoalsPage: React.FC = () => {
       return prev.filter((_, i) => i !== idx);
     });
   }, []);
+
   // Form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,7 +392,7 @@ const GoalsPage: React.FC = () => {
     setLoading(true);
     try {
       if (modalMode === "add") {
-        // Khi tạo mới goal, gửi milestones luôn
+        // Tạo goal và milestones cùng lúc
         const res = await createGoal({
           title: form.title,
           description: form.description,
@@ -447,42 +419,28 @@ const GoalsPage: React.FC = () => {
             }
           }
         }
-        // Thêm các milestone mới (chưa có milestone_id)
-        const newMilestones = milestones.filter((m) => !m.milestone_id);
-        for (const m of newMilestones) {
-          console.log("Tạo milestone:", {
-            goal_id: editingGoal.goal_id,
-            title: m.title,
-            deadline: m.deadline
-              ? new Date(m.deadline).toISOString().slice(0, 10)
-              : "",
-          });
-          try {
+        // Cập nhật milestone cũ
+        for (const m of milestones) {
+          if (m.milestone_id) {
+            await updateMilestone(m.milestone_id, {
+              title: m.title,
+              deadline: m.deadline
+                ? new Date(m.deadline).toISOString().slice(0, 10)
+                : "",
+            });
+          }
+        }
+        // Thêm milestone mới
+        for (const m of milestones) {
+          if (!m.milestone_id) {
             await createMilestone(editingGoal.goal_id, {
               title: m.title,
               deadline: m.deadline
                 ? new Date(m.deadline).toISOString().slice(0, 10)
                 : "",
             });
-          } catch (err: any) {
-            setErrorMsg(
-              err?.response?.data?.message || "Failed to create milestone."
-            );
-            console.error("Create milestone error:", err?.response?.data, err);
-            setLoading(false);
-            return;
           }
         }
-        // Reload lại goal để đồng bộ milestones
-        const updatedGoal = await getGoal(editingGoal.goal_id);
-        setEditingGoal(updatedGoal.data);
-        setMilestones(
-          (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
-            milestone_id: m.milestone_id,
-            title: m.title,
-            deadline: m.deadline,
-          }))
-        );
         // Cập nhật goal (KHÔNG gửi milestones)
         const res = await updateGoal(editingGoal.goal_id, {
           title: form.title,
@@ -492,6 +450,16 @@ const GoalsPage: React.FC = () => {
           sharing_type: form.sharing_type,
           collaborators: form.collaborators,
         });
+        // Lấy lại goal mới nhất
+        const updatedGoal = await getGoal(editingGoal.goal_id);
+        setEditingGoal(updatedGoal.data);
+        setMilestones(
+          (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
+            milestone_id: m.milestone_id,
+            title: m.title,
+            deadline: m.deadline,
+          }))
+        );
         setGoals((prev) =>
           prev.map((g) =>
             g.goal_id === editingGoal.goal_id ? res.data.data || res.data : g
@@ -502,11 +470,11 @@ const GoalsPage: React.FC = () => {
       setErrors({});
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message || "Failed to save goal.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
   // Delete goal
   const handleDelete = async () => {
     if (!editingGoal) return;

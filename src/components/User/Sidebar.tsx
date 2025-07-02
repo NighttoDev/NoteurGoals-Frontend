@@ -7,7 +7,7 @@ const Sidebar = () => {
       <div className="header-left">
         <div className="logo">NoteurGoals</div>
         <nav className="main-nav">
-          <a href="/" className="active">
+          <a href="/dashboard" className="active">
             <i className="fas fa-home"></i> HOME
           </a>
           <a href="/goals">

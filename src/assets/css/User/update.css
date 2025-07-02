@@ -1,0 +1,185 @@
+.upgrade-page-container {
+  padding: 3rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.upgrade-layout {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+}
+.upgrade-details {
+  flex: 1.8;
+}
+.upgrade-summary {
+  flex: 1;
+  position: sticky;
+  top: 32px;
+}
+
+.upgrade-card {
+  background-color: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
+}
+.upgrade-card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.upgrade-card-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.upgrade-card-body {
+  padding: 1.5rem;
+}
+
+/* Plan change visualization */
+.upgrade-visualizer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.upgrade-visualizer-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+.upgrade-plan-box {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.upgrade-plan-box.current {
+  background-color: var(--grey-light);
+}
+.upgrade-plan-box.new {
+  background-color: var(--primary-purple-light);
+  border-color: var(--primary-purple);
+  border-width: 2px;
+}
+.upgrade-plan-box h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.upgrade-plan-box p {
+  color: var(--text-light);
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+}
+.upgrade-visualizer-arrow {
+  text-align: center;
+  font-size: 1.5rem;
+  color: var(--text-light);
+}
+
+/* Payment method */
+.upgrade-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.upgrade-payment-method i {
+  font-size: 1.8rem;
+  color: var(--primary-purple);
+}
+.upgrade-payment-method a {
+  color: var(--primary-purple);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.upgrade-payment-method a:hover {
+  text-decoration: underline;
+}
+
+/* Order Summary */
+.upgrade-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  color: var(--text-light);
+}
+.upgrade-summary-item strong {
+  color: var(--text-dark);
+  font-weight: 500;
+}
+.upgrade-summary-item .credit {
+  color: var(--green);
+  font-weight: 600;
+}
+.upgrade-summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.25rem;
+  margin-top: 1rem;
+  border-top: 2px solid var(--border-color);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* CTA Button & Security */
+.upgrade-security-note {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 1.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.upgrade-security-note i {
+  color: var(--green);
+}
+.upgrade-btn-submit {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.75rem;
+  background: linear-gradient(
+    45deg,
+    var(--primary-purple-dark),
+    var(--primary-purple)
+  );
+  color: var(--white);
+  box-shadow: var(--shadow-purple);
+}
+.upgrade-btn-submit:hover {
+  background: linear-gradient(45deg, #4c1d95, var(--primary-purple-dark));
+  box-shadow: 0 7px 20px rgba(124, 58, 237, 0.35);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 992px) {
+  .upgrade-layout {
+    flex-direction: column;
+  }
+  .upgrade-summary {
+    position: static;
+    width: 100%;
+  }
+}
+@media (max-width: 768px) {
+  .upgrade-page-container {
+    padding: 2rem 1rem;
+  }
+}
