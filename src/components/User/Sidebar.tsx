@@ -1,10 +1,14 @@
 // src/components/User/Sidebar.tsx
 
 import React from "react";
-import { NavLink } from "react-router-dom"; 
+import { NavLink } from "react-router-dom";
 // Loại bỏ import logo
-// import logoImage from "../../assets/images/logo.png"; 
-import { AiOutlineHome, AiOutlineSetting, AiOutlineSearch } from "react-icons/ai";
+// import logoImage from "../../assets/images/logo.png";
+import {
+  AiOutlineHome,
+  AiOutlineSetting,
+  AiOutlineSearch,
+} from "react-icons/ai";
 import { BsFlag, BsCalendar3 } from "react-icons/bs";
 import { BiNote } from "react-icons/bi";
 import { FiUsers } from "react-icons/fi";
@@ -22,7 +26,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   // Hàm này giúp NavLink biết khi nào cần thêm class 'active'
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
-    return isActive ? 'nav-link active' : 'nav-link';
+    return isActive ? "nav-link active" : "nav-link";
   };
 
   // Xác định URL của avatar để hiển thị
@@ -69,12 +73,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
         {/* --- HIỂN THỊ AVATAR CỦA NGƯỜI DÙNG --- */}
         <div className="user-avatars">
-          <img 
-            src={avatarUrl} 
-            alt={user?.display_name || "User Avatar"} 
+          <img
+            src={avatarUrl}
+            alt={user?.display_name || "User Avatar"}
             title={user?.display_name || "User"}
             // onError sẽ xử lý trường hợp URL ảnh bị lỗi (ví dụ: 404)
-            onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }} 
+            onError={(e) => {
+              e.currentTarget.src = "/default-avatar.png";
+            }}
           />
         </div>
       </div>

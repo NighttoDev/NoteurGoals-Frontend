@@ -1,22 +1,92 @@
-/* --- Animations --- */
-@keyframes progress-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+/* --- ROOT & GENERAL STYLES (Đồng nhất với Notes) --- */
+:root {
+  --primary-glow: rgba(167, 139, 250, 0.4);
+  --primary-deep: #4c1d95;
+  --primary-main: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-purple-dark: #4c1d95;
+  --primary-purple: #7c3aed;
+  --primary-purple-light: #a78bfa;
+
+  --background-main: #f5f3ff;
+  --surface-main: #ffffff;
+  --surface-alt: #fcfcff;
+  --border-main: #e7e5e4;
+
+  --text-main: #1f2937;
+  --text-light: #6b7280;
+  --text-on-primary: #ffffff;
+
+  --accent-red: #ef4444;
+  --accent-red-glow: rgba(239, 68, 68, 0.3);
+  --accent-green: #22c55e;
+  --accent-blue: #3b82f6;
+  --accent-yellow: #f59e0b;
+  --accent-yellow-light: #fef3c7;
+  --accent-green-light: #dcfce7;
+  --accent-grey-light: #f3f4f6;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07),
+    0 4px 6px -4px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-glow-purple: 0 0 0 3px var(--primary-glow);
+
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --transition-main: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s ease;
 }
 
-/* --- Main Content Area --- */
+/* --- Main Content Area (Đồng nhất với Notes) --- */
 .goals-main-content {
-  padding: 2rem;
-  max-width: 100%;
-  margin: 0 auto;
+  background-color: var(--background-main);
+  background-image: radial-gradient(
+    circle at 10% 20%,
+    rgba(167, 139, 250, 0.05) 0%,
+    transparent 20%
+  );
+  padding: 2rem 2.5rem;
+  min-height: 100vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, sans-serif;
+  line-height: 1.6;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+.goals-main-content::-webkit-scrollbar {
+  display: none;
+}
+
+.goals-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.goals-page-title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  border-radius: 2px;
+}
+
+/* --- Header & Toolbar (Đồng nhất với Notes) --- */
 .goals-header {
   margin-bottom: 2rem;
 }
+
 .goals-actions {
   display: flex;
   justify-content: flex-end;
@@ -25,65 +95,116 @@
   gap: 1rem;
 }
 
+/* --- Button Styles (Đồng nhất với Notes) --- */
 .goals-btn {
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--border-radius-md);
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: var(--transition);
+  transition: var(--transition-main);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-}
-.goals-btn-primary {
-  background: linear-gradient(
-    45deg,
-    var(--primary-purple-dark),
-    var(--primary-purple)
-  );
-  color: var(--white);
-  box-shadow: var(--shadow-purple);
-}
-.goals-btn-primary:hover {
-  background: linear-gradient(45deg, #4c1d95, var(--primary-purple-dark));
-  box-shadow: 0 7px 20px rgba(124, 58, 237, 0.35);
-  transform: translateY(-2px);
-}
-.goals-btn-secondary {
-  background-color: var(--white);
-  color: var(--text-dark);
-  border: 1px solid var(--border-color);
+  gap: 0.75rem;
+  font-size: 0.95rem;
   box-shadow: var(--shadow-sm);
-}
-.goals-btn-secondary:hover {
-  background-color: var(--grey-light);
-  transform: translateY(-2px);
-  border-color: #d1d5db;
+  letter-spacing: 0.025em;
 }
 
-/* --- Filter Styles --- */
+.goals-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.goals-btn:active {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.goals-btn-primary {
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-main) 0%,
+    var(--primary-deep) 100%
+  );
+  color: var(--text-on-primary);
+  box-shadow: 0 7px 15px -4px var(--primary-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.goals-btn-primary:hover {
+  box-shadow: 0 10px 20px -4px var(--primary-glow);
+}
+
+.goals-btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: var(--transition-main);
+}
+
+.goals-btn-primary:hover::after {
+  opacity: 1;
+}
+
+.goals-btn-secondary {
+  background-color: var(--surface-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+}
+
+.goals-btn-secondary:hover {
+  border-color: var(--primary-light);
+  color: var(--primary-main);
+}
+
+.goals-btn-danger {
+  background-color: transparent;
+  color: var(--accent-red);
+  border: 1px solid #fecaca;
+}
+
+.goals-btn-danger:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+/* --- Filter Tabs (Cập nhật theo phong cách Notes) --- */
 .goals-filter-tabs {
   position: relative;
   display: flex;
   gap: 0.5rem;
-  background-color: var(--grey-light);
+  background-color: var(--surface-main);
   padding: 6px;
-  border-radius: 10px;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-main);
 }
+
 .goals-filter-highlight {
   position: absolute;
   top: 6px;
   left: 6px;
   height: calc(100% - 12px);
   width: 0;
-  background-color: var(--white);
+  background-color: var(--surface-main);
   border-radius: 6px;
   box-shadow: var(--shadow-md);
   transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 1;
 }
+
 .goals-filter-btn {
   position: relative;
   z-index: 2;
@@ -94,63 +215,93 @@
   color: var(--text-light);
   border: none;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: var(--transition-main);
   font-size: 0.85rem;
   white-space: nowrap;
 }
+
 .goals-filter-btn.goals-active {
-  color: var(--primary-purple);
+  color: var(--primary-main);
   font-weight: 600;
 }
+
 .goals-filter-btn:not(.goals-active):hover {
   color: var(--text-dark);
 }
 
-/* --- Goals Grid & Cards --- */
+/* --- Goals Grid & Cards (Cập nhật theo phong cách Notes) --- */
 .goals-grid {
-  max-height: 78vh; /* hoặc height: 500px; tuỳ ý bạn */
+  max-height: 78vh;
   overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  padding-right: 8px; /* tránh che nội dung bởi thanh cuộn */
+  gap: 2rem;
+  padding-right: 8px;
 }
+
 .goals-card {
-  background-color: var(--white);
-  border-radius: 12px;
-  padding: 1.25rem;
-  border: 1px solid var(--border-color);
-  transition: var(--transition);
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border-main);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  transform-origin: center bottom;
   border-top: 5px solid transparent;
 }
-.goals-card.goals-border-new {
-  border-top-color: var(--primary-purple);
+
+.goals-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: transparent;
+  opacity: 0;
+  transition: var(--transition-main);
+  filter: blur(80px);
+  pointer-events: none;
 }
-.goals-card.goals-border-in_progress {
-  border-top-color: var(--yellow);
+
+.goals-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  opacity: 0;
+  transition: var(--transition-main);
 }
-.goals-card.goals-border-completed {
-  border-top-color: var(--green);
-}
-.goals-card.goals-border-cancelled {
-  border-top-color: var(--grey);
-}
+
 .goals-card:hover {
-  transform: translateY(-5px);
+  transform: perspective(1000px) translateY(-8px) rotateX(5deg) scale(1.02);
   box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
 }
+
+.goals-card:hover::before {
+  opacity: 0.25;
+}
+
+.goals-card:hover::after {
+  opacity: 1;
+}
+
 .goals-card.goals-is-cancelled {
   filter: grayscale(80%);
   background-color: #fafafa;
 }
+
 .goals-card.goals-is-cancelled:hover {
   filter: grayscale(0);
-  transform: translateY(-5px);
+  transform: perspective(1000px) translateY(-8px) rotateX(5deg) scale(1.02);
   box-shadow: var(--shadow-lg);
 }
 
@@ -159,22 +310,25 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
+
 .goals-title-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex: 1;
 }
+
 .goals-card-title {
   font-weight: 700;
-  font-size: 1rem;
-  color: var(--text-dark);
+  font-size: 1.2rem;
+  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .goals-sharing-status {
   color: var(--text-light);
   font-size: 0.7rem;
@@ -186,10 +340,12 @@
   flex-shrink: 0;
   transition: var(--transition-fast);
 }
+
 .goals-sharing-status:hover {
-  color: var(--primary-purple);
+  color: var(--primary-main);
   transform: scale(1.1);
 }
+
 .goals-card-menu {
   color: var(--text-light);
   cursor: pointer;
@@ -198,48 +354,57 @@
   border-radius: 4px;
   font-size: 0.9rem;
 }
+
 .goals-card-menu:hover {
-  color: var(--primary-purple);
-  background-color: var(--primary-purple-light);
+  color: var(--primary-main);
+  background-color: rgba(124, 58, 237, 0.1);
+  transform: rotate(90deg);
 }
+
 .goals-card-description {
   color: var(--text-light);
-  font-size: 0.85rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .goals-card-dates {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-light);
   margin-bottom: 1rem;
   align-items: center;
 }
+
 .goals-card-dates i {
   font-size: 0.8rem;
-  color: var(--primary-purple);
+  color: var(--primary-main);
 }
+
 .goals-card-dates .goals-date-separator {
-  color: var(--border-color);
+  color: var(--border-main);
   font-weight: 700;
 }
 
+/* --- Progress Bar (Cập nhật phong cách) --- */
 .goals-card-progress {
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
 }
+
 .goals-progress-bar {
   height: 8px;
-  background-color: var(--grey-light);
+  background-color: var(--accent-grey-light);
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.5rem;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+
 .goals-progress-fill {
   height: 100%;
   background: linear-gradient(
@@ -250,64 +415,73 @@
   border-radius: 4px;
   transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
   background-size: 200% 200%;
-  animation: progress-shimmer 2s linear infinite;
 }
+
 .goals-progress-text {
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-light);
   font-weight: 500;
 }
 
+/* --- Status Tags (Cập nhật phong cách) --- */
 .goals-card-status {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-weight: 600;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
   align-self: flex-start;
 }
+
 .goals-status-tag-new {
-  background-color: var(--primary-purple-light);
-  color: var(--primary-purple-dark);
-}
-.goals-status-tag-in-progress {
-  background-color: var(--yellow-light);
-  color: #92400e;
-}
-.goals-status-tag-completed {
-  background-color: var(--green-light);
-  color: #047857;
-}
-.goals-status-tag-cancelled {
-  background-color: var(--grey-light);
-  color: var(--grey);
+  background-color: rgba(124, 58, 237, 0.1);
+  color: var(--primary-deep);
 }
 
+.goals-status-tag-in-progress {
+  background-color: var(--accent-yellow-light);
+  color: #92400e;
+}
+
+.goals-status-tag-completed {
+  background-color: var(--accent-green-light);
+  color: #047857;
+}
+
+.goals-status-tag-cancelled {
+  background-color: var(--accent-grey-light);
+  color: var(--text-light);
+}
+
+/* --- Milestones (Cập nhật phong cách) --- */
 .goals-card-milestones {
   margin-top: auto;
-  border-top: 1px solid var(--grey-light);
+  border-top: 1px solid var(--border-main);
   padding-top: 1rem;
 }
+
 .goals-card-milestones h4 {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
 .goals-card-milestones h4::before {
   content: "";
   display: block;
   width: 10px;
   height: 2px;
-  background-color: var(--primary-purple);
+  background-color: var(--primary-main);
 }
+
 .goals-milestone-item {
   display: flex;
   align-items: center;
@@ -315,295 +489,322 @@
   transition: var(--transition-fast);
   border-radius: 4px;
 }
+
 .goals-milestone-item:not(:last-child) {
-  border-bottom: 1px solid var(--grey-light);
+  border-bottom: 1px solid var(--border-main);
 }
+
 .goals-milestone-checkbox {
   margin-right: 0.5rem;
-  accent-color: var(--primary-purple);
+  accent-color: var(--primary-main);
   width: 14px;
   height: 14px;
   cursor: pointer;
   flex-shrink: 0;
 }
+
 .goals-milestone-text {
   flex-grow: 1;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   transition: var(--transition-fast);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .goals-milestone-checkbox:checked + .goals-milestone-text {
   text-decoration: line-through;
   color: var(--text-light);
 }
+
 .goals-milestone-date {
   font-size: 0.7rem;
   color: var(--text-light);
-  background-color: var(--grey-light);
+  background-color: var(--accent-grey-light);
   padding: 2px 5px;
   border-radius: 3px;
   flex-shrink: 0;
   transition: var(--transition-fast);
 }
+
 .goals-milestone-item:hover {
-  background-color: var(--primary-purple-light);
-}
-.goals-milestone-item:hover .goals-milestone-date {
-  background-color: var(--primary-purple);
-  color: var(--white);
+  background-color: rgba(124, 58, 237, 0.05);
 }
 
+.goals-milestone-item:hover .goals-milestone-date {
+  background-color: var(--primary-main);
+  color: var(--text-on-primary);
+}
+
+/* --- Footer (Cập nhật phong cách) --- */
 .goals-card-footer {
   margin-top: 1rem;
   padding-top: 0.8rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-main);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .goals-card-collaborators .goals-user-avatars {
   margin-left: 0;
 }
+
 .goals-card-stats {
   display: flex;
   gap: 0.8rem;
   color: var(--text-light);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
+
 .goals-card-stats span {
   display: flex;
   align-items: center;
   gap: 0.2rem;
   transition: var(--transition-fast);
 }
+
 .goals-card-stats span:hover {
-  color: var(--primary-purple);
+  color: var(--primary-main);
   transform: scale(1.1);
 }
-.goals-user-avatars {
-  display: flex;
-}
-.goals-user-avatars img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid var(--white);
-  margin-left: -12px;
-  transition: var(--transition);
-  box-shadow: var(--shadow-sm);
-  object-fit: cover;
-}
-.goals-user-avatars img:hover {
-  transform: scale(1.15) translateY(-3px);
-  z-index: 1;
-  box-shadow: var(--shadow-md);
+
+/* --- Modal Styles (Đồng nhất với Notes) --- */
+@keyframes goals-modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* --- Modal Styles --- */
+@keyframes goals-modalPopIn {
+  0% {
+    transform: scale(0.95) translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
 .goals-modal-overlay {
   position: fixed;
-  z-index: 9999;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: goals-modalFadeIn 0.3s ease forwards;
+  padding: 1rem;
 }
-.goals-modal-overlay.goals-active {
-  opacity: 1;
-  visibility: visible;
-  backdrop-filter: blur(5px);
-}
+
 .goals-modal-content {
-  background-color: var(--white);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-20px) scale(0.95);
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  background: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  max-height: 95vh;
-  border: 1px solid var(--border-color);
+  animation: goals-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-.goals-modal-overlay.goals-active .goals-modal-content {
-  transform: translateY(0) scale(1);
-}
+
 .goals-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border-main);
   flex-shrink: 0;
 }
+
 .goals-modal-header h2 {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-dark);
+  margin: 0;
+  letter-spacing: -0.015em;
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-deep) 25%,
+    var(--primary-main) 75%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
+
 .goals-modal-close {
   background: none;
   border: none;
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: 1.8rem;
   color: var(--text-light);
   cursor: pointer;
-  transition: var(--transition-fast);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  transition: var(--transition-main);
 }
+
 .goals-modal-close:hover {
-  color: var(--text-dark);
-  transform: rotate(90deg);
-  background-color: var(--grey-light);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary-main);
+  transform: rotate(90deg) scale(1.1);
 }
+
 .goals-modal-body {
-  padding: 1.25rem;
+  padding: 1.5rem 1.75rem;
   overflow-y: auto;
+  flex-grow: 1;
+  background-image: radial-gradient(
+    circle at 10% 10%,
+    rgba(167, 139, 250, 0.1),
+    transparent 50%
+  );
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+.goals-modal-body::-webkit-scrollbar {
+  display: none;
+}
+
+.goals-form .goals-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.goals-form label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  display: block;
+}
+
+.goals-form input[type="text"],
+.goals-form textarea,
+.goals-form input[type="date"],
+.goals-form select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-main);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  background: var(--surface-alt);
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  color: var(--text-main);
+}
+
+.goals-form input[type="text"]:hover,
+.goals-form textarea:hover,
+.goals-form input[type="date"]:hover,
+.goals-form select:hover {
+  border-color: var(--primary-light);
+}
+
+.goals-form input[type="text"]:focus,
+.goals-form textarea:focus,
+.goals-form input[type="date"]:focus,
+.goals-form select:focus {
+  border-color: var(--primary-main);
+  background: var(--surface-main);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px var(--primary-glow);
+  outline: none;
+}
+
+.goals-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
 .goals-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 1.25rem;
-  background-color: var(--grey-light);
-  border-top: 1px solid var(--border-color);
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 1.75rem;
+  background: rgba(245, 243, 255, 0.9);
+  border-top: 1px solid var(--border-main);
   flex-shrink: 0;
 }
 
-/* --- Form Inside Modal --- */
-.goals-form-group {
-  margin-bottom: 1rem;
+.goals-modal-footer .goals-btn-danger {
+  margin-right: auto;
 }
-.goals-form label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
-  color: var(--text-dark);
-  font-size: 0.85rem;
-}
-.goals-form input[type="text"],
-.goals-form input[type="date"],
-.goals-form textarea,
-.goals-form select {
-  width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--grey-light);
-  border-radius: 6px;
-  font-family: "Inter", sans-serif;
-  font-size: 0.9rem;
-  transition: var(--transition);
-  background-color: var(--grey-light);
-  box-shadow: none;
-}
-.goals-form input[type="text"]:focus,
-.goals-form input[type="date"]:focus,
-.goals-form textarea:focus,
-.goals-form select:focus {
-  outline: none;
-  border-color: var(--primary-purple);
-  background-color: var(--white);
-  box-shadow: var(--shadow-glow-purple);
-}
-.goals-form textarea {
-  resize: vertical;
-  min-height: 80px;
-  line-height: 1.5;
-}
+
+/* --- Form Group Inline (Cập nhật phong cách) --- */
 .goals-form-group-inline {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 1rem;
 }
-#goal-form-milestones-container .goals-form-milestone {
+
+.goals-form-group-inline > .goals-form-group {
+  flex: 1;
+}
+
+/* --- Milestone Form Items (Cập nhật phong cách) --- */
+.goals-form-milestone {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
   align-items: center;
+  margin-bottom: 0.5rem;
 }
-#goal-form-milestones-container input[type="text"] {
-  flex-grow: 1;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.7rem;
+
+.goals-form-milestone input[type="text"] {
+  flex: 2;
 }
-#goal-form-milestones-container input[type="date"] {
-  width: 130px;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.7rem;
+
+.goals-form-milestone input[type="date"] {
+  flex: 1;
 }
+
 .goals-form-remove-milestone {
   background: none;
-  border: 1px solid var(--border-color);
-  color: var(--text-light);
+  border: none;
+  color: var(--accent-red);
+  cursor: pointer;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  border-radius: 50%;
+  transition: var(--transition-main);
 }
+
 .goals-form-remove-milestone:hover {
-  background-color: var(--red-light);
-  border-color: var(--red-dark);
-  color: var(--red-dark);
-  transform: rotate(180deg) scale(1.1);
+  background-color: #fee2e2;
 }
 
-.goals-btn-danger {
-  background: var(--red);
-  color: var(--white);
-  margin-right: auto;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.9rem;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2);
-}
-.goals-btn-danger:hover {
-  background: var(--red-dark);
-  box-shadow: 0 7px 20px rgba(239, 68, 68, 0.3);
-  transform: translateY(-2px);
-}
-
-/* --- Responsive Design --- */
+/* --- Responsive Adjustments (Đồng nhất với Notes) --- */
 @media (max-width: 768px) {
   .goals-main-content {
-    padding: 1rem;
+    padding: 1.5rem;
   }
-  .goals-grid {
-    grid-template-columns: 1fr;
-  }
-  .goals-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
+
   .goals-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: stretch;
     gap: 1rem;
-    justify-content: flex-start;
   }
-  .goals-filter-tabs {
-    width: 100%;
-    justify-content: space-around;
+
+  .goals-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
   }
+
   .goals-form-group-inline {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
+    flex-direction: column;
+    gap: 0;
   }
 }
