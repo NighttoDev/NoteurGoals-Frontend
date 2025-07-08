@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "../../assets/css/User/friends.css";
-// Sửa đổi import để khớp với service
 import {
   getFriendsData,
   getCollaborators,
@@ -9,10 +8,9 @@ import {
   deleteFriend,
 } from "../../services/friendsService";
 
-// Định nghĩa kiểu dữ liệu để code an toàn hơn
 interface Friend {
   friendship_id: string;
-  id: string; // user_id
+  id: string;
   name: string;
   email: string;
   avatar?: string;
@@ -23,7 +21,7 @@ interface Request extends Friend {
 }
 
 interface Collaborator {
-  id: string; // user_id
+  id: string;
   name: string;
   email: string;
   avatar?: string;
@@ -52,21 +50,15 @@ const FriendsPage: React.FC = () => {
     return errors;
   };
 
-  // Hàm lấy tất cả dữ liệu cần thiết cho trang
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Gọi cả hai API song song để tăng tốc
       const [friendsResponse, collaboratorsResponse] = await Promise.all([
         getFriendsData(),
         getCollaborators(),
       ]);
-
-      // Gán dữ liệu bạn bè và lời mời từ response đầu tiên
       setFriends(friendsResponse.data.friends || []);
       setRequests(friendsResponse.data.requests || []);
-
-      // Gán dữ liệu cộng tác viên từ response thứ hai
       setCollaborators(collaboratorsResponse.data || []);
     } catch (err) {
       console.error("Could not load data:", err);
@@ -80,7 +72,6 @@ const FriendsPage: React.FC = () => {
     fetchData();
   }, []);
 
-  // Gửi lời mời kết bạn
   const handleSendFriendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateAddFriend();
@@ -91,231 +82,137 @@ const FriendsPage: React.FC = () => {
     setAddErrors({});
     setSendLoading(true);
     try {
-      await sendFriendRequest(friendEmail); // Gửi chuỗi email
+      await sendFriendRequest(friendEmail);
       setShowFriendModal(false);
       setFriendEmail("");
       alert("Friend request sent successfully!");
-      fetchData(); // Tải lại toàn bộ dữ liệu để cập nhật UI
+      fetchData();
     } catch (err: any) {
       alert(err?.response?.data?.message || "Failed to send friend request!");
     }
     setSendLoading(false);
   };
 
-  // Chấp nhận lời mời
   const handleAcceptRequest = async (friendshipId: string) => {
     try {
       await respondFriendRequest(friendshipId, "accepted");
-      fetchData(); // Tải lại dữ liệu
+      fetchData();
     } catch (err) {
       alert("Failed to accept request.");
     }
   };
 
-  // Từ chối lời mời
   const handleRejectRequest = async (friendshipId: string) => {
     try {
       await respondFriendRequest(friendshipId, "rejected");
-      fetchData(); // Tải lại dữ liệu
+      fetchData();
     } catch (err) {
       alert("Failed to reject request.");
     }
   };
 
-  // Hủy lời mời đã gửi hoặc xóa bạn
   const handleDeleteFriend = async (friendshipId: string) => {
-    if (
-      window.confirm("Are you sure you want to remove this friend/request?")
-    ) {
+    if (window.confirm("Are you sure you want to remove this friend/request?")) {
       try {
         await deleteFriend(friendshipId);
-        fetchData(); // Tải lại dữ liệu
+        fetchData();
       } catch (err) {
         alert("Failed to remove friend/request.");
       }
     }
   };
 
-  // Xóa collaborator
   const handleRemoveCollaborator = (id: string) => {
     if (window.confirm("Remove this collaborator?")) {
-      // CHÚ Ý: Chức năng này yêu cầu một API riêng, ví dụ: DELETE /goals/{goal_id}/collaborators/{user_id}
-      // Vì hiện tại chưa có API này, chúng ta chỉ hiển thị thông báo.
       alert("This functionality is not yet implemented in the backend.");
     }
   };
 
   return (
-    <main className="main-content">
-      <section className="friends-section">
-        <div className="content-header">
-          <h1 className="page-title">Friends</h1>
-          <div className="action-buttons">
-            <button className="btn btn-secondary">
-              <i className="fas fa-filter"></i> Filter
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setShowFriendModal(true);
-                setAddErrors({});
-              }}
-            >
-              <i className="fas fa-user-plus"></i> Add Friend
-            </button>
-          </div>
-        </div>
-
-        <div className="tabs">
-          <div
-            className={`tab ${activeTab === "friends" ? "active" : ""}`}
-            onClick={() => setActiveTab("friends")}
-          >
-            My Friends
-          </div>
-          <div
-            className={`tab ${activeTab === "requests" ? "active" : ""}`}
-            onClick={() => setActiveTab("requests")}
-          >
-            Friend Requests
-          </div>
-          <div
-            className={`tab ${activeTab === "collaborators" ? "active" : ""}`}
-            onClick={() => setActiveTab("collaborators")}
-          >
-            Goal Collaborators
-          </div>
-        </div>
-
-        {activeTab === "friends" && (
-          <div className="friends-grid" id="friends-tab">
-            {loading ? (
-              <div>Loading...</div>
-            ) : friends.length === 0 ? (
-              <div>You have no friends yet.</div>
-            ) : (
-              friends.map((friend) => (
-                <div className="friend-card" key={friend.friendship_id}>
-                  <img
-                    src={friend.avatar || "https://i.pravatar.cc/80"}
-                    alt="Friend Avatar"
-                    className="friend-avatar"
-                  />
-                  <h3 className="friend-name">{friend.name || friend.email}</h3>
-                  <p className="friend-email">{friend.email}</p>
-                  <span className={`friend-status status-accepted`}>
-                    Friends
-                  </span>
-                  <div className="friend-actions">
-                    <button className="friend-btn friend-btn-message">
-                      <i className="fas fa-comment"></i> Message
-                    </button>
-                    <button
-                      className="friend-btn friend-btn-reject"
-                      onClick={() => handleDeleteFriend(friend.friendship_id)}
-                    >
-                      <i className="fas fa-user-minus"></i> Remove
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === "requests" && (
-          <div className="requests-section" id="requests-tab">
-            <div className="requests-list">
-              {loading ? (
-                <div>Loading...</div>
-              ) : requests.length === 0 ? (
-                <div>No pending friend requests.</div>
-              ) : (
-                requests.map((request) => (
-                  <div className="friend-card" key={request.friendship_id}>
-                    <img
-                      src={request.avatar || "https://i.pravatar.cc/80"}
-                      alt="Friend Avatar"
-                      className="friend-avatar"
-                    />
-                    <h3 className="friend-name">
-                      {request.name || request.email}
-                    </h3>
-                    <p className="friend-email">{request.email}</p>
-                    <span className={`friend-status status-pending`}>
-                      {request.status === "received"
-                        ? "Request Received"
-                        : "Request Sent"}
-                    </span>
-                    <div className="friend-actions">
-                      {request.status === "received" ? (
-                        <>
-                          <button
-                            className="friend-btn friend-btn-accept"
-                            onClick={() =>
-                              handleAcceptRequest(request.friendship_id)
-                            }
-                          >
-                            <i className="fas fa-check"></i> Accept
-                          </button>
-                          <button
-                            className="friend-btn friend-btn-reject"
-                            onClick={() =>
-                              handleRejectRequest(request.friendship_id)
-                            }
-                          >
-                            <i className="fas fa-times"></i> Reject
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          className="friend-btn friend-btn-reject"
-                          onClick={() =>
-                            handleDeleteFriend(request.friendship_id)
-                          }
-                        >
-                          <i className="fas fa-times"></i> Cancel
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+    <main className="friends-main-content">
+      <div className="friends-container">
+        <section className="friends-section">
+          <div className="friends-content-header">
+            <h1 className="friends-page-title">Friends</h1>
+            <div className="friends-action-buttons">
+              <button className="friends-btn friends-btn-secondary">
+                <i className="fas fa-filter"></i> Filter
+              </button>
+              <button
+                className="friends-btn friends-btn-primary"
+                onClick={() => {
+                  setShowFriendModal(true);
+                  setAddErrors({});
+                }}
+              >
+                <i className="fas fa-user-plus"></i> Add Friend
+              </button>
             </div>
           </div>
-        )}
 
-        {activeTab === "collaborators" && (
-          <div className="collaborators-section" id="collaborators-tab">
-            <div className="friends-grid">
+          <div className="friends-tabs">
+            <div
+              className={`friends-tab ${activeTab === "friends" ? "friends-tab-active" : ""}`}
+              onClick={() => setActiveTab("friends")}
+            >
+              My Friends
+            </div>
+            <div
+              className={`friends-tab ${activeTab === "requests" ? "friends-tab-active" : ""}`}
+              onClick={() => setActiveTab("requests")}
+            >
+              Friend Requests
+            </div>
+            <div
+              className={`friends-tab ${activeTab === "collaborators" ? "friends-tab-active" : ""}`}
+              onClick={() => setActiveTab("collaborators")}
+            >
+              Goal Collaborators
+            </div>
+          </div>
+
+          {activeTab === "friends" && (
+            <div className="friends-grid" id="friends-tab">
               {loading ? (
-                <div>Loading...</div>
-              ) : collaborators.length === 0 ? (
-                <div>You have no collaborators on your goals.</div>
+                <div className="friends-loading">Loading...</div>
+              ) : friends.length === 0 ? (
+                <div className="friends-empty-state">
+                  <img 
+                    src="/images/no-friends.svg" 
+                    alt="No friends" 
+                    className="friends-empty-image"
+                  />
+                  <h3 className="friends-empty-title">No Friends Yet</h3>
+                  <p className="friends-empty-message">
+                    You haven't added any friends yet. Start by sending a friend request!
+                  </p>
+                  <button
+                    className="friends-btn friends-btn-primary friends-empty-action"
+                    onClick={() => setShowFriendModal(true)}
+                  >
+                    <i className="fas fa-user-plus"></i> Add Your First Friend
+                  </button>
+                </div>
               ) : (
-                collaborators.map((collaborator) => (
-                  <div className="friend-card" key={collaborator.id}>
+                friends.map((friend) => (
+                  <div className="friends-card" key={friend.friendship_id}>
                     <img
-                      src={collaborator.avatar || "https://i.pravatar.cc/80"}
+                      src={friend.avatar || "https://i.pravatar.cc/80"}
                       alt="Friend Avatar"
-                      className="friend-avatar"
+                      className="friends-avatar"
                     />
-                    <h3 className="friend-name">
-                      {collaborator.name || collaborator.email}
-                    </h3>
-                    <p className="friend-email">{collaborator.email}</p>
-                    <span className="friend-status status-accepted">
-                      Collaborator
+                    <h3 className="friends-name">{friend.name || friend.email}</h3>
+                    <p className="friends-email">{friend.email}</p>
+                    <span className={`friends-status friends-status-accepted`}>
+                      Friends
                     </span>
-                    <div className="friend-actions">
-                      <button className="friend-btn friend-btn-message">
+                    <div className="friends-actions">
+                      <button className="friends-action-btn friends-action-btn-message">
                         <i className="fas fa-comment"></i> Message
                       </button>
                       <button
-                        className="friend-btn friend-btn-reject"
-                        onClick={() =>
-                          handleRemoveCollaborator(collaborator.id)
-                        }
+                        className="friends-action-btn friends-action-btn-reject"
+                        onClick={() => handleDeleteFriend(friend.friendship_id)}
                       >
                         <i className="fas fa-user-minus"></i> Remove
                       </button>
@@ -324,63 +221,187 @@ const FriendsPage: React.FC = () => {
                 ))
               )}
             </div>
+          )}
+
+          {activeTab === "requests" && (
+            <div className="friends-requests-section" id="requests-tab">
+              <div className="friends-requests-list">
+                {loading ? (
+                  <div className="friends-loading">Loading...</div>
+                ) : requests.length === 0 ? (
+                  <div className="friends-empty-state">
+                    <img 
+                      src="/images/no-requests.svg" 
+                      alt="No requests" 
+                      className="friends-empty-image"
+                    />
+                    <h3 className="friends-empty-title">No Pending Requests</h3>
+                    <p className="friends-empty-message">
+                      You don't have any pending friend requests at this time.
+                    </p>
+                  </div>
+                ) : (
+                  requests.map((request) => (
+                    <div className="friends-card" key={request.friendship_id}>
+                      <img
+                        src={request.avatar || "https://i.pravatar.cc/80"}
+                        alt="Friend Avatar"
+                        className="friends-avatar"
+                      />
+                      <h3 className="friends-name">
+                        {request.name || request.email}
+                      </h3>
+                      <p className="friends-email">{request.email}</p>
+                      <span className={`friends-status friends-status-pending`}>
+                        {request.status === "received"
+                          ? "Request Received"
+                          : "Request Sent"}
+                      </span>
+                      <div className="friends-actions">
+                        {request.status === "received" ? (
+                          <>
+                            <button
+                              className="friends-action-btn friends-action-btn-accept"
+                              onClick={() =>
+                                handleAcceptRequest(request.friendship_id)
+                              }
+                            >
+                              <i className="fas fa-check"></i> Accept
+                            </button>
+                            <button
+                              className="friends-action-btn friends-action-btn-reject"
+                              onClick={() =>
+                                handleRejectRequest(request.friendship_id)
+                              }
+                            >
+                              <i className="fas fa-times"></i> Reject
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="friends-action-btn friends-action-btn-reject"
+                            onClick={() =>
+                              handleDeleteFriend(request.friendship_id)
+                            }
+                          >
+                            <i className="fas fa-times"></i> Cancel
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "collaborators" && (
+            <div className="friends-collaborators-section" id="collaborators-tab">
+              <div className="friends-grid">
+                {loading ? (
+                  <div className="friends-loading">Loading...</div>
+                ) : collaborators.length === 0 ? (
+                  <div className="friends-empty-state">
+                    <img 
+                      src="/images/no-collaborators.svg" 
+                      alt="No collaborators" 
+                      className="friends-empty-image"
+                    />
+                    <h3 className="friends-empty-title">No Collaborators</h3>
+                    <p className="friends-empty-message">
+                      You don't have any collaborators on your goals yet.
+                    </p>
+                  </div>
+                ) : (
+                  collaborators.map((collaborator) => (
+                    <div className="friends-card" key={collaborator.id}>
+                      <img
+                        src={collaborator.avatar || "https://i.pravatar.cc/80"}
+                        alt="Friend Avatar"
+                        className="friends-avatar"
+                      />
+                      <h3 className="friends-name">
+                        {collaborator.name || collaborator.email}
+                      </h3>
+                      <p className="friends-email">{collaborator.email}</p>
+                      <span className="friends-status friends-status-accepted">
+                        Collaborator
+                      </span>
+                      <div className="friends-actions">
+                        <button className="friends-action-btn friends-action-btn-message">
+                          <i className="fas fa-comment"></i> Message
+                        </button>
+                        <button
+                          className="friends-action-btn friends-action-btn-reject"
+                          onClick={() =>
+                            handleRemoveCollaborator(collaborator.id)
+                          }
+                        >
+                          <i className="fas fa-user-minus"></i> Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {showFriendModal && (
+          <div className="friends-modal-overlay">
+            <div className="friends-modal-content">
+              <div className="friends-modal-header">
+                <h2>Add New Friend</h2>
+                <button
+                  className="friends-modal-close-btn"
+                  onClick={() => setShowFriendModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="friends-modal-body">
+                <form
+                  className="friends-modal-form"
+                  onSubmit={handleSendFriendRequest}
+                  noValidate
+                >
+                  <div className="friends-modal-group">
+                    <label htmlFor="friend-email">Friend's Email</label>
+                    <input
+                      type="email"
+                      id="friend-email"
+                      placeholder="Enter friend's email address"
+                      value={friendEmail}
+                      onChange={(e) => setFriendEmail(e.target.value)}
+                      required
+                    />
+                    {addErrors.friendEmail && (
+                      <div className="friends-form-error">{addErrors.friendEmail}</div>
+                    )}
+                  </div>
+                  <div className="friends-modal-footer">
+                    <button
+                      className="friends-btn friends-btn-secondary"
+                      onClick={() => setShowFriendModal(false)}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="friends-btn friends-btn-primary"
+                      type="submit"
+                      disabled={sendLoading}
+                    >
+                      {sendLoading ? "Sending..." : "Send Friend Request"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
-      </section>
-
-      {showFriendModal && (
-        <div className="friend-modal-overlay">
-          <div className="friend-modal-content">
-            <div className="friend-modal-header">
-              <h2>Add New Friend</h2>
-              <button
-                className="friend-modal-close-btn"
-                onClick={() => setShowFriendModal(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="friend-modal-body">
-              <form
-                className="friend-modal-form"
-                onSubmit={handleSendFriendRequest}
-                noValidate
-              >
-                <div className="friend-modal-group">
-                  <label htmlFor="friend-email">Friend's Email</label>
-                  <input
-                    type="email"
-                    id="friend-email"
-                    placeholder="Enter friend's email address"
-                    value={friendEmail}
-                    onChange={(e) => setFriendEmail(e.target.value)}
-                    required
-                  />
-                  {addErrors.friendEmail && (
-                    <div className="form-error">{addErrors.friendEmail}</div>
-                  )}
-                </div>
-                <div className="friend-modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setShowFriendModal(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    type="submit"
-                    disabled={sendLoading}
-                  >
-                    {sendLoading ? "Sending..." : "Send Friend Request"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </main>
   );
 };

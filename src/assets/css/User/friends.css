@@ -1,236 +1,433 @@
-/* --- Main Content Area --- */
-.main-content {
-  padding: 1.5rem 2rem;
+/* 
+================================================================
+  STYLESHEET FOR FRIENDS PAGE - ELITE V2 REVAMP
+  Designer: AI
+  Focus: Advanced UI, Gradient Typography, Intelligent Layout
+================================================================
+*/
+
+/* --- 0. ROOT & GENERAL STYLES --- */
+:root {
+  --primary-glow: rgba(167, 139, 250, 0.4);
+  --primary-deep: #4c1d95;
+  --primary-main: #7c3aed;
+  --primary-light: #a78bfa;
+
+  --background-main: #f5f3ff;
+  --surface-main: #ffffff;
+  --surface-alt: #fcfcff;
+  --border-main: #e7e5e4;
+
+  --text-main: #1f2937;
+  --text-light: #6b7280;
+  --text-on-primary: #ffffff;
+
+  --accent-red: #ef4444;
+  --accent-green: #22c55e;
+  --accent-blue: #3b82f6;
+  --accent-yellow: #f59e0b;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07),
+    0 4px 6px -4px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --transition-main: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.content-header {
+/* --- 1. MAIN CONTENT & HEADER --- */
+.friends-main-content {
+  background-color: var(--background-main);
+  background-image: radial-gradient(
+    circle at 10% 20%,
+    rgba(167, 139, 250, 0.05) 0%,
+    transparent 20%
+  );
+  padding: 2rem 2.5rem;
+  min-height: 100vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, sans-serif;
+  line-height: 1.6;
+}
+
+.friends-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.friends-page-title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  border-radius: 2px;
+}
+
+.friends-content-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
 }
 
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn {
-  padding: 0.65rem 1.25rem;
-  border-radius: 8px;
+/* --- 2. BUTTON STYLES --- */
+.friends-btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: var(--border-radius-md);
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-main);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.025em;
 }
 
-.btn-primary {
-  background-color: var(--primary-purple);
-  color: var(--white);
+.friends-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
 }
 
-.btn-primary:hover {
-  background-color: #6d28d9;
-  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+.friends-btn-primary {
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-main) 0%,
+    var(--primary-deep) 100%
+  );
+  color: var(--text-on-primary);
+  box-shadow: 0 7px 15px -4px var(--primary-glow);
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-secondary {
-  background-color: var(--white);
-  color: var(--text-dark);
-  border: 1px solid var(--border-color);
+.friends-btn-primary:hover {
+  box-shadow: 0 10px 20px -4px var(--primary-glow);
 }
 
-.btn-secondary:hover {
-  background-color: #f3f4f6;
+.friends-btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: var(--transition-main);
 }
 
-/* --- Friends Grid View --- */
+.friends-btn-primary:hover::after {
+  opacity: 1;
+}
+
+.friends-btn-secondary {
+  background-color: var(--surface-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+}
+
+.friends-btn-secondary:hover {
+  border-color: var(--primary-light);
+  color: var(--primary-main);
+}
+
+/* --- 3. TABS STYLES --- */
+.friends-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-main);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.friends-tab {
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-light);
+  border-bottom: 3px solid transparent;
+  transition: var(--transition-main);
+  white-space: nowrap;
+}
+
+.friends-tab:hover {
+  color: var(--primary-main);
+}
+
+.friends-tab-active {
+  color: var(--primary-main);
+  border-bottom-color: var(--primary-main);
+  font-weight: 600;
+}
+
+/* --- 4. GRID AND CARD STYLES --- */
 .friends-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: friends-fadeIn 0.4s ease forwards;
 }
 
-.friend-card {
-  background-color: var(--white);
-  border-radius: 8px;
-  padding: 1.25rem;
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+@keyframes friends-fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.friends-card {
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border-main);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.friend-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-purple);
+.friends-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: var(--primary-light);
+  opacity: 0;
+  transition: var(--transition-main);
+  filter: blur(80px);
+  pointer-events: none;
 }
 
-.friend-avatar {
+.friends-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  opacity: 0;
+  transition: var(--transition-main);
+}
+
+.friends-card:hover {
+  transform: perspective(1000px) translateY(-8px) rotateX(5deg) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
+}
+
+.friends-card:hover::before {
+  opacity: 0.25;
+}
+
+.friends-card:hover::after {
+  opacity: 1;
+}
+
+.friends-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 1rem;
-  border: 3px solid var(--primary-purple-light);
+  border: 3px solid var(--border-main);
+  transition: var(--transition-main);
+  z-index: 1;
 }
 
-.friend-name {
-  font-weight: 600;
+.friends-card:hover .friends-avatar {
+  border-color: var(--primary-light);
+  transform: scale(1.05);
+}
+
+.friends-name {
+  font-weight: 700;
   font-size: 1.1rem;
-  color: var(--text-dark);
+  color: var(--text-main);
   margin-bottom: 0.25rem;
+  z-index: 1;
 }
 
-.friend-email {
+.friends-email {
   color: var(--text-light);
   font-size: 0.85rem;
   margin-bottom: 1rem;
+  z-index: 1;
 }
 
-.friend-status {
+.friends-status {
   font-size: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
   font-weight: 600;
   margin-bottom: 1rem;
+  z-index: 1;
 }
 
-.status-pending {
-  background-color: #fef3c7;
-  color: #92400e;
+.friends-status-pending {
+  background-color: #fff3bf;
+  color: #674d00;
 }
 
-.status-accepted {
-  background-color: #ecfdf5;
-  color: #047857;
+.friends-status-accepted {
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-green) 0%,
+    #16a34a 100%
+  );
+  color: white;
 }
 
-.status-rejected {
-  background-color: #fee2e2;
-  color: #b91c1c;
+.friends-status-rejected {
+  background-color: #ffe3e3;
+  color: #c92a2a;
 }
 
-.friend-actions {
+.friends-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: 100%;
   justify-content: center;
+  z-index: 1;
 }
 
-.friend-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+.friends-action-btn {
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-size: 0.85rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-main);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
-.friend-btn-accept {
-  background-color: var(--green);
+.friends-action-btn-accept {
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-green) 0%,
+    #16a34a 100%
+  );
   color: white;
 }
 
-.friend-btn-accept:hover {
-  background-color: #0d9b6c;
+.friends-action-btn-accept:hover {
+  box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
+  transform: translateY(-2px);
 }
 
-.friend-btn-reject {
-  background-color: var(--red);
+.friends-action-btn-reject {
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-red) 0%,
+    #dc2626 100%
+  );
   color: white;
 }
 
-.friend-btn-reject:hover {
-  background-color: #dc2626;
+.friends-action-btn-reject:hover {
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
 }
 
-.friend-btn-message {
-  background-color: var(--blue);
+.friends-action-btn-message {
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-main) 0%,
+    var(--primary-deep) 100%
+  );
   color: white;
 }
 
-.friend-btn-message:hover {
-  background-color: #2563eb;
+.friends-action-btn-message:hover {
+  box-shadow: 0 10px 15px -3px var(--primary-glow);
+  transform: translateY(-2px);
 }
 
-.friend-btn-collaborate {
-  background-color: var(--primary-purple);
-  color: white;
-}
-
-.friend-btn-collaborate:hover {
-  background-color: #6d28d9;
-}
-
-/* --- Friend Requests Section --- */
-.requests-section {
-  margin-top: 3rem;
-}
-
-.requests-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.requests-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-/* --- Goal Collaborators Section --- */
-.collaborators-section {
-  margin-top: 3rem;
-}
-
-/* --- Friend Modal Styles --- */
-.friend-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.friend-modal-content {
-  background: var(--white);
-  border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(80, 36, 180, 0.18);
-  width: 95%;
-  max-width: 480px;
-  max-height: 92vh;
+/* --- 5. EMPTY STATE STYLES --- */
+.friends-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  animation: modalPopIn 0.18s cubic-bezier(0.4, 2, 0.6, 1) both;
+  align-items: center;
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  border: 1px dashed var(--border-main);
+  box-shadow: var(--shadow-sm);
 }
-@keyframes modalPopIn {
+
+.friends-empty-image {
+  width: 180px;
+  height: 180px;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.friends-empty-title {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.friends-empty-message {
+  color: var(--text-light);
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+
+.friends-empty-action {
+  margin: 0 auto;
+  padding: 0.8rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* --- 6. MODAL STYLES --- */
+@keyframes friends-modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes friends-modalPopIn {
   0% {
-    transform: scale(0.98) translateY(30px);
+    transform: scale(0.95) translateY(20px);
     opacity: 0;
   }
   100% {
@@ -238,206 +435,189 @@
     opacity: 1;
   }
 }
-.friend-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.1rem 1.5rem 1.1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--white);
-}
-.friend-modal-header h2 {
-  font-size: 1.13rem;
-  font-weight: 700;
-  color: var(--primary-purple);
-  margin: 0;
-}
-.friend-modal-close-btn {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  color: var(--text-light);
-  cursor: pointer;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
+
+.friends-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
+  animation: friends-modalFadeIn 0.3s ease forwards;
+  padding: 1rem;
 }
-.friend-modal-close-btn:hover {
-  background: var(--grey-light);
-  color: var(--primary-purple);
-  transform: rotate(90deg);
-}
-.friend-modal-body {
-  padding: 1.25rem 1.5rem;
-  overflow-y: auto;
-  background: var(--white);
-  flex: 1 1 auto;
-}
-.friend-modal-form .friend-modal-group {
-  margin-bottom: 1.1rem;
-}
-.friend-modal-form label {
-  font-weight: 600;
-  margin-bottom: 0.35rem;
-  color: var(--text-dark);
-  font-size: 0.93rem;
-}
-.friend-modal-form input[type="text"],
-.friend-modal-form input[type="email"],
-.friend-modal-form textarea,
-.friend-modal-form select {
+
+.friends-modal-content {
+  background: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
-  padding: 0.62rem 0.9rem;
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-  font-size: 0.97rem;
-  background: #fff;
-  transition: border 0.15s, box-shadow 0.15s;
-  margin-bottom: 0;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: friends-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-.friend-modal-form input[type="text"]:focus,
-.friend-modal-form input[type="email"]:focus,
-.friend-modal-form textarea:focus,
-.friend-modal-form select:focus {
-  border-color: var(--primary-purple);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08);
+
+.friends-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--border-main);
+  flex-shrink: 0;
+}
+
+.friends-modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.015em;
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-deep) 25%,
+    var(--primary-main) 75%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.friends-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: var(--text-light);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-main);
+}
+
+.friends-modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary-main);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.friends-modal-body {
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  background-image: radial-gradient(
+    circle at 10% 10%,
+    rgba(167, 139, 250, 0.1),
+    transparent 50%
+  );
+}
+
+.friends-modal-form .friends-modal-group {
+  margin-bottom: 1.25rem;
+}
+
+.friends-modal-form label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  display: block;
+}
+
+.friends-modal-form input[type="email"] {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-main);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  background: var(--surface-alt);
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  color: var(--text-main);
+}
+
+.friends-modal-form input[type="email"]:hover {
+  border-color: var(--primary-light);
+}
+
+.friends-modal-form input[type="email"]:focus {
+  border-color: var(--primary-main);
+  background: var(--surface-main);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px var(--primary-glow);
   outline: none;
 }
-.friend-modal-form textarea {
-  min-height: 80px;
-  resize: vertical;
-  font-size: 0.97rem;
-}
-.friend-modal-footer {
+
+.friends-modal-footer {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 0.7rem;
-  padding: 1rem 1.5rem;
-  background: var(--grey-light);
-  border-top: 1px solid var(--border-color);
-  border-bottom-left-radius: 14px;
-  border-bottom-right-radius: 14px;
+  padding: 1rem 1.75rem;
+  background: rgba(245, 243, 255, 0.9);
+  border-top: 1px solid var(--border-main);
   flex-shrink: 0;
 }
-@media (max-width: 600px) {
-  .friend-modal-content {
-    max-width: 99vw;
-    width: 99vw;
-    border-radius: 0;
-    min-height: 100vh;
-    max-height: 100vh;
-  }
-  .friend-modal-header,
-  .friend-modal-footer,
-  .friend-modal-body {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-.btn {
-  padding: 0.65rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.btn-primary {
-  background-color: var(--primary-purple);
-  color: var(--white);
-}
-.btn-primary:hover {
-  background-color: #6d28d9;
-  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
-}
-.btn-secondary {
-  background-color: var(--white);
-  color: var(--text-dark);
-  border: 1px solid var(--border-color);
-}
-.btn-secondary:hover {
-  background-color: #f3f4f6;
-}
-.btn-danger {
-  background-color: var(--red);
-  color: var(--white);
-  margin-right: auto; /* Pushes this button to the left */
-}
-.btn-danger:hover {
-  background-color: #dc2626;
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-}
 
-/* --- Tabs Navigation --- */
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 1.5rem;
-}
-
-.tab {
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
+.friends-form-error {
+  color: var(--accent-red);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
   font-weight: 500;
+}
+
+/* --- 7. LOADING STYLES --- */
+.friends-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
   color: var(--text-light);
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  animation: friends-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.tab:hover {
-  color: var(--text-dark);
+@keyframes friends-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-.tab.active {
-  color: var(--primary-purple);
-  border-bottom-color: var(--primary-purple);
-}
-
-/* --- Responsive Design --- */
+/* --- 8. RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 768px) {
-  .main-header {
+  .friends-main-content {
+    padding: 1.5rem;
+  }
+
+  .friends-content-header {
     flex-direction: column;
-    padding: 1rem;
+    align-items: stretch;
     gap: 1rem;
   }
 
-  .header-left {
-    width: 100%;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .main-nav {
-    width: 100%;
+  .friends-action-buttons {
     justify-content: space-between;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .main-nav a {
-    padding: 0.5rem;
-  }
-
-  .main-nav a::after {
-    bottom: -10px;
-  }
-
-  .header-right {
     width: 100%;
-    justify-content: space-between;
   }
 
-  .main-content {
-    padding: 1rem;
+  .friends-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
   }
+}
 
-  .friends-grid,
-  .requests-list {
-    grid-template-columns: 1fr;
+@media (max-width: 480px) {
+  .friends-modal-content {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
   }
 }
