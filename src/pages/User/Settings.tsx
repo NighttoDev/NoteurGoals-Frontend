@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import "../../assets/css/User/settings.css";
 import {
@@ -35,6 +35,25 @@ interface User {
   registration_type: 'email' | 'google' | 'facebook';
   role?: 'user' | 'admin';
 }
+
+interface SubscriptionPlan {
+  plan_id: number;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+}
+
+interface UserSubscription {
+  subscription_id: number;
+  user_id: number;
+  plan_id: number;
+  start_date: string;
+  end_date: string;
+  payment_status: 'active' | 'cancelled' | 'expired';
+  plan: SubscriptionPlan;
+}
+
 interface ApiError {
   message?: string;
   errors?: { [key: string]: string[] };
@@ -42,6 +61,8 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
+  const navigate = useNavigate();
+
   // --- STATES ---
   const [activeTab, setActiveTab] = useState("profile");
   const [user, setUser] = useState<User | null>(null);
@@ -49,42 +70,101 @@ const SettingsPage = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [profileData, setProfileData] = useState({ displayName: "" });
   const [passwordData, setPasswordData] = useState({ current_password: "", new_password: "", new_password_confirmation: "" });
-  const [notifications, setNotifications] = useState({ eventReminders: true, goalProgress: true, friendActivity: false, aiSuggestions: true, autoRenewal: true });
-  const [loading, setLoading] = useState({ profile: false, password: false, delete: false });
-  // Giữ lại state error để hiển thị lỗi validation
+  const [notifications, setNotifications] = useState({ eventReminders: true, goalProgress: true, friendActivity: false, aiSuggestions: true });
+  const [loading, setLoading] = useState({ profile: false, password: false, delete: false, logout: false });
   const [error, setError] = useState<{ type?: string; message?: string; errors?: any }>({});
 
+  const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
+  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
   // --- HANDLERS & EFFECTS ---
-  
-  // SỬA LỖI QUAN TRỌNG NHẤT: useEffect này chỉ chạy MỘT LẦN khi component được tải.
-  // Mảng phụ thuộc rỗng `[]` đảm bảo nó không bao giờ chạy lại và gây ra vòng lặp.
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get('/user/profile');
-        const fetchedUser: User = response.data.data;
-        setUser(fetchedUser);
-        setProfileData({ displayName: fetchedUser.display_name });
-        setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        if (err instanceof AxiosError && err.response?.status === 401) {
-          // Nếu token hết hạn, chỉ cần logout đơn giản
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_info");
-          window.location.href = "/login";
-        }
+  const handleLogout = useCallback(async (isForced = false) => {
+    setLoading(prev => ({ ...prev, logout: true }));
+    if (!isForced) {
+        try { await api.post('/logout'); } catch(err) { console.error("Logout API failed, but logging out locally anyway."); }
+    }
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_info");
+    window.location.href = "/login";
+  }, []);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user/profile');
+      const fetchedUser: User = response.data.data;
+      setUser(fetchedUser);
+      setProfileData({ displayName: fetchedUser.display_name });
+      setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        handleLogout(true);
       }
-    };
-    fetchUser();
-  }, []); // <-- Mảng rỗng là chìa khóa để phá vỡ vòng lặp
+    }
+  }, [handleLogout]);
+
+  const fetchSubscriptionData = useCallback(async () => {
+    setSubscriptionLoading(true);
+    try {
+      const [plansResponse, mySubResponse] = await Promise.all([
+        api.get('/subscriptions/plans'),
+        api.get('/subscriptions/my-current')
+      ]);
+      setAllPlans(plansResponse.data);
+      setMySubscription(mySubResponse.data);
+    } catch (err) {
+      console.error("Failed to fetch subscription data:", err);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
+    const paymentStatus = sessionStorage.getItem('payment_status');
+    if (paymentStatus === 'success') {
+        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    } else if (paymentStatus === 'failed') {
+        alert('Thanh toán không thành công. Vui lòng thử lại.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    }
+
+    // Luôn fetch dữ liệu mới nhất khi component tải
+    fetchUserData();
+    fetchSubscriptionData();
+  }, [fetchUserData, fetchSubscriptionData]);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
     if (hash && ["profile", "account", "subscription", "notifications", "admin"].includes(hash)) {
       setActiveTab(hash);
+    } else {
+      setActiveTab("profile");
     }
   }, []);
+  
+  const handleGoToCheckout = (planId: number) => {
+    navigate(`/dashboard/checkout/${planId}`);
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!mySubscription) return;
+    if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.")) return;
+
+    setActionLoading(prev => ({ ...prev, cancel: true }));
+    try {
+      const response = await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
+      setMySubscription(response.data.subscription);
+      alert('Hủy gói đăng ký thành công.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, cancel: false }));
+    }
+  };
 
   const handleTabChange = (tab: string) => { setActiveTab(tab); window.history.pushState(null, "", `#${tab}`); };
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) { const file = e.target.files[0]; setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); } };
@@ -100,13 +180,9 @@ const SettingsPage = () => {
     
     try {
       const response = await api.post('/user/profile/update', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      // Cập nhật localStorage để các phần khác của app nhận được thông tin mới
       localStorage.setItem('user_info', JSON.stringify(response.data.data));
-
-      // SỬA LỖI: Dùng alert và reload để đảm bảo ổn định
       alert("Cập nhật thông tin thành công!");
       window.location.reload();
-
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
         const apiError = err.response.data as ApiError;
@@ -129,11 +205,8 @@ const SettingsPage = () => {
     setLoading(prev => ({ ...prev, password: true }));
     try {
       await api.post('/user/password/change', passwordData);
-      
-      // SỬA LỖI: Dùng alert để thông báo
       alert("Đổi mật khẩu thành công!");
       setPasswordData({ current_password: "", new_password: "", new_password_confirmation: "" });
-
     } catch (err: any) {
       if (err instanceof AxiosError && err.response) {
         const apiError = err.response.data as ApiError;
@@ -146,9 +219,12 @@ const SettingsPage = () => {
     }
   };
 
-  const handleDeleteAccount = async () => { if (window.confirm("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.")) { setLoading(prev => ({ ...prev, delete: true })); try { await api.post('/user/account/delete'); alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất."); localStorage.removeItem("auth_token"); localStorage.removeItem("user_info"); window.location.href = "/login"; } catch (err: any) { alert(err.response?.data?.message || 'Không thể xóa tài khoản. Vui lòng thử lại.'); } finally { setLoading(prev => ({ ...prev, delete: false })); } } };
-  const handleLogout = async () => { try { await api.post('/logout'); } catch(err) { console.error("Logout API failed"); } finally { localStorage.removeItem("auth_token"); localStorage.removeItem("user_info"); window.location.href = "/login"; }};
+  const handleDeleteAccount = async () => { if (window.confirm("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.")) { setLoading(prev => ({ ...prev, delete: true })); try { await api.post('/user/account/delete'); alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất."); handleLogout(true); } catch (err: any) { alert(err.response?.data?.message || 'Không thể xóa tài khoản. Vui lòng thử lại.'); } finally { setLoading(prev => ({ ...prev, delete: false })); } } };
+  
   const handleNotificationToggle = (key: keyof typeof notifications) => { setNotifications((prev) => ({ ...prev, [key]: !prev[key] })); };
+
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formatPrice = (price: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   if (!user) {
     return (
@@ -160,11 +236,9 @@ const SettingsPage = () => {
     <main className="main-content">
       <h1 className="page-title">Settings</h1>
       
-      {/* Không còn state 'success' nữa */}
-
       <div className="settings-container">
         <nav className="settings-nav">
-          <ul className="settings-nav-list">
+           <ul className="settings-nav-list">
             <li><a href="#profile" className={`settings-nav-link ${activeTab === "profile" ? "active" : ""}`} onClick={e => { e.preventDefault(); handleTabChange("profile"); }}><FaUserCircle /> Profile</a></li>
             <li><a href="#account" className={`settings-nav-link ${activeTab === "account" ? "active" : ""}`} onClick={e => { e.preventDefault(); handleTabChange("account"); }}><FaShieldAlt /> Account</a></li>
             <li><a href="#subscription" className={`settings-nav-link ${activeTab === "subscription" ? "active" : ""}`} onClick={e => { e.preventDefault(); handleTabChange("subscription"); }}><FaGem /> Subscription</a></li>
@@ -172,12 +246,12 @@ const SettingsPage = () => {
             {user.role === 'admin' && (
               <li><Link to="/admin" className={`settings-nav-link admin-link`}><FaUserShield /> Admin Panel</Link></li>
             )}
-            <li><button className="settings-nav-link logout-link" onClick={handleLogout}><FaSignOutAlt /> Logout</button></li>
+            <li><button className="settings-nav-link logout-link" onClick={() => handleLogout()} disabled={loading.logout}><FaSignOutAlt /> {loading.logout ? 'Logging out...' : 'Logout'}</button></li>
           </ul>
         </nav>
 
         <div className="settings-content">
-          {/* Toàn bộ JSX còn lại được giữ nguyên từ file gốc của bạn */}
+          
           <section id="profile" className={`settings-section ${activeTab === "profile" ? "active" : ""}`}>
             <div className="settings-section-header"><h2>Public Profile</h2><p>This information will be displayed on your public profile.</p></div>
             <form onSubmit={handleProfileSubmit}>
@@ -199,7 +273,57 @@ const SettingsPage = () => {
 
           <section id="subscription" className={`settings-section ${activeTab === "subscription" ? "active" : ""}`}>
             <div className="settings-section-header"><h2>Subscription</h2><p>Manage your billing and subscription plan.</p></div>
-            <div className="settings-section-body"><div><h3 style={{ fontWeight: 500 }}>Current Plan</h3><p style={{ color: "var(--text-light)" }}>You are currently on the <strong style={{ color: "var(--primary-purple)" }}>Premium Monthly</strong> plan.</p><p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>Your subscription will renew on July 22, 2025.</p></div><div className="notification-item"><div className="notification-text"><h3>Auto-Renewal</h3><p>Your plan will automatically renew. You can cancel anytime.</p></div><label className="toggle-switch"><input type="checkbox" checked={notifications.autoRenewal} onChange={() => handleNotificationToggle("autoRenewal")} /><span className="slider"></span></label></div><h3 style={{ fontWeight: 500, marginTop: "2rem" }}>Available Plans</h3><div className="plans-grid"><div className="plan-card current"><h3>Premium Monthly</h3><p className="price">99.000đ <span>/ month</span></p><ul><li><FaCheckCircle /> Unlimited Goals</li><li><FaCheckCircle /> AI Suggestions</li><li><FaCheckCircle /> Advanced Collaboration</li></ul><button className="btn btn-secondary" disabled>Current Plan</button></div><div className="plan-card"><h3>Premium Yearly</h3><p className="price">950.000đ <span>/ year</span></p><ul><li><FaCheckCircle /> All Premium Features</li><li><FaCheckCircle /> Save 20%</li><li><FaCheckCircle /> Priority Support</li></ul><button className="btn btn-primary">Upgrade to Yearly</button></div></div></div>
+            {subscriptionLoading ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}>Đang tải thông tin gói đăng ký...</div>
+            ) : (
+              <div className="settings-section-body">
+                <div>
+                  <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
+                  {mySubscription && mySubscription.plan ? (
+                    <>
+                      <p style={{ color: "var(--text-light)" }}>Bạn đang sử dụng gói <strong style={{ color: "var(--primary-purple)" }}>{mySubscription.plan.name}</strong>.</p>
+                      {mySubscription.payment_status === 'active' ? (
+                        <>
+                          <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>Gói của bạn sẽ hết hạn vào ngày {formatDate(mySubscription.end_date)}.</p>
+                          <button className="btn btn-danger" style={{marginTop: '1rem'}} onClick={handleCancelSubscription} disabled={!!actionLoading['cancel']}>{actionLoading['cancel'] ? 'Đang xử lý...' : 'Hủy đăng ký'}</button>
+                        </>
+                      ) : (
+                        <p className="form-notice" style={{marginTop: '0.5rem'}}>Gói của bạn đã được hủy và sẽ hết hạn vào ngày {formatDate(mySubscription.end_date)}. Bạn sẽ không bị tính phí trong chu kỳ tiếp theo.</p>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ color: "var(--text-light)" }}>Bạn hiện đang sử dụng gói miễn phí.</p>
+                  )}
+                </div>
+                <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>Available Plans</h3>
+                <div className="plans-grid">
+                  {allPlans.map(plan => (
+                    <div key={plan.plan_id} className={`plan-card ${mySubscription?.plan_id === plan.plan_id ? 'current' : ''}`}>
+                      <h3>{plan.name}</h3>
+                      <p className="price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                      <ul>
+                          <li><FaCheckCircle /> Unlimited Goals</li>
+                          <li><FaCheckCircle /> AI Suggestions</li>
+                          <li><FaCheckCircle /> Advanced Collaboration</li>
+                          {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                      </ul>
+                      <button 
+                          className={`btn ${(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active') ? 'btn-secondary' : 'btn-primary'}`}
+                          disabled={(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active')}
+                          onClick={() => handleGoToCheckout(plan.plan_id)}
+                      >
+                          { (mySubscription?.plan_id === plan.plan_id && mySubscription.payment_status === 'active')
+                              ? 'Current Plan' 
+                              : mySubscription
+                                  ? 'Upgrade Plan'
+                                  : 'Subscribe Now'
+                          }
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           <section id="notifications" className={`settings-section ${activeTab === "notifications" ? "active" : ""}`}>

@@ -12,6 +12,7 @@ import AdminLayout from "../layouts/Admin/DashboardLayout";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage"; 
 import VerifyEmailPage from "../pages/VerifyEmailPage";
 import SocialAuthCallback from "../pages/SocialAuthCallback";
 import DashboardPage from "../pages/User/DashboardPage";
@@ -29,7 +30,12 @@ import AddUsersPage from "../pages/Admin/User/AddUser";
 import AdminGoalsPage from "../pages/Admin/Goals/GoalsPage";
 import AdminNotesPage from "../pages/Admin/Notes/NotesPage";
 import AdminSchedulesPage from "../pages/Admin/Schedules/SchedulesPage";
+import CheckoutPage from "../pages/User/Checkout";
 
+// *** MỚI: Nhập các component trang cho luồng thanh toán ***
+import PaymentCallback from "../pages/PaymentCallback"; // Giả sử bạn đặt file ở đây
+import PaymentSuccess from "../pages/PaymentSuccess";
+import PaymentFailure from "../pages/PaymentFailure";
 
 // --- AUTHENTICATION HELPERS ---
 const isAuthenticated = (): boolean => !!localStorage.getItem("auth_token");
@@ -45,18 +51,12 @@ const isAdmin = (): boolean => {
   }
 };
 
-// --- SỬA LỖI: PROTECTED ROUTE COMPONENTS ---
-
-// Component này chỉ kiểm tra đăng nhập. Nếu OK, nó sẽ render các route con (<Outlet />).
-// Nếu không, nó sẽ điều hướng đến /login.
+// --- PROTECTED ROUTE COMPONENTS ---
 const RequireAuth: React.FC = () => {
   return isAuthenticated() ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
-// Component này kiểm tra quyền admin.
-// Nó phải được đặt BÊN TRONG một route đã được bảo vệ bởi RequireAuth.
 const RequireAdmin: React.FC = () => {
-  // Không cần kiểm tra isAuthenticated() nữa vì nó đã được cha lo.
   return isAdmin() ? <Outlet /> : <Navigate to="/dashboard" replace />;
 };
 
@@ -77,6 +77,7 @@ const router = createBrowserRouter([
       { path: "/register", element: <RegisterPage /> },
       { path: "/verify-email", element: <VerifyEmailPage /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/auth/social-callback", element: <SocialAuthCallback /> },
     ],
   },
@@ -85,7 +86,6 @@ const router = createBrowserRouter([
   // --- 2. USER ROUTES (Yêu cầu đăng nhập) ---
   // =======================================================
   {
-    // Bọc tất cả các route bên trong bằng RequireAuth
     element: <RequireAuth />,
     children: [
       {
@@ -101,21 +101,38 @@ const router = createBrowserRouter([
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
           { path: "settings", element: <Settings /> },
+          
+          // *** MỚI: Route cho trang checkout, có `:planId` động ***
+          // Đã sửa lại đường dẫn để tường minh hơn, ví dụ: /checkout/2
+          { path: "checkout/:planId", element: <CheckoutPage /> },
         ],
       },
-      // Thêm các layout khác cho user ở đây nếu cần, ví dụ: /profile
     ],
   },
 
   // =======================================================
-  // --- 3. ADMIN ROUTES (Yêu cầu đăng nhập VÀ quyền Admin) ---
+  // --- 3. PAYMENT ROUTES (Yêu cầu đăng nhập nhưng không cần layout) ---
   // =======================================================
   {
-    // Bọc tất cả các route bên trong bằng RequireAuth
+    element: <RequireAuth />, // Vẫn cần đăng nhập để biết ai đang thanh toán
+    children: [
+      // *** MỚI: Route để xử lý khi VNPay redirect về ***
+      // URL này phải khớp với VNPAY_RETURN_URL trong file .env của backend
+      { path: "/payment/callback", element: <PaymentCallback /> },
+
+      // *** MỚI: Route cho trang thông báo thành công/thất bại ***
+      { path: "/payment-success", element: <PaymentSuccess /> },
+      { path: "/payment-failure", element: <PaymentFailure /> },
+    ],
+  },
+
+  // =======================================================
+  // --- 4. ADMIN ROUTES (Yêu cầu đăng nhập VÀ quyền Admin) ---
+  // =======================================================
+  {
     element: <RequireAuth />, 
     children: [
       {
-        // Tiếp tục bọc các route admin bằng RequireAdmin
         element: <RequireAdmin />,
         children: [
           {
