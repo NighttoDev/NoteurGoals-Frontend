@@ -1,7 +1,9 @@
 import React from "react";
 import "../../assets/css/User/sidebar.css";
+import { useSearch } from "../../hooks/searchContext";
 
-const Sidebar = () => {
+const Sidebar: React.FC = () => {
+  const { searchTerm, setSearchTerm } = useSearch();
   return (
     <header className="main-header">
       <div className="header-left">
@@ -33,7 +35,13 @@ const Sidebar = () => {
       <div className="header-right">
         <div className="search-container">
           <i className="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search notes..." />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="sidebar-search"
+          />
         </div>
         <button className="add-button">+</button>
         <div className="user-avatars">

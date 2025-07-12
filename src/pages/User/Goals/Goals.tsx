@@ -26,6 +26,8 @@ import {
   deleteMilestone,
 } from "../../../services/goalsService";
 
+import { useSearch } from "../../../hooks/searchContext";
+
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
 type Sharing = "private" | "friends" | "public";
 
@@ -352,11 +354,6 @@ const GoalsPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Filter logic
-  const filteredGoals = goals.filter(
-    (g) => filter === "all" || g.status === filter
-  );
-
   // Milestone handlers
   const addMilestone = useCallback(() => {
     setMilestones((prev) => [...prev, { title: "", deadline: "" }]);
@@ -552,6 +549,13 @@ const GoalsPage: React.FC = () => {
       }
     }
   };
+
+  const { searchTerm } = useSearch();
+  const filteredGoals = goals.filter(
+    (g) =>
+      (filter === "all" || g.status === filter) &&
+      g.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <main className="goals-main-content">

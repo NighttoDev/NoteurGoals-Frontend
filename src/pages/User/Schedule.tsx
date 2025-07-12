@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "../../assets/css/User/schedule.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,6 +18,8 @@ import {
   linkGoalToEvent,
   unlinkGoalFromEvent,
 } from "../../services/eventService";
+
+import { useSearch } from "../../hooks/searchContext";
 
 interface Event {
   event_id: string;
@@ -58,7 +60,6 @@ const Schedule: React.FC = () => {
 
   useEffect(() => {
     fetchEvents();
-    // eslint-disable-next-line
   }, []);
 
   const fetchEvents = async () => {
@@ -125,7 +126,9 @@ const Schedule: React.FC = () => {
     const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1)
       .toString()
       .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
-    return events.filter((event) => event.event_time.startsWith(dateStr));
+    return filteredEvents.filter((event) =>
+      event.event_time.startsWith(dateStr)
+    );
   };
 
   // Modal logic
@@ -271,6 +274,17 @@ const Schedule: React.FC = () => {
     setCurrentDate(newDate);
   };
 
+  const { searchTerm } = useSearch();
+  const filteredEvents = useMemo(() => {
+    if (!searchTerm.trim()) return events;
+    const lowerSearch = searchTerm.toLowerCase();
+    return events.filter(
+      (event) =>
+        event.title.toLowerCase().includes(lowerSearch) ||
+        event.description.toLowerCase().includes(lowerSearch)
+    );
+  }, [searchTerm, events]);
+
   return (
     <main className="main-content">
       <div className="schedule-page-container">
@@ -356,7 +370,7 @@ const Schedule: React.FC = () => {
             </button>
           </div>
           <div className="agenda-list">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <div
                 key={event.event_id}
                 className="agenda-item"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import "../../assets/css/User/friends.css";
 import {
   getFriends,
@@ -6,6 +6,7 @@ import {
   respondFriendRequest,
   deleteFriend,
 } from "../../services/friendsService";
+import { useSearch } from "../../hooks/searchContext";
 
 const FriendsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
@@ -99,6 +100,37 @@ const FriendsPage: React.FC = () => {
     }
   };
 
+  const { searchTerm } = useSearch();
+
+  const filteredFriends = useMemo(() => {
+    if (!searchTerm.trim()) return friends;
+    const lower = searchTerm.toLowerCase();
+    return friends.filter(
+      (f) =>
+        f.display_name?.toLowerCase().includes(lower) ||
+        f.email?.toLowerCase().includes(lower)
+    );
+  }, [friends, searchTerm]);
+
+  const filteredRequests = useMemo(() => {
+    if (!searchTerm.trim()) return requests;
+    const lower = searchTerm.toLowerCase();
+    return requests.filter(
+      (r) =>
+        r.display_name?.toLowerCase().includes(lower) ||
+        r.email?.toLowerCase().includes(lower)
+    );
+  }, [requests, searchTerm]);
+
+  const filteredCollaborators = useMemo(() => {
+    if (!searchTerm.trim()) return collaborators;
+    const lower = searchTerm.toLowerCase();
+    return collaborators.filter(
+      (c) =>
+        c.display_name?.toLowerCase().includes(lower) ||
+        c.email?.toLowerCase().includes(lower)
+    );
+  }, [collaborators, searchTerm]);
   return (
     <main className="main-content">
       <section className="friends-section">
@@ -150,7 +182,7 @@ const FriendsPage: React.FC = () => {
             ) : friends.length === 0 ? (
               <div>Chưa có bạn bè nào.</div>
             ) : (
-              friends.map((friend) => (
+              filteredFriends.map((friend) => (
                 <div
                   className="friend-card"
                   key={friend.id || friend.friendship_id}
@@ -160,7 +192,9 @@ const FriendsPage: React.FC = () => {
                     alt="Friend Avatar"
                     className="friend-avatar"
                   />
-                  <h3 className="friend-name">{friend.name || friend.email}</h3>
+                  <h3 className="friend-name">
+                    {friend.display_name || friend.email}
+                  </h3>
                   <p className="friend-email">{friend.email}</p>
                   <span className={`friend-status status-accepted`}>
                     Friends
@@ -196,7 +230,7 @@ const FriendsPage: React.FC = () => {
               ) : requests.length === 0 ? (
                 <div>Không có lời mời nào.</div>
               ) : (
-                requests.map((request) => (
+                filteredRequests.map((request) => (
                   <div
                     className="friend-card"
                     key={request.id || request.friendship_id}
@@ -207,7 +241,7 @@ const FriendsPage: React.FC = () => {
                       className="friend-avatar"
                     />
                     <h3 className="friend-name">
-                      {request.name || request.email}
+                      {request.display_name || request.email}
                     </h3>
                     <p className="friend-email">{request.email}</p>
                     <span className={`friend-status status-pending`}>
@@ -274,7 +308,7 @@ const FriendsPage: React.FC = () => {
               {collaborators.length === 0 ? (
                 <div>Chưa có cộng tác viên nào.</div>
               ) : (
-                collaborators.map((collaborator) => (
+                filteredCollaborators.map((collaborator) => (
                   <div className="friend-card" key={collaborator.id}>
                     <img
                       src={collaborator.avatar || "https://i.pravatar.cc/80"}
@@ -282,7 +316,7 @@ const FriendsPage: React.FC = () => {
                       className="friend-avatar"
                     />
                     <h3 className="friend-name">
-                      {collaborator.name || collaborator.email}
+                      {collaborator.display_name || collaborator.email}
                     </h3>
                     <p className="friend-email">{collaborator.email}</p>
                     <span className="friend-status status-accepted">

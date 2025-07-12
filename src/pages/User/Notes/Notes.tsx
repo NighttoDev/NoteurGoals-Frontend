@@ -21,6 +21,8 @@ import {
   faPaperclip,
 } from "@fortawesome/free-solid-svg-icons";
 
+import { useSearch } from "../../../hooks/searchContext";
+
 interface NoteCard {
   id: string;
   title: string;
@@ -340,12 +342,37 @@ const NotesPage: React.FC = () => {
   const showLoading = notes.length === 0 && loading;
 
   // Memo hóa danh sách notes
+  // Filter và memo hóa danh sách notes
+  const { searchTerm } = useSearch();
+
   const renderedNotes = useMemo(() => {
     if (notes.length === 0) return null;
-    return notes.map((note) => (
+
+    const filtered = notes.filter((note) => {
+      const titleMatch = note.title
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const contentMatch = note.content
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const goalTitleMatch = note.linkedGoal?.title
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      return titleMatch || contentMatch || goalTitleMatch;
+    });
+
+    if (filtered.length === 0) {
+      return (
+        <div style={{ textAlign: "center", width: "100%" }}>
+          No matching notes found.
+        </div>
+      );
+    }
+
+    return filtered.map((note) => (
       <NoteCardItem key={note.id} note={note} onEdit={openEditModal} />
     ));
-  }, [notes, openEditModal]);
+  }, [notes, searchTerm, openEditModal]);
 
   return (
     <main className="main-content">
@@ -386,10 +413,6 @@ const NotesPage: React.FC = () => {
         <div className={`notes-container ${viewMode}-view`} id="notes-list">
           {showLoading ? (
             <div style={{ textAlign: "center", width: "100%" }}>Loading...</div>
-          ) : notes.length === 0 ? (
-            <div style={{ textAlign: "center", width: "100%" }}>
-              No notes found.
-            </div>
           ) : (
             renderedNotes
           )}
