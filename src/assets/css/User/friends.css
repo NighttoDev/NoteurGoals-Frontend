@@ -39,6 +39,10 @@
   --transition-main: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 /* --- 1. MAIN CONTENT & HEADER --- */
 .friends-main-content {
   background-color: var(--background-main);
@@ -78,9 +82,16 @@
 .friends-content-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end; /* Changed from space-between */
   margin-bottom: 2.5rem;
   flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.friends-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 /* --- 2. BUTTON STYLES --- */
@@ -348,11 +359,7 @@
 }
 
 .friends-action-btn-reject {
-  background-image: linear-gradient(
-    135deg,
-    var(--accent-red) 0%,
-    #dc2626 100%
-  );
+  background-image: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%);
   color: white;
 }
 
@@ -598,7 +605,7 @@
   }
 
   .friends-content-header {
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: stretch;
     gap: 1rem;
   }
