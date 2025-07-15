@@ -2,7 +2,7 @@
 ================================================================
   STYLESHEET FOR FRIENDS PAGE - ELITE V2 REVAMP
   Designer: AI
-  Focus: Advanced UI, Gradient Typography, Intelligent Layout
+  Focus: Full-screen UI, Gradient Typography, Intelligent Layout
 ================================================================
 */
 
@@ -41,6 +41,8 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 /* --- 1. MAIN CONTENT & HEADER --- */
@@ -51,11 +53,21 @@
     rgba(167, 139, 250, 0.05) 0%,
     transparent 20%
   );
-  padding: 2rem 2.5rem;
   min-height: 100vh;
+  height: 100%;
+  width: 100%;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-container-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 2.5rem;
 }
 
 .friends-page-title {
@@ -82,10 +94,12 @@
 .friends-content-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end; /* Changed from space-between */
+  justify-content: flex-end;
   margin-bottom: 2.5rem;
   flex-wrap: wrap;
   gap: 0.7rem;
+  /* Thêm dòng này nếu muốn các tab và nút sát nhau về bên phải */
+  /* justify-content: flex-end; */
 }
 
 .friends-action-buttons {
@@ -166,8 +180,14 @@
 .friends-tabs {
   display: flex;
   border-bottom: 1px solid var(--border-main);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
+  margin-right: 2rem;
+  /* Xóa margin-bottom nếu có */
+  /* margin-bottom: 1.5rem; */
   overflow-x: auto;
+  flex-shrink: 0;
+  /* Thêm nếu muốn tab không chiếm hết chiều ngang */
+  /* min-width: 0; */
 }
 
 .friends-tab {
@@ -190,22 +210,24 @@
   font-weight: 600;
 }
 
-/* --- 4. GRID AND CARD STYLES --- */
+/* --- 4. CONTENT AREA STYLES --- */
+.friends-content-area {
+  flex: 1;
+  /*  */
+  padding-bottom: 2rem;
+}
+
+.friends-grid-container {
+  height: 100%;
+  min-height: 0;
+}
+
 .friends-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   width: 100%;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: friends-fadeIn 0.4s ease forwards;
-}
-
-@keyframes friends-fadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  min-height: 500px;
 }
 
 .friends-card {
@@ -394,6 +416,9 @@
   border-radius: var(--border-radius-lg);
   border: 1px dashed var(--border-main);
   box-shadow: var(--shadow-sm);
+  height: 100%;
+  min-height: 400px;
+  justify-content: center;
 }
 
 .friends-empty-image {
@@ -586,6 +611,10 @@
   color: var(--text-light);
   font-weight: 500;
   animation: friends-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes friends-pulse {
@@ -598,9 +627,47 @@
   }
 }
 
-/* --- 8. RESPONSIVE ADJUSTMENTS --- */
+/* --- 8. SCROLLBAR STYLES --- */
+.friends-content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.friends-content-area::-webkit-scrollbar-track {
+  background: var(--border-main);
+  border-radius: 4px;
+}
+
+.friends-content-area::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 4px;
+}
+
+.friends-content-area::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-main);
+}
+
+/* Ẩn scrollbar dọc nhưng vẫn cho phép cuộn */
+body,
+.friends-main-content {
+  /* Đảm bảo vẫn có thể cuộn */
+  overflow-y: scroll;
+  /* Ẩn scrollbar trên Chrome, Edge, Safari */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+body::-webkit-scrollbar,
+.friends-main-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* --- 9. RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 768px) {
   .friends-main-content {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .friends-container-section {
     padding: 1.5rem;
   }
 
@@ -626,5 +693,13 @@
     width: 100%;
     max-height: 100vh;
     border-radius: 0;
+  }
+
+  .friends-container-section {
+    padding: 1rem;
+  }
+
+  .friends-page-title {
+    font-size: 1.75rem;
   }
 }

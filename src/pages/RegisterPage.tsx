@@ -1,192 +1,211 @@
 // src/pages/RegisterPage.tsx
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const RegisterPage: React.FC = () => {
-    // --- QUẢN LÝ TRẠNG THÁI (STATE) ---
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [termsAccepted, setTermsAccepted] = useState(false);
-    
-    // State cho việc xử lý tải và lỗi
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation
+  // --- QUẢN LÝ TRẠNG THÁI (STATE) ---
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-    // --- HOOKS ---
-    const navigate = useNavigate();
+  // State cho việc xử lý tải và lỗi
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation
 
-    // --- CẤU HÌNH API ---
-    const API_BASE_URL = 'http://localhost:8000/api';
+  // --- HOOKS ---
+  const navigate = useNavigate();
 
-    // --- HÀM VALIDATION PHÍA CLIENT ---
-    const validate = () => {
-        const newErrors: any = {};
-        if (!name.trim()) {
-            newErrors.display_name = ["Vui lòng nhập họ và tên."];
+  // --- CẤU HÌNH API ---
+  const API_BASE_URL = "http://localhost:8000/api";
+
+  // --- HÀM VALIDATION PHÍA CLIENT ---
+  const validate = () => {
+    const newErrors: any = {};
+    if (!name.trim()) {
+      newErrors.display_name = ["Please enter your full name."];
+    }
+    if (!email.trim()) {
+      newErrors.email = ["Please enter your email."];
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
+      newErrors.email = ["Invalid email format."];
+    }
+    if (!password) {
+      newErrors.password = ["Please enter a password."];
+    } else if (password.length < 8) {
+      newErrors.password = ["Password must be at least 8 characters."];
+    }
+    if (password !== passwordConfirmation) {
+      newErrors.password_confirmation = [
+        "Password confirmation does not match.",
+      ];
+    }
+    if (!termsAccepted) {
+      setError("You must accept the Terms of Service to continue.");
+    }
+    return newErrors;
+  };
+
+  // --- HÀM XỬ LÝ GỬI FORM ---
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Reset lỗi trước mỗi lần gửi
+    setError(null);
+    setErrors({});
+
+    // Thực hiện validation phía client trước
+    const clientErrors = validate();
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/register`, {
+        display_name: name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+
+      // Đăng ký thành công, chuyển hướng đến trang xác thực email
+      navigate("/verify-email", { state: { email } });
+    } catch (err: any) {
+      if (axios.isAxiosError(err) && err.response) {
+        const data = err.response.data;
+        setError(
+          data.message || "Registration failed. Please check your information."
+        );
+        if (data.errors) {
+          setErrors(data.errors);
         }
-        if (!email.trim()) {
-            newErrors.email = ["Vui lòng nhập email."];
-        } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
-            newErrors.email = ["Định dạng email không hợp lệ."];
-        }
-        if (!password) {
-            newErrors.password = ["Vui lòng nhập mật khẩu."];
-        } else if (password.length < 8) {
-            newErrors.password = ["Mật khẩu phải có ít nhất 8 ký tự."];
-        }
-        if (password !== passwordConfirmation) {
-            // Hiển thị lỗi ngay ở trường xác nhận mật khẩu
-            newErrors.password_confirmation = ["Mật khẩu xác nhận không khớp."];
-        }
-        if (!termsAccepted) {
-            // Mặc dù đã có 'required', thêm vào đây để thông báo rõ hơn nếu cần
-            setError("Bạn phải đồng ý với Điều khoản dịch vụ để tiếp tục.");
-        }
-        return newErrors;
-    };
+      } else {
+        setError("Unable to connect to server. Please try again later.");
+        console.error("Lỗi đăng ký không xác định:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // --- HÀM XỬ LÝ GỬI FORM ---
-    const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // Reset lỗi trước mỗi lần gửi
-        setError(null);
-        setErrors({});
+  // --- HÀM HỖ TRỢ HIỂN THỊ LỖI VALIDATION ---
+  const getError = (field: string) => (errors[field] ? errors[field][0] : null);
 
-        // Thực hiện validation phía client trước
-        const clientErrors = validate();
-        if (Object.keys(clientErrors).length > 0) {
-            setErrors(clientErrors);
-            return;
-        }
+  // --- RENDER COMPONENT ---
+  return (
+    <div className="form-content">
+      <h2>Create Account</h2>
+      <p className="subtitle">Register to explore the power of smart records</p>
 
-        setLoading(true);
-
-        try {
-            await axios.post(`${API_BASE_URL}/register`, {
-                display_name: name,
-                email,
-                password,
-                password_confirmation: passwordConfirmation,
-            });
-            
-            // Đăng ký thành công, chuyển hướng đến trang xác thực email
-            navigate('/verify-email', { state: { email } });
-
-        } catch (err: any) {
-            if (axios.isAxiosError(err) && err.response) {
-                const data = err.response.data;
-                setError(data.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.');
-                if (data.errors) {
-                    setErrors(data.errors);
-                }
-            } else {
-                setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
-                console.error("Lỗi đăng ký không xác định:", err);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-    // --- HÀM HỖ TRỢ HIỂN THỊ LỖI VALIDATION ---
-    const getError = (field: string) => errors[field] ? errors[field][0] : null;
-
-    // --- RENDER COMPONENT ---
-    return (
-        <div className="form-content">
-            <h2>Tạo tài khoản</h2>
-            <p className="subtitle">Đăng ký để khám phá sức mạnh của bản ghi thông minh</p>
-
-            <form onSubmit={handleRegister}>
-                <div className="form-group">
-                    <label htmlFor="name">Họ và tên</label>
-                    <input 
-                        type="text" 
-                        id="name" 
-                        placeholder="Nhập họ và tên đầy đủ" 
-                        value={name} 
-                        onChange={e => setName(e.target.value)} 
-                        disabled={loading}
-                        required 
-                    />
-                    {getError('display_name') && <small className="form-field-error">{getError('display_name')}</small>}
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        placeholder="nhapemail@diachi.com" 
-                        value={email} 
-                        onChange={e => setEmail(e.target.value)} 
-                        disabled={loading}
-                        required 
-                    />
-                    {getError('email') && <small className="form-field-error">{getError('email')}</small>}
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="password">Mật khẩu</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        placeholder="Yêu cầu tối thiểu 8 ký tự" 
-                        value={password} 
-                        onChange={e => setPassword(e.target.value)} 
-                        disabled={loading}
-                        required 
-                        minLength={8}
-                    />
-                    {getError('password') && <small className="form-field-error">{getError('password')}</small>}
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="confirm-password">Xác nhận mật khẩu</label>
-                    <input 
-                        type="password" 
-                        id="confirm-password" 
-                        placeholder="Nhập lại mật khẩu" 
-                        value={passwordConfirmation} 
-                        onChange={e => setPasswordConfirmation(e.target.value)} 
-                        disabled={loading}
-                        required 
-                    />
-                    {getError('password_confirmation') && <small className="form-field-error">{getError('password_confirmation')}</small>}
-                </div>
-                
-                {/* Hiển thị lỗi chung (từ server hoặc từ validation điều khoản) */}
-                {error && <p className="form-error">{error}</p>}
-
-                <div className="form-options">
-                    <div className="remember-me">
-                        <input 
-                            type="checkbox" 
-                            id="terms" 
-                            checked={termsAccepted} 
-                            onChange={e => setTermsAccepted(e.target.checked)} 
-                            disabled={loading}
-                            required 
-                        />
-                        <label htmlFor="terms">Tôi đồng ý với <Link to="/terms">Điều khoản dịch vụ</Link></label>
-                    </div>
-                </div>
-                
-                <button type="submit" className="signin-btn" disabled={loading || !termsAccepted}>
-                    {loading ? 'Đang xử lý...' : 'Đăng ký'}
-                </button>
-            </form>
-
-            <p className="signup-link">
-                Bạn đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-            </p>
+      <form onSubmit={handleRegister}>
+        <div className="form-group">
+          <label htmlFor="name">Full Name</label>
+          <input
+            type="text"
+            id="name"
+            placeholder="Enter your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={loading}
+            required
+          />
+          {getError("display_name") && (
+            <small className="form-field-error">
+              {getError("display_name")}
+            </small>
+          )}
         </div>
-    );
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="your@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            required
+          />
+          {getError("email") && (
+            <small className="form-field-error">{getError("email")}</small>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Minimum 8 characters required"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            required
+            minLength={8}
+          />
+          {getError("password") && (
+            <small className="form-field-error">{getError("password")}</small>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="confirm-password">Confirm Password</label>
+          <input
+            type="password"
+            id="confirm-password"
+            placeholder="Re-enter your password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            disabled={loading}
+            required
+          />
+          {getError("password_confirmation") && (
+            <small className="form-field-error">
+              {getError("password_confirmation")}
+            </small>
+          )}
+        </div>
+
+        {/* Hiển thị lỗi chung (từ server hoặc từ validation điều khoản) */}
+        {error && <p className="form-error">{error}</p>}
+
+        <div className="form-options">
+          <div className="remember-me">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              disabled={loading}
+              required
+            />
+            <label htmlFor="terms">
+              I agree to the <Link to="/terms">Terms of Service</Link>
+            </label>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="signin-btn"
+          disabled={loading || !termsAccepted}
+        >
+          {loading ? "Processing..." : "Register"}
+        </button>
+      </form>
+
+      <p className="signup-link">
+        Already have an account? <Link to="/login">Sign in</Link>
+      </p>
+    </div>
+  );
 };
 
 export default RegisterPage;

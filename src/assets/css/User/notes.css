@@ -660,13 +660,13 @@
 
 .notes-checkbox-item label::after {
   content: "\2713";
-  font-size: 14px;
+  font-size: 15px; /* tăng nhẹ cho cân đối */
   font-weight: bold;
   color: white;
   position: absolute;
-  left: 9px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
+  left: 50%; /* căn giữa ngang */
+  top: 50%; /* căn giữa dọc */
+  transform: translate(-50%, -50%) scale(0); /* căn giữa hoàn toàn */
   transition: var(--transition-main);
 }
 
@@ -678,7 +678,7 @@
   align-items: center;
 }
 
-.notes-checkbox-item input[type="checkbox"]:checked + label::before {
+.notes-checkbox-item input[type="checkbox"]:checked ~ label::before {
   background-image: linear-gradient(
     135deg,
     var(--primary-main) 0%,
@@ -686,8 +686,8 @@
   );
   border-color: var(--primary-main);
 }
-.notes-checkbox-item input[type="checkbox"]:checked + label::after {
-  transform: translateY(-50%) scale(1);
+.notes-checkbox-item input[type="checkbox"]:checked ~ label::after {
+  transform: translate(-50%, -50%) scale(1);
 }
 .notes-checkbox-item input[type="checkbox"]:focus + label::before {
   box-shadow: 0 0 0 3px var(--primary-glow);

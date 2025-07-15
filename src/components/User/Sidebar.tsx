@@ -66,7 +66,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
       <div className="header-right">
         <div className="search-container">
-          <AiOutlineSearch />
+          <span className="search-icon">
+            <AiOutlineSearch />
+          </span>
           <input type="text" placeholder="Search notes..." />
         </div>
         <button className="add-button">+</button>

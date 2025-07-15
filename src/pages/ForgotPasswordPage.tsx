@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 const ForgotPasswordPage: React.FC = () => {
   return (
     <div className="form-content">
-      <h2>Quên mật khẩu</h2>
+      <h2>Forgot Password</h2>
       <p className="subtitle">
-        Nhập email của bạn để nhận liên kết đặt lại mật khẩu
+        Enter your email to receive a password reset link
       </p>
 
       <form action="#">
@@ -15,17 +15,17 @@ const ForgotPasswordPage: React.FC = () => {
           <input
             type="email"
             id="email"
-            placeholder="nhapemail@diachi.com"
+            placeholder="yourname@example.com"
             required
           />
         </div>
         <button type="submit" className="signin-btn">
-          Gửi liên kết đặt lại mật khẩu
+          Send Reset Link
         </button>
       </form>
 
       <p className="signup-link">
-        Quay lại trang <Link to="/login">Đăng nhập</Link>
+        Back to <Link to="/login">Login</Link> page
       </p>
     </div>
   );
