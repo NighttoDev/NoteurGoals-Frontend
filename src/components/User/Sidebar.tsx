@@ -55,8 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/dashboard/friends" className={getNavLinkClass}>
             <FiUsers /> FRIENDS
           </NavLink>
-          <NavLink to="/dashboard/account" className={getNavLinkClass}>
-            <CgProfile /> ACCOUNT
+          <NavLink to="/dashboard/milestones" className={getNavLinkClass}>
+            <CgProfile /> MILESTONES
           </NavLink>
           <NavLink to="/dashboard/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS

@@ -1,6 +1,11 @@
 // src/routes/index.tsx
 
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 
 // --- Layouts ---
 import HomeLayout from "../layouts/Home";
@@ -19,6 +24,7 @@ import GoalsPage from "../pages/User/Goals/Goals";
 import NotesPage from "../pages/User/Notes/Notes";
 import Schedule from "../pages/User/Schedule";
 import Friends from "../pages/User/Friends";
+import Milestones from "../pages/User/Milestones";
 import Settings from "../pages/User/Settings";
 import AddGoalsPage from "../pages/Admin/Goals/AddGoals";
 import AddNotePage from "../pages/Admin/Notes/AddNotes";
@@ -30,7 +36,6 @@ import AdminGoalsPage from "../pages/Admin/Goals/GoalsPage";
 import AdminNotesPage from "../pages/Admin/Notes/NotesPage";
 import AdminSchedulesPage from "../pages/Admin/Schedules/SchedulesPage";
 
-
 // --- AUTHENTICATION HELPERS ---
 const isAuthenticated = (): boolean => !!localStorage.getItem("auth_token");
 
@@ -39,7 +44,7 @@ const isAdmin = (): boolean => {
   if (!userInfo) return false;
   try {
     const user = JSON.parse(userInfo);
-    return user.role === 'admin';
+    return user.role === "admin";
   } catch (e) {
     return false;
   }
@@ -60,7 +65,6 @@ const RequireAdmin: React.FC = () => {
   return isAdmin() ? <Outlet /> : <Navigate to="/dashboard" replace />;
 };
 
-
 // --- ROUTER CONFIGURATION ---
 const router = createBrowserRouter([
   // =======================================================
@@ -80,7 +84,7 @@ const router = createBrowserRouter([
       { path: "/auth/social-callback", element: <SocialAuthCallback /> },
     ],
   },
-  
+
   // =======================================================
   // --- 2. USER ROUTES (Yêu cầu đăng nhập) ---
   // =======================================================
@@ -100,6 +104,7 @@ const router = createBrowserRouter([
           { path: "notes/edit/:id", element: <EditNotePage /> },
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
+          { path: "milestones", element: <Milestones /> },
           { path: "settings", element: <Settings /> },
         ],
       },
@@ -112,7 +117,7 @@ const router = createBrowserRouter([
   // =======================================================
   {
     // Bọc tất cả các route bên trong bằng RequireAuth
-    element: <RequireAuth />, 
+    element: <RequireAuth />,
     children: [
       {
         // Tiếp tục bọc các route admin bằng RequireAdmin
@@ -130,9 +135,9 @@ const router = createBrowserRouter([
               { path: "schedules", element: <AdminSchedulesPage /> },
             ],
           },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   },
 ]);
 
