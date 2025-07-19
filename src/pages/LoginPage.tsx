@@ -146,40 +146,10 @@ const LoginPage: React.FC = () => {
       <p className="subtitle">Sign in to discover the power of smart notes</p>
 
       {/* Success message */}
-      {successMessage && (
-        <p
-          className="form-success"
-          style={{
-            color: "green",
-            textAlign: "center",
-            backgroundColor: "#e8f5e9",
-            padding: "10px",
-            borderRadius: "5px",
-            marginBottom: "1rem",
-            border: "1px solid #c8e6c9",
-          }}
-        >
-          {successMessage}
-        </p>
-      )}
+      {successMessage && <p className="form-success">{successMessage}</p>}
 
       {/* General error (from API or Social Login) */}
-      {error && (
-        <p
-          className="form-error"
-          style={{
-            color: "#D8000C",
-            backgroundColor: "#FFD2D2",
-            textAlign: "center",
-            padding: "10px",
-            borderRadius: "5px",
-            marginBottom: "1rem",
-            border: "1px solid #D8000C",
-          }}
-        >
-          {error}
-        </p>
-      )}
+      {error && <p className="form-error">{error}</p>}
 
       <form onSubmit={handleEmailLogin} noValidate>
         <div className="form-group">
@@ -193,9 +163,7 @@ const LoginPage: React.FC = () => {
             disabled={loading}
           />
           {fieldErrors.email && (
-            <small style={{ color: "red", marginTop: "4px", display: "block" }}>
-              {fieldErrors.email}
-            </small>
+            <small className="form-field-error">{fieldErrors.email}</small>
           )}
         </div>
         <div className="form-group">
@@ -209,9 +177,7 @@ const LoginPage: React.FC = () => {
             disabled={loading}
           />
           {fieldErrors.password && (
-            <small style={{ color: "red", marginTop: "4px", display: "block" }}>
-              {fieldErrors.password}
-            </small>
+            <small className="form-field-error">{fieldErrors.password}</small>
           )}
         </div>
 

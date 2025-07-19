@@ -14,14 +14,15 @@ const RegisterPage: React.FC = () => {
 
   // State cho việc xử lý tải và lỗi
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation
+  const [error, setError] = useState<string | null>(null); // Lỗi chung từ API
+  const [errors, setErrors] = useState<any>({}); // Để lưu các lỗi validation từng trường
 
   // --- HOOKS ---
   const navigate = useNavigate();
 
   // --- CẤU HÌNH API ---
-  const API_BASE_URL = "http://localhost:8000/api";
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
   // --- HÀM VALIDATION PHÍA CLIENT ---
   const validate = () => {
@@ -45,7 +46,7 @@ const RegisterPage: React.FC = () => {
       ];
     }
     if (!termsAccepted) {
-      setError("You must accept the Terms of Service to continue.");
+      newErrors.terms = ["You must accept the Terms of Service to continue."];
     }
     return newErrors;
   };
@@ -100,10 +101,13 @@ const RegisterPage: React.FC = () => {
   // --- RENDER COMPONENT ---
   return (
     <div className="form-content">
-      <h2>Create Account</h2>
-      <p className="subtitle">Register to explore the power of smart records</p>
+      <h2>Sign Up</h2>
 
-      <form onSubmit={handleRegister}>
+      {/* Hiển thị lỗi chung từ server */}
+      {error && <p className="form-error">{error}</p>}
+
+      {/* THAY ĐỔI: Thêm noValidate vào form */}
+      <form onSubmit={handleRegister} noValidate>
         <div className="form-group">
           <label htmlFor="name">Full Name</label>
           <input
@@ -173,9 +177,6 @@ const RegisterPage: React.FC = () => {
           )}
         </div>
 
-        {/* Hiển thị lỗi chung (từ server hoặc từ validation điều khoản) */}
-        {error && <p className="form-error">{error}</p>}
-
         <div className="form-options">
           <div className="remember-me">
             <input
@@ -190,6 +191,9 @@ const RegisterPage: React.FC = () => {
               I agree to the <Link to="/terms">Terms of Service</Link>
             </label>
           </div>
+          {getError("terms") && (
+            <small className="form-field-error">{getError("terms")}</small>
+          )}
         </div>
 
         <button
