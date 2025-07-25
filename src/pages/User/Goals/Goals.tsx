@@ -560,6 +560,7 @@ const GoalsPage: React.FC = () => {
   return (
     <main className="goals-main-content">
       <section className="goals-section">
+        <h1 className="goals-page-title">My Goals</h1>
         <div className="goals-header">
           <div className="goals-actions">
             <div className="goals-filter-tabs" ref={filterTabsRef}>

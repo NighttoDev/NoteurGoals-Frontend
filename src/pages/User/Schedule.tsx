@@ -286,25 +286,28 @@ const Schedule: React.FC = () => {
   }, [searchTerm, events]);
 
   return (
-    <main className="main-content">
+    <main className="schedule-main-content">
       <div className="schedule-page-container">
         {/* Calendar View */}
-        <div className="calendar-container">
-          <div className="calendar-header">
-            <h2 id="month-year">{monthYearString}</h2>
-            <div className="calendar-nav">
+        <div className="schedule-calendar-container">
+          <div className="schedule-calendar-header">
+            <h2 id="schedule-month-year">{monthYearString}</h2>
+            <div className="schedule-calendar-nav">
               <button
-                id="prev-month"
+                id="schedule-prev-month"
                 title="Previous Month"
                 onClick={() => navigateMonth("prev")}
               >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
-              <button id="today-btn" onClick={() => navigateMonth("today")}>
+              <button
+                id="schedule-today-btn"
+                onClick={() => navigateMonth("today")}
+              >
                 Today
               </button>
               <button
-                id="next-month"
+                id="schedule-next-month"
                 title="Next Month"
                 onClick={() => navigateMonth("next")}
               >
@@ -312,14 +315,14 @@ const Schedule: React.FC = () => {
               </button>
             </div>
           </div>
-          <div className="calendar-grid">
-            <div className="calendar-weekday">Sun</div>
-            <div className="calendar-weekday">Mon</div>
-            <div className="calendar-weekday">Tue</div>
-            <div className="calendar-weekday">Wed</div>
-            <div className="calendar-weekday">Thu</div>
-            <div className="calendar-weekday">Fri</div>
-            <div className="calendar-weekday">Sat</div>
+          <div className="schedule-calendar-grid">
+            <div className="schedule-calendar-weekday">Sun</div>
+            <div className="schedule-calendar-weekday">Mon</div>
+            <div className="schedule-calendar-weekday">Tue</div>
+            <div className="schedule-calendar-weekday">Wed</div>
+            <div className="schedule-calendar-weekday">Thu</div>
+            <div className="schedule-calendar-weekday">Fri</div>
+            <div className="schedule-calendar-weekday">Sat</div>
 
             {calendarDays.map((day, index) => {
               const dayEvents = getEventsForDay(day);
@@ -328,18 +331,18 @@ const Schedule: React.FC = () => {
               return (
                 <div
                   key={index}
-                  className={`calendar-day ${isToday(day) ? "today" : ""} ${
-                    isOtherMonth ? "other-month" : ""
-                  }`}
+                  className={`schedule-calendar-day ${
+                    isToday(day) ? "schedule-today" : ""
+                  } ${isOtherMonth ? "schedule-other-month" : ""}`}
                   onClick={() => day && openAddModal(day)}
                 >
-                  {day && <div className="day-number">{day}</div>}
+                  {day && <div className="schedule-day-number">{day}</div>}
                   {dayEvents.length > 0 && (
-                    <div className="events-in-day">
+                    <div className="schedule-events-in-day">
                       {dayEvents.map((event) => (
                         <div
                           key={event.event_id}
-                          className="event-item"
+                          className="schedule-event-item"
                           onClick={(e) => {
                             e.stopPropagation();
                             openEditModal(event);
@@ -358,26 +361,27 @@ const Schedule: React.FC = () => {
         </div>
 
         {/* Agenda View */}
-        <div className="agenda-container">
-          <div className="agenda-header">
+        <div className="schedule-agenda-container">
+          <div className="schedule-agenda-header">
             <h2>Upcoming Agenda</h2>
             <button
-              className="btn btn-primary"
-              id="add-event-btn"
+              className="schedule-btn schedule-btn-primary"
+              id="schedule-add-event-btn"
               onClick={() => openAddModal()}
             >
               <FontAwesomeIcon icon={faPlus} /> New
             </button>
           </div>
-          <div className="agenda-list">
-            {filteredEvents.map((event) => (
+
+          <div className="schedule-agenda-list">
+            {events.map((event) => (
               <div
                 key={event.event_id}
-                className="agenda-item"
+                className="schedule-agenda-item"
                 onClick={() => openEditModal(event)}
               >
-                <h4 className="agenda-item-title">{event.title}</h4>
-                <p className="agenda-item-time">
+                <h4 className="schedule-agenda-item-title">{event.title}</h4>
+                <p className="schedule-agenda-item-time">
                   {new Date(event.event_time).toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
@@ -386,7 +390,7 @@ const Schedule: React.FC = () => {
                   })}{" "}
                   - {event.event_time.slice(11, 16)}
                 </p>
-                <p className="agenda-item-desc">{event.description}</p>
+                <p className="schedule-agenda-item-desc">{event.description}</p>
               </div>
             ))}
           </div>
@@ -412,72 +416,77 @@ const Schedule: React.FC = () => {
             <div className="schedule-modal-body">
               <form className="schedule-modal-form" onSubmit={handleAddSubmit}>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-title-input-add">Title</label>
+                  <label htmlFor="schedule-event-title-input-add">Title</label>
                   <input
                     type="text"
-                    id="event-title-input-add"
+                    id="schedule-event-title-input-add"
                     value={addForm.title}
                     onChange={(e) =>
                       setAddForm((f) => ({ ...f, title: e.target.value }))
                     }
                   />
                   {addErrors.title && (
-                    <div className="form-error">{addErrors.title}</div>
+                    <div className="schedule-form-error">{addErrors.title}</div>
                   )}
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-description-input-add">
+                  <label htmlFor="schedule-event-description-input-add">
                     Description
                   </label>
                   <textarea
-                    id="event-description-input-add"
+                    id="schedule-event-description-input-add"
                     value={addForm.description}
                     onChange={(e) =>
                       setAddForm((f) => ({ ...f, description: e.target.value }))
                     }
                   />
-                  {/* Hiển thị lỗi nếu có */}
                   {addErrors.description && (
-                    <div className="form-error">{addErrors.description}</div>
+                    <div className="schedule-form-error">
+                      {addErrors.description}
+                    </div>
                   )}
                 </div>
                 <div className="schedule-modal-group-inline">
                   <div className="schedule-modal-group">
-                    <label htmlFor="event-date-input-add">Date</label>
+                    <label htmlFor="schedule-event-date-input-add">Date</label>
                     <input
                       type="date"
-                      id="event-date-input-add"
+                      id="schedule-event-date-input-add"
                       value={addForm.date}
                       onChange={(e) =>
                         setAddForm((f) => ({ ...f, date: e.target.value }))
                       }
                     />
                     {addErrors.date && (
-                      <div className="form-error">{addErrors.date}</div>
+                      <div className="schedule-form-error">
+                        {addErrors.date}
+                      </div>
                     )}
                   </div>
                   <div className="schedule-modal-group">
-                    <label htmlFor="event-time-input-add">Time</label>
+                    <label htmlFor="schedule-event-time-input-add">Time</label>
                     <input
                       type="time"
-                      id="event-time-input-add"
+                      id="schedule-event-time-input-add"
                       value={addForm.time}
                       onChange={(e) =>
                         setAddForm((f) => ({ ...f, time: e.target.value }))
                       }
                     />
                     {addErrors.time && (
-                      <div className="form-error">{addErrors.time}</div>
+                      <div className="schedule-form-error">
+                        {addErrors.time}
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-link-goal-select-add">
+                  <label htmlFor="schedule-event-link-goal-select-add">
                     Link to Goal
                   </label>
                   <input
                     type="text"
-                    id="event-link-goal-select-add"
+                    id="schedule-event-link-goal-select-add"
                     value={addForm.linkedGoal}
                     onChange={(e) =>
                       setAddForm((f) => ({
@@ -488,12 +497,14 @@ const Schedule: React.FC = () => {
                     placeholder="Goal ID (nếu có)"
                   />
                   {addErrors.linkedGoal && (
-                    <div className="form-error">{addErrors.linkedGoal}</div>
+                    <div className="schedule-form-error">
+                      {addErrors.linkedGoal}
+                    </div>
                   )}
                 </div>
                 <div className="schedule-modal-footer">
                   <button
-                    className="btn btn-secondary"
+                    className="schedule-btn schedule-btn-secondary"
                     onClick={closeAddModal}
                     type="button"
                     disabled={isSubmitting}
@@ -502,7 +513,7 @@ const Schedule: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="schedule-btn schedule-btn-primary"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -537,25 +548,27 @@ const Schedule: React.FC = () => {
             <div className="schedule-modal-body">
               <form className="schedule-modal-form" onSubmit={handleEditSubmit}>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-title-input-edit">Title</label>
+                  <label htmlFor="schedule-event-title-input-edit">Title</label>
                   <input
                     type="text"
-                    id="event-title-input-edit"
+                    id="schedule-event-title-input-edit"
                     value={editForm.title}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, title: e.target.value }))
                     }
                   />
                   {editErrors.title && (
-                    <div className="form-error">{editErrors.title}</div>
+                    <div className="schedule-form-error">
+                      {editErrors.title}
+                    </div>
                   )}
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-description-input-edit">
+                  <label htmlFor="schedule-event-description-input-edit">
                     Description
                   </label>
                   <textarea
-                    id="event-description-input-edit"
+                    id="schedule-event-description-input-edit"
                     value={editForm.description}
                     onChange={(e) =>
                       setEditForm((f) => ({
@@ -567,41 +580,45 @@ const Schedule: React.FC = () => {
                 </div>
                 <div className="schedule-modal-group-inline">
                   <div className="schedule-modal-group">
-                    <label htmlFor="event-date-input-edit">Date</label>
+                    <label htmlFor="schedule-event-date-input-edit">Date</label>
                     <input
                       type="date"
-                      id="event-date-input-edit"
+                      id="schedule-event-date-input-edit"
                       value={editForm.date}
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, date: e.target.value }))
                       }
                     />
                     {editErrors.date && (
-                      <div className="form-error">{editErrors.date}</div>
+                      <div className="schedule-form-error">
+                        {editErrors.date}
+                      </div>
                     )}
                   </div>
                   <div className="schedule-modal-group">
-                    <label htmlFor="event-time-input-edit">Time</label>
+                    <label htmlFor="schedule-event-time-input-edit">Time</label>
                     <input
                       type="time"
-                      id="event-time-input-edit"
+                      id="schedule-event-time-input-edit"
                       value={editForm.time}
                       onChange={(e) =>
                         setEditForm((f) => ({ ...f, time: e.target.value }))
                       }
                     />
                     {editErrors.time && (
-                      <div className="form-error">{editErrors.time}</div>
+                      <div className="schedule-form-error">
+                        {editErrors.time}
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="schedule-modal-group">
-                  <label htmlFor="event-link-goal-select-edit">
+                  <label htmlFor="schedule-event-link-goal-select-edit">
                     Link to Goal
                   </label>
                   <input
                     type="text"
-                    id="event-link-goal-select-edit"
+                    id="schedule-event-link-goal-select-edit"
                     value={editForm.linkedGoal}
                     onChange={(e) =>
                       setEditForm((f) => ({
@@ -612,12 +629,14 @@ const Schedule: React.FC = () => {
                     placeholder="Goal ID (nếu có)"
                   />
                   {editErrors.linkedGoal && (
-                    <div className="form-error">{editErrors.linkedGoal}</div>
+                    <div className="schedule-form-error">
+                      {editErrors.linkedGoal}
+                    </div>
                   )}
                 </div>
                 <div className="schedule-modal-footer">
                   <button
-                    className="btn btn-danger"
+                    className="schedule-btn schedule-btn-danger"
                     onClick={handleDelete}
                     type="button"
                     disabled={isDeleting}
@@ -629,7 +648,7 @@ const Schedule: React.FC = () => {
                     )}
                   </button>
                   <button
-                    className="btn btn-secondary"
+                    className="schedule-btn schedule-btn-secondary"
                     onClick={closeEditModal}
                     type="button"
                     disabled={isSubmitting || isDeleting}
@@ -638,7 +657,7 @@ const Schedule: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="schedule-btn schedule-btn-primary"
                     disabled={isSubmitting || isDeleting}
                   >
                     {isSubmitting ? (

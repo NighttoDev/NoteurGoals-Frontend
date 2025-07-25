@@ -18,7 +18,7 @@
   --font-family: "Poppins", sans-serif;
 }
 
-/* --- Main Header (Giữ nguyên từ file của bạn) --- */
+/* --- Main Header --- */
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -82,27 +82,33 @@
   color: var(--text-dark);
 }
 
+/* --- Search Container (Đã điều chỉnh) --- */
 .search-container {
   position: relative;
   display: flex;
   align-items: center;
 }
-.search-container i {
-  position: absolute;
-  left: 12px;
+.search-icon {
+  position: fixed;
+  right: 135px;
+  top: 54%;
+  transform: translateY(-50%);
   color: var(--text-light);
-  transition: color 0.3s ease;
+  font-size: 1.3rem; /* Tăng kích thước icon */
+  z-index: 2;
+  pointer-events: none;
 }
 .search-container input {
   border: 1px solid transparent;
   background-color: #f3f4f6;
   border-radius: 8px;
-  padding: 0.5rem 0.75rem 0.5rem 35px;
-  width: 180px;
+  padding: 0.6rem 0.75rem 0.6rem 10px; /* Đẩy text sang phải để đủ chỗ cho icon */
+  width: 200px; /* Tăng chiều rộng */
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 15px; /* Tăng kích thước chữ */
   color: var(--text-dark);
   transition: all 0.3s ease;
+  height: 40px; /* Cố định chiều cao */
 }
 .search-container input::placeholder {
   color: #9ca3af;
@@ -112,7 +118,7 @@
   border-color: var(--primary-purple);
   background-color: var(--white);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-  width: 220px;
+  width: 240px; /* Tăng chiều rộng khi focus */
 }
 .search-container:focus-within i {
   color: var(--primary-purple);
