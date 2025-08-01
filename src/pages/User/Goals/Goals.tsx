@@ -1,3 +1,5 @@
+// src/pages/User/Goals/Goals.tsx
+
 import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import "../../../assets/css/User/goals.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,8 +11,6 @@ import {
   faCalendarAlt,
   faStickyNote,
   faPaperclip,
-  faCheckSquare,
-  faBook,
   faEllipsisV,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
@@ -24,10 +24,11 @@ import {
   updateShareSettings,
   getGoal,
   createMilestone,
-  updateMilestone,
+  updateMilestone, // Đảm bảo đã import
   deleteMilestone,
 } from "../../../services/goalsService";
 
+// --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
 type Sharing = "private" | "friends" | "public";
 
@@ -88,19 +89,28 @@ const sharingTitles = {
   public: "Public",
 };
 
-const statusTags = {
+const statusTags: { [key: string]: string } = {
   in_progress: "In Progress",
   completed: "Completed",
   new: "New",
   cancelled: "Cancelled",
 };
 
+// --- GOAL CARD COMPONENT ---
 const GoalCard = memo(
-  ({ goal, onEdit }: { goal: Goal; onEdit: (goal: Goal) => void }) => (
+  ({
+    goal,
+    onEdit,
+    onMilestoneToggle, // THÊM PROP MỚI
+  }: {
+    goal: Goal;
+    onEdit: (goal: Goal) => void;
+    onMilestoneToggle: (milestoneId: string, isCompleted: boolean) => void; // THÊM KIỂU DỮ LIỆU
+  }) => (
     <div
       className={`goals-card${
         goal.status === "cancelled" ? " goals-is-cancelled" : ""
-      } goals-border-${goal.status}`}
+      }`}
       data-status={goal.status}
     >
       <div className="goals-card-header">
@@ -153,9 +163,12 @@ const GoalCard = memo(
             : ""}
         </span>
       </div>
-      <div className={`goals-card-status goals-status-tag-${goal.status}`}>
-        {statusTags[goal.status]}
-      </div>
+      {/* Hiển thị tag status nếu có */}
+      {goal.status && statusTags[goal.status] && (
+        <div className={`goals-card-status goals-status-tag-${goal.status}`}>
+          {statusTags[goal.status]}
+        </div>
+      )}
       <div className="goals-card-progress">
         <div className="goals-progress-bar">
           <div
@@ -182,8 +195,10 @@ const GoalCard = memo(
                 type="checkbox"
                 className="goals-milestone-checkbox"
                 id={milestone.milestone_id}
-                checked={milestone.is_completed}
-                readOnly
+                checked={!!milestone.is_completed} // Dùng !! để đảm bảo là boolean
+                onChange={(e) =>
+                  onMilestoneToggle(milestone.milestone_id!, e.target.checked)
+                }
               />
               <label
                 htmlFor={milestone.milestone_id}
@@ -235,6 +250,7 @@ const GoalCard = memo(
   )
 );
 
+// --- GOALS PAGE COMPONENT ---
 const GoalsPage: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
@@ -258,8 +274,8 @@ const GoalsPage: React.FC = () => {
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch goals từ API khi mount
-  useEffect(() => {
+  // Fetch goals
+  const fetchGoals = useCallback(() => {
     setLoading(true);
     getGoals()
       .then((res) => {
@@ -273,6 +289,10 @@ const GoalsPage: React.FC = () => {
       .catch(() => setErrorMsg("Failed to load goals."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
 
   // Move highlight bar
   useEffect(() => {
@@ -309,6 +329,7 @@ const GoalsPage: React.FC = () => {
           milestone_id: m.milestone_id,
           title: m.title,
           deadline: m.deadline,
+          is_completed: m.is_completed,
         }))
       );
       setDeletedMilestoneIds([]);
@@ -359,47 +380,18 @@ const GoalsPage: React.FC = () => {
     (g) => filter === "all" || g.status === filter
   );
 
-  // Milestone handlers (API riêng)
+  // Milestone handlers
   const addMilestone = useCallback(() => {
     setMilestones((prev) => [...prev, { title: "", deadline: "" }]);
   }, []);
-
   const updateMilestoneHandler = useCallback(
-    async (idx: number, field: "title" | "deadline", value: string) => {
-      setMilestones((prev) => {
-        const next = prev.map((m, i) =>
-          i === idx ? { ...m, [field]: value } : m
-        );
-        return next;
-      });
-
-      if (editingGoal && milestones[idx]?.milestone_id) {
-        setLoading(true);
-        try {
-          const milestoneId = milestones[idx].milestone_id!;
-          await updateMilestone(milestoneId, {
-            ...milestones[idx],
-            [field]: value,
-          });
-          const updatedGoal = await getGoal(editingGoal.goal_id);
-          setEditingGoal(updatedGoal.data);
-          setMilestones(
-            (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
-              milestone_id: m.milestone_id,
-              title: m.title,
-              deadline: m.deadline,
-            }))
-          );
-        } catch {
-          setErrorMsg("Failed to update milestone.");
-        } finally {
-          setLoading(false);
-        }
-      }
+    (idx: number, field: "title" | "deadline", value: string) => {
+      setMilestones((prev) =>
+        prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m))
+      );
     },
-    [editingGoal, milestones]
+    []
   );
-
   const removeMilestone = useCallback((idx: number) => {
     setMilestones((prev) => {
       const removed = prev[idx];
@@ -413,6 +405,7 @@ const GoalsPage: React.FC = () => {
       return prev.filter((_, i) => i !== idx);
     });
   }, []);
+
   // Form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,14 +413,12 @@ const GoalsPage: React.FC = () => {
     setLoading(true);
     try {
       if (modalMode === "add") {
-        // Khi tạo mới goal, gửi milestones luôn
         const res = await createGoal({
           title: form.title,
           description: form.description,
           start_date: form.start_date,
           end_date: form.end_date,
           sharing_type: form.sharing_type,
-          collaborators: form.collaborators,
           milestones: milestones.map((m) => ({
             title: m.title,
             deadline: m.deadline
@@ -437,76 +428,51 @@ const GoalsPage: React.FC = () => {
         });
         setGoals((prev) => [...prev, res.data.data || res.data]);
       } else if (modalMode === "edit" && editingGoal) {
-        // Xóa milestones thực tế nếu có
         if (deletedMilestoneIds.length > 0) {
-          for (const id of deletedMilestoneIds) {
-            try {
-              await deleteMilestone(id);
-            } catch (err: any) {
-              if (err?.response?.status !== 404) throw err;
-            }
-          }
+          await Promise.all(
+            deletedMilestoneIds.map((id) =>
+              deleteMilestone(id).catch((err) => {
+                if (err?.response?.status !== 404) throw err;
+              })
+            )
+          );
         }
-        // Thêm các milestone mới (chưa có milestone_id)
         const newMilestones = milestones.filter((m) => !m.milestone_id);
-        for (const m of newMilestones) {
-          console.log("Tạo milestone:", {
-            goal_id: editingGoal.goal_id,
-            title: m.title,
-            deadline: m.deadline
-              ? new Date(m.deadline).toISOString().slice(0, 10)
-              : "",
-          });
-          try {
-            await createMilestone(editingGoal.goal_id, {
-              title: m.title,
-              deadline: m.deadline
-                ? new Date(m.deadline).toISOString().slice(0, 10)
-                : "",
-            });
-          } catch (err: any) {
-            setErrorMsg(
-              err?.response?.data?.message || "Failed to create milestone."
-            );
-            console.error("Create milestone error:", err?.response?.data, err);
-            setLoading(false);
-            return;
-          }
+        if (newMilestones.length > 0) {
+          await Promise.all(
+            newMilestones.map((m) =>
+              createMilestone(editingGoal.goal_id, {
+                title: m.title,
+                deadline: m.deadline
+                  ? new Date(m.deadline).toISOString().slice(0, 10)
+                  : "",
+              })
+            )
+          );
         }
-        // Reload lại goal để đồng bộ milestones
-        const updatedGoal = await getGoal(editingGoal.goal_id);
-        setEditingGoal(updatedGoal.data);
-        setMilestones(
-          (updatedGoal.data.milestones ?? []).map((m: Milestone) => ({
-            milestone_id: m.milestone_id,
-            title: m.title,
-            deadline: m.deadline,
-          }))
-        );
-        // Cập nhật goal (KHÔNG gửi milestones)
+
         const res = await updateGoal(editingGoal.goal_id, {
           title: form.title,
           description: form.description,
           start_date: form.start_date,
           end_date: form.end_date,
-          sharing_type: form.sharing_type,
-          collaborators: form.collaborators,
         });
+
+        const updatedGoalData = await getGoal(editingGoal.goal_id);
+        const finalGoal = updatedGoalData.data.data || updatedGoalData.data;
+
         setGoals((prev) =>
-          prev.map((g) =>
-            g.goal_id === editingGoal.goal_id ? res.data.data || res.data : g
-          )
+          prev.map((g) => (g.goal_id === editingGoal.goal_id ? finalGoal : g))
         );
       }
-      setIsModalOpen(false);
-      setErrors({});
+      closeModal();
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message || "Failed to save goal.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
   // Delete goal
   const handleDelete = async () => {
     if (!editingGoal) return;
@@ -514,8 +480,7 @@ const GoalsPage: React.FC = () => {
     try {
       await deleteGoal(editingGoal.goal_id);
       setGoals((prev) => prev.filter((g) => g.goal_id !== editingGoal.goal_id));
-      setIsModalOpen(false);
-      setErrors({});
+      closeModal();
     } catch (err) {
       setErrorMsg("Failed to delete goal.");
     } finally {
@@ -528,13 +493,15 @@ const GoalsPage: React.FC = () => {
     if (!editingGoal || !collaboratorInput.trim()) return;
     setLoading(true);
     try {
-      await addCollaborator(editingGoal.goal_id, {
+      const res = await addCollaborator(editingGoal.goal_id, {
         email: collaboratorInput.trim(),
       });
-      const res = await getGoal(editingGoal.goal_id);
-      setEditingGoal(res.data);
+      const updatedGoalData = res.data.data || res.data;
+      setEditingGoal(updatedGoalData);
       setGoals((prev) =>
-        prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+        prev.map((g) =>
+          g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
+        )
       );
       setCollaboratorInput("");
     } catch {
@@ -548,11 +515,13 @@ const GoalsPage: React.FC = () => {
     if (!editingGoal) return;
     setLoading(true);
     try {
-      await removeCollaborator(editingGoal.goal_id, userId);
-      const res = await getGoal(editingGoal.goal_id);
-      setEditingGoal(res.data);
+      const res = await removeCollaborator(editingGoal.goal_id, userId);
+      const updatedGoalData = res.data.data || res.data;
+      setEditingGoal(updatedGoalData);
       setGoals((prev) =>
-        prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+        prev.map((g) =>
+          g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
+        )
       );
     } catch {
       setErrorMsg("Failed to remove collaborator.");
@@ -561,24 +530,76 @@ const GoalsPage: React.FC = () => {
     }
   };
 
+  // --- HÀM MỚI ĐỂ CẬP NHẬT MILESTONE ---
+  const handleMilestoneToggle = useCallback(
+    async (goalId: string, milestoneId: string, isCompleted: boolean) => {
+      // Optimistic Update: Cập nhật giao diện ngay lập tức
+      setGoals((prevGoals) =>
+        prevGoals.map((g) => {
+          if (g.goal_id === goalId) {
+            return {
+              ...g,
+              milestones: g.milestones.map((m) =>
+                m.milestone_id === milestoneId
+                  ? { ...m, is_completed: isCompleted }
+                  : m
+              ),
+            };
+          }
+          return g;
+        })
+      );
+
+      try {
+        const res = await updateMilestone(milestoneId, {
+          is_completed: isCompleted,
+        });
+        const updatedGoalData = res.data.data || res.data;
+
+        // Cập nhật lại state với dữ liệu chính xác từ server (bao gồm status mới)
+        setGoals((prevGoals) =>
+          prevGoals.map((g) =>
+            g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
+          )
+        );
+      } catch (err: any) {
+        setErrorMsg("Failed to update milestone. Reverting changes.");
+        // Nếu có lỗi, fetch lại toàn bộ dữ liệu để đảm bảo đồng bộ
+        fetchGoals();
+      }
+    },
+    [fetchGoals]
+  );
+
   // Sharing handler
   const handleChangeSharing = async (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    setForm((f) => ({ ...f, sharing_type: e.target.value as Sharing }));
+    const newSharingType = e.target.value as Sharing;
+    setForm((f) => ({ ...f, sharing_type: newSharingType }));
+
     if (editingGoal) {
       setLoading(true);
       try {
         await updateShareSettings(editingGoal.goal_id, {
-          share_type: e.target.value,
+          share_type: newSharingType,
         });
         const res = await getGoal(editingGoal.goal_id);
-        setEditingGoal(res.data);
+        const updatedGoalData = res.data.data || res.data;
+        setEditingGoal(updatedGoalData);
         setGoals((prev) =>
-          prev.map((g) => (g.goal_id === res.data.goal_id ? res.data : g))
+          prev.map((g) =>
+            g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
+          )
         );
-      } catch {
-        setErrorMsg("Failed to update sharing.");
+      } catch (err: any) {
+        setErrorMsg(
+          err?.response?.data?.message || "Failed to update sharing."
+        );
+        setForm((f) => ({
+          ...f,
+          sharing_type: editingGoal.shares?.[0]?.share_type || "private",
+        }));
       } finally {
         setLoading(false);
       }
@@ -603,7 +624,6 @@ const GoalsPage: React.FC = () => {
                     className={`goals-filter-btn${
                       filter === s ? " goals-active" : ""
                     }`}
-                    data-filter={s}
                     onClick={() => setFilter(s)}
                     type="button"
                   >
@@ -618,86 +638,90 @@ const GoalsPage: React.FC = () => {
             </div>
             <button
               className="goals-btn goals-btn-primary"
-              id="add-goal-btn"
               onClick={() => openModal("add")}
-              type="button"
             >
               <FontAwesomeIcon icon={faPlus} /> New Goal
             </button>
           </div>
         </div>
-        {loading && <div className="goals-loading">Loading...</div>}
-        {errorMsg && <div className="form-error">{errorMsg}</div>}
+
+        {errorMsg && (
+          <div
+            className="form-error"
+            style={{ color: "red", textAlign: "center", padding: "1rem" }}
+          >
+            {errorMsg}
+          </div>
+        )}
         <div className="goals-grid">
-          {filteredGoals.length === 0 && !loading && (
-            <div
-              style={{ textAlign: "center", color: "#888", marginTop: "2rem" }}
-            >
-              No goals found.
+          {loading ? (
+            <div className="goals-loading-container">
+              <div className="goals-loading-spinner">
+                {/* 8 divs để tạo 8 chấm xoay tròn */}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+              <p>Loading your goals...</p>
+            </div>
+          ) : filteredGoals.length > 0 ? (
+            filteredGoals.map((goal) => (
+              <GoalCard
+                key={goal.goal_id}
+                goal={goal}
+                onEdit={() => openModal("edit", goal)}
+                onMilestoneToggle={(milestoneId, isCompleted) =>
+                  handleMilestoneToggle(goal.goal_id, milestoneId, isCompleted)
+                }
+              />
+            ))
+          ) : (
+            <div className="goals-no-goals-found">
+              No goals found for the selected filter.
             </div>
           )}
-          {filteredGoals.map((goal) => (
-            <GoalCard
-              key={goal.goal_id}
-              goal={goal}
-              onEdit={() => openModal("edit", goal)}
-            />
-          ))}
         </div>
       </section>
+
       {isModalOpen && (
-        <div
-          className="goals-modal-overlay"
-          style={{ display: "flex" }}
-          onClick={closeModal}
-        >
+        <div className="goals-modal-overlay" onClick={closeModal}>
           <div
             className="goals-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="goals-modal-header">
-              <h2 id="goal-modal-title">
-                {modalMode === "add" ? "Add New Goal" : "Edit Goal"}
-              </h2>
+              <h2>{modalMode === "add" ? "Add New Goal" : "Edit Goal"}</h2>
               <button className="goals-modal-close" onClick={closeModal}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
             <div className="goals-modal-body">
-              <form
-                className="goals-form"
-                id="goal-form"
-                onSubmit={handleSubmit}
-                noValidate
-              >
+              <form className="goals-form" onSubmit={handleSubmit} noValidate>
                 <div className="goals-form-group">
                   <label htmlFor="goal-title-input">Title</label>
                   <input
                     type="text"
                     id="goal-title-input"
-                    placeholder="e.g., Learn a new programming language"
                     value={form.title}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, title: e.target.value }))
                     }
                   />
-                  {errors.title && (
-                    <div className="form-error">{errors.title}</div>
-                  )}
                 </div>
                 <div className="goals-form-group">
                   <label htmlFor="goal-description-input">Description</label>
                   <textarea
                     id="goal-description-input"
-                    placeholder="Describe your goal and why it's important..."
                     value={form.description}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, description: e.target.value }))
                     }
                   ></textarea>
-                  {errors.description && (
-                    <div className="form-error">{errors.description}</div>
-                  )}
                 </div>
                 <div className="goals-form-group-inline">
                   <div className="goals-form-group">
@@ -710,9 +734,6 @@ const GoalsPage: React.FC = () => {
                         setForm((f) => ({ ...f, start_date: e.target.value }))
                       }
                     />
-                    {errors.start_date && (
-                      <div className="form-error">{errors.start_date}</div>
-                    )}
                   </div>
                   <div className="goals-form-group">
                     <label htmlFor="goal-end-date">End Date</label>
@@ -724,14 +745,12 @@ const GoalsPage: React.FC = () => {
                         setForm((f) => ({ ...f, end_date: e.target.value }))
                       }
                     />
-                    {errors.end_date && (
-                      <div className="form-error">{errors.end_date}</div>
-                    )}
                   </div>
                 </div>
+
                 <div className="goals-form-group">
                   <label>Milestones</label>
-                  <div id="goal-form-milestones-container">
+                  <div>
                     {milestones.map((m, idx) => (
                       <div
                         key={m.milestone_id || idx}
@@ -745,11 +764,6 @@ const GoalsPage: React.FC = () => {
                             updateMilestoneHandler(idx, "title", e.target.value)
                           }
                         />
-                        {errors[`milestone-title-${idx}`] && (
-                          <div className="form-error">
-                            {errors[`milestone-title-${idx}`]}
-                          </div>
-                        )}
                         <input
                           type="date"
                           value={m.deadline}
@@ -761,15 +775,9 @@ const GoalsPage: React.FC = () => {
                             )
                           }
                         />
-                        {errors[`milestone-deadline-${idx}`] && (
-                          <div className="form-error">
-                            {errors[`milestone-deadline-${idx}`]}
-                          </div>
-                        )}
                         <button
                           type="button"
                           className="goals-form-remove-milestone"
-                          title="Remove milestone"
                           onClick={() => removeMilestone(idx)}
                         >
                           <FontAwesomeIcon icon={faTimes} />
@@ -780,24 +788,48 @@ const GoalsPage: React.FC = () => {
                   <button
                     type="button"
                     className="goals-btn goals-btn-secondary"
-                    id="add-milestone-btn"
-                    style={{ marginTop: "0.5rem" }}
                     onClick={addMilestone}
                   >
                     <FontAwesomeIcon icon={faPlus} /> Add Milestone
                   </button>
                 </div>
+
                 <div className="goals-form-group-inline">
                   <div className="goals-form-group">
                     <label htmlFor="goal-collaborators">Collaborators</label>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    {editingGoal && editingGoal.collaborators.length > 0 && (
+                      <div className="goals-form-collaborators-list">
+                        {editingGoal.collaborators.map((c) => (
+                          <div
+                            key={c.user_id}
+                            className="goals-form-collaborator-item"
+                          >
+                            <img
+                              src={c.avatar}
+                              alt={c.name}
+                              className="goals-form-collaborator-avatar"
+                            />
+                            <button
+                              type="button"
+                              className="goals-form-collaborator-remove"
+                              onClick={() =>
+                                handleRemoveCollaborator(c.user_id)
+                              }
+                              disabled={loading}
+                            >
+                              <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="goals-form-add-collaborator">
                       <input
                         type="text"
-                        id="goal-collaborators"
-                        placeholder="Add people by email..."
+                        placeholder="Add by email..."
                         value={collaboratorInput}
                         onChange={(e) => setCollaboratorInput(e.target.value)}
-                        disabled={loading}
+                        disabled={loading || modalMode === "add"}
                       />
                       <button
                         type="button"
@@ -810,41 +842,6 @@ const GoalsPage: React.FC = () => {
                         Add
                       </button>
                     </div>
-                    {editingGoal &&
-                      editingGoal.collaborators &&
-                      editingGoal.collaborators.length > 0 && (
-                        <ul
-                          style={{
-                            margin: "8px 0 0 0",
-                            padding: 0,
-                            listStyle: "none",
-                          }}
-                        >
-                          {editingGoal.collaborators.map((c) => (
-                            <li
-                              key={c.user_id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                              }}
-                            >
-                              <span>{c.name || c.user_id}</span>
-                              <button
-                                type="button"
-                                className="goals-btn goals-btn-danger"
-                                style={{ padding: "2px 8px", fontSize: 12 }}
-                                onClick={() =>
-                                  handleRemoveCollaborator(c.user_id)
-                                }
-                                disabled={loading}
-                              >
-                                Remove
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                   </div>
                   <div className="goals-form-group">
                     <label htmlFor="goal-sharing-select">Sharing</label>
@@ -854,17 +851,17 @@ const GoalsPage: React.FC = () => {
                       onChange={handleChangeSharing}
                       disabled={loading}
                     >
-                      <option value="private">Private (Only me)</option>
+                      <option value="private">Private</option>
                       <option value="friends">Friends Only</option>
                       <option value="public">Public</option>
                     </select>
                   </div>
                 </div>
+
                 <div className="goals-modal-footer">
                   {modalMode === "edit" && (
                     <button
                       className="goals-btn goals-btn-danger"
-                      id="delete-goal-btn"
                       type="button"
                       onClick={handleDelete}
                       disabled={loading}
@@ -874,7 +871,6 @@ const GoalsPage: React.FC = () => {
                   )}
                   <button
                     className="goals-btn goals-btn-secondary"
-                    id="cancel-goal-btn"
                     type="button"
                     onClick={closeModal}
                     disabled={loading}

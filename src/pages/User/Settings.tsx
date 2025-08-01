@@ -230,8 +230,18 @@ const SettingsPage = () => {
     return (
       <main className="settings-main-content">
         <h1 className="settings-page-title">Settings</h1>
-        <div style={{ textAlign: "center", padding: "50px" }}>
-          Đang tải dữ liệu người dùng...
+        <div className="settings-loading-container">
+          <div className="settings-loading-spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <p>Loading user data...</p>
         </div>
       </main>
     );
@@ -353,7 +363,7 @@ const SettingsPage = () => {
                         className="settings-avatar-upload-btn"
                         title="Đổi ảnh đại diện"
                       >
-                        Đổi ảnh
+                        <FaCamera />
                       </label>
                       <input
                         type="file"
@@ -447,7 +457,7 @@ const SettingsPage = () => {
               <div
                 className="settings-section-header"
                 style={{
-                  borderTop: "1px solid var(--border-color)",
+                  borderTop: "1px solid var(--border-main)",
                   borderRadius: 0,
                 }}
               >
@@ -589,7 +599,7 @@ const SettingsPage = () => {
                 <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
                 <p style={{ color: "var(--text-light)" }}>
                   You are currently on the{" "}
-                  <strong style={{ color: "var(--primary-purple)" }}>
+                  <strong style={{ color: "var(--primary-main)" }}>
                     Premium Monthly
                   </strong>{" "}
                   plan.
