@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import "../../assets/css/User/schedule.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,8 +18,7 @@ import {
   linkGoalToEvent,
   unlinkGoalFromEvent,
 } from "../../services/eventService";
-
-import { useSearch } from "../../hooks/searchContext";
+import { useSearch } from "../../hooks/searchContext"; // Thêm dòng này
 
 interface Event {
   event_id: string;
@@ -58,8 +57,11 @@ const Schedule: React.FC = () => {
   const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({});
   const [events, setEvents] = useState<Event[]>([]);
 
+  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+
   useEffect(() => {
     fetchEvents();
+    // eslint-disable-next-line
   }, []);
 
   const fetchEvents = async () => {
@@ -274,16 +276,13 @@ const Schedule: React.FC = () => {
     setCurrentDate(newDate);
   };
 
-  const { searchTerm } = useSearch();
-  const filteredEvents = useMemo(() => {
-    if (!searchTerm.trim()) return events;
-    const lowerSearch = searchTerm.toLowerCase();
-    return events.filter(
-      (event) =>
-        event.title.toLowerCase().includes(lowerSearch) ||
-        event.description.toLowerCase().includes(lowerSearch)
-    );
-  }, [searchTerm, events]);
+  // Lọc sự kiện theo searchTerm
+  const filteredEvents = events.filter(
+    (event) =>
+      !searchTerm ||
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <main className="schedule-main-content">
@@ -300,6 +299,7 @@ const Schedule: React.FC = () => {
               >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
+
               <button
                 id="schedule-today-btn"
                 onClick={() => navigateMonth("today")}
@@ -374,7 +374,7 @@ const Schedule: React.FC = () => {
           </div>
 
           <div className="schedule-agenda-list">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <div
                 key={event.event_id}
                 className="schedule-agenda-item"

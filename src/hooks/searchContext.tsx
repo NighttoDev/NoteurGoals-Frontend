@@ -1,9 +1,9 @@
-// src/contexts/SearchContext.tsx
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useMemo } from "react";
 
 interface SearchContextType {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  clearSearch: () => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -13,10 +13,15 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
+  const clearSearch = () => setSearchTerm("");
+
+  const value = useMemo(
+    () => ({ searchTerm, setSearchTerm, clearSearch }),
+    [searchTerm]
+  );
+
   return (
-    <SearchContext.Provider value={{ searchTerm, setSearchTerm }}>
-      {children}
-    </SearchContext.Provider>
+    <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
   );
 };
 

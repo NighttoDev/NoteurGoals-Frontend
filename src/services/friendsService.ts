@@ -34,21 +34,45 @@ export const getFriendsData = () => {
 };
 
 /**
- * Lấy danh sách tất cả các cộng tác viên.
- * API trả về: [ collaborator1, collaborator2, ... ]
+
+ * Lấy các mục tiêu được chia sẻ trong cộng đồng (Community Feed).
  */
-export const getCollaborators = () => {
-  return axiosAuth.get("/collaborators");
+export const getCommunityFeed = () => {
+  return axiosAuth.get("/community/feed");
+};
+
+/**
+ * Lấy danh sách gợi ý kết bạn từ server.
+ */
+export const getUserSuggestions = () => {
+  return axiosAuth.get("/users/suggestions");
+};
+
+/**
+ * Tìm kiếm người dùng theo query (tên hoặc email).
+ */
+export const searchUsers = (query: string) => {
+  // Mã hóa query để đảm bảo các ký tự đặc biệt được gửi đi an toàn
+  return axiosAuth.get(`/users/search?q=${encodeURIComponent(query)}`);
 };
 
 /**
  * Gửi lời mời kết bạn bằng email.
  */
-export const sendFriendRequest = (email: string) => {
+export const sendFriendRequestByEmail = (email: string) => {
   return axiosAuth.post("/friends/request", { email });
 };
 
 /**
+
+ * Gửi lời mời kết bạn bằng User ID.
+ */
+export const sendFriendRequestById = (userId: string) => {
+  return axiosAuth.post("/friends/request", { user_id: userId });
+};
+
+/**
+
  * Phản hồi một lời mời kết bạn.
  */
 export const respondFriendRequest = (
@@ -63,4 +87,11 @@ export const respondFriendRequest = (
  */
 export const deleteFriend = (friendshipId: string) => {
   return axiosAuth.delete(`/friends/${friendshipId}`);
+};
+
+/**
+ * Báo cáo một người dùng.
+ */
+export const reportUser = (userId: string, reason: string) => {
+  return axiosAuth.post(`/user/${userId}/report`, { reason });
 };

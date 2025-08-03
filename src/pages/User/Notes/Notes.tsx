@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getNotes,
   createNote,
@@ -18,11 +18,11 @@ import {
   faEllipsisVertical,
   faBullseye,
   faPaperclip,
+  faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
+import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
 
 interface NotesCard {
-
   id: string;
   title: string;
   content: string;
@@ -43,42 +43,6 @@ interface GoalOption {
 
 const NOTES_CACHE_KEY = "user_notes_cache";
 
-// NoteCardItem component tối ưu với React.memo
-const NoteCardItem = React.memo(
-  ({ note, onEdit }: { note: NoteCard; onEdit: (note: NoteCard) => void }) => (
-    <div
-      className={`note-card ${note.color ? `color-${note.color}` : ""}`}
-      onClick={() => onEdit(note)}
-    >
-      <div className="note-header">
-        <h3 className="note-title">{note.title}</h3>
-        <FontAwesomeIcon icon={faEllipsisVertical} className="note-menu" />
-      </div>
-      <div className="note-body">
-        <div className="note-content">{note.content}</div>
-        <div className="note-footer">
-          <span className="note-date">Updated: {note.updatedDate}</span>
-          <div className="note-meta">
-            {note.linkedGoal && (
-              <span
-                className="linked-goal"
-                title={`Linked to Goal: ${note.linkedGoal.title}`}
-              >
-                <FontAwesomeIcon icon={faBullseye} /> {note.linkedGoal.title}
-              </span>
-            )}
-            {note.attachments && (
-              <span>
-                <FontAwesomeIcon icon={faPaperclip} /> {note.attachments}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-);
-
 const NotesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -91,13 +55,14 @@ const NotesPage: React.FC = () => {
   const [addForm, setAddForm] = useState({ title: "", content: "" });
   const [editForm, setEditForm] = useState({ title: "", content: "" });
 
+  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+
   useEffect(() => {
     fetchNotes();
     // eslint-disable-next-line
   }, []);
 
   const fetchNotes = async () => {
-    
     try {
       const res = await getNotes();
       const rawNotes = Array.isArray(res.data) ? res.data : res.data.data;
@@ -133,7 +98,6 @@ const NotesPage: React.FC = () => {
     }
   };
 
-
   const fetchGoalsList = async () => {
     if (goals.length > 0) return;
     try {
@@ -146,7 +110,7 @@ const NotesPage: React.FC = () => {
         }))
       );
     } catch {}
-  }, [goals.length]);
+  };
 
   const handleGoalSelectionChange = (goalId: string) => {
     setSelectedGoalIds((prev) =>
@@ -161,7 +125,7 @@ const NotesPage: React.FC = () => {
     setSelectedGoalIds([]);
     fetchGoalsList();
     setIsAddModalOpen(true);
-  }, [fetchGoalsList]);
+  };
 
   const openEditModal = (note: NotesCard) => {
     setEditingNote(note);
@@ -173,10 +137,9 @@ const NotesPage: React.FC = () => {
 
   const closeAddModal = () => setIsAddModalOpen(false);
   const closeEditModal = () => {
-
     setIsEditModalOpen(false);
     setEditingNote(null);
-  }, []);
+  };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +226,6 @@ const NotesPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure?")) {
-
       setLoading(true);
       try {
         if (editingNote) {
@@ -281,10 +243,17 @@ const NotesPage: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [editingNote, closeEditModal]);
+  };
 
   const showLoading = notes.length === 0 && loading;
 
+  // Lọc notes theo searchTerm
+  const filteredNotes = notes.filter(
+    (note) =>
+      !searchTerm ||
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const renderGoalsCheckboxes = () => (
     <div className="notes-modal-group">
@@ -331,9 +300,11 @@ const NotesPage: React.FC = () => {
     </div>
   );
 
-
   return (
-    <main className="notes-main-content">
+    <main
+      className="notes-main-content"
+      style={{ margin: "0", borderRadius: "0" }}
+    >
       <section className="notes-container-section">
         <h1 className="notes-page-title">My Notes</h1>
 
@@ -368,9 +339,9 @@ const NotesPage: React.FC = () => {
         <div className={`notes-main-container ${viewMode}-view`}>
           {showLoading
             ? renderLoading()
-            : notes.length === 0
+            : filteredNotes.length === 0
             ? renderEmptyState()
-            : notes.map((note) => (
+            : filteredNotes.map((note) => (
                 <div
                   key={note.id}
                   className={`notes-card ${
@@ -425,7 +396,6 @@ const NotesPage: React.FC = () => {
                   </div>
                 </div>
               ))}
-
         </div>
       </section>
 
