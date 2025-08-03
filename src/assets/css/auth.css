@@ -93,49 +93,52 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 320px;
+  align-items: center;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .form-content {
   width: 450px;
-  max-width: 600px; /* THAY ĐỔI: Thu nhỏ chiều rộng tối đa của form */
+  max-width: 100%;
+  margin: 0;
 }
 
 /* ===== CÁC THAY ĐỔI ĐỂ FORM GỌN HƠN ===== */
 
 .form-content h2 {
-  font-size: 28px; /* THAY ĐỔI: Giảm kích thước tiêu đề */
+  font-size: 24px; /* THAY ĐỔI: Giảm cỡ chữ tiêu đề */
   font-weight: 700;
   color: #1a202c;
   text-align: center;
-  margin-bottom: 8px; /* THAY ĐỔI: Giảm khoảng cách */
+  margin-bottom: 6px; /* THAY ĐỔI: Giảm khoảng cách */
 }
 
 .form-content .subtitle {
   text-align: center;
   color: #718096;
-  margin-bottom: 25px; /* THAY ĐỔI: Giảm khoảng cách */
-  font-size: 15px;
+  margin-bottom: 12px; /* THAY ĐỔI: Giảm khoảng cách dưới */
+  font-size: 14px;
 }
 
 .form-group {
-  margin-bottom: 0; /* THAY ĐỔI: Giảm khoảng cách */
+  margin-bottom: 8px; /* THAY ĐỔI: Giảm khoảng cách giữa các trường */
 }
 
 .form-group label {
   display: block;
-  font-size: 14px;
+  font-size: 13px; /* THAY ĐỔI: Giảm cỡ chữ label */
   font-weight: 500;
   color: #4a5568;
-  margin-bottom: 6px; /* THAY ĐỔI: Giảm khoảng cách */
+  margin-bottom: 4px;
 }
 
 .form-group input {
   width: 100%;
-  padding: 10px 14px; /* THAY ĐỔI: Giảm padding để ô nhỏ hơn */
+  padding: 8px 12px; /* THAY ĐỔI: Giảm padding dọc để input thấp hơn */
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 15px; /* THAY ĐỔI: Giảm cỡ chữ input */
+  border-radius: 6px; /* THAY ĐỔI: Giảm bo góc cho gọn */
+  font-size: 14px;
   font-family: "Inter", sans-serif;
 }
 .form-group input::placeholder {
@@ -149,48 +152,61 @@ body {
 
 .form-options {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px; /* THAY ĐỔI: Giảm cỡ chữ */
-  margin-bottom: 25px; /* THAY ĐỔI: Giảm khoảng cách */
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 13px;
+  margin-top: 8px; /* THAY ĐỔI: Tăng nhẹ để cách input ở trên */
+  margin-bottom: 12px; /* THAY ĐỔI: Giảm khoảng cách dưới */
 }
 .remember-me {
   display: flex;
   align-items: center;
   gap: 6px;
   color: #718096;
-  margin-right: 40%;
+  width: 100%;
 }
-#remember {
-  width: 15px;
-  height: 15px;
+#remember,
+#terms {
+  width: 14px; /* THAY ĐỔI: Giảm kích thước checkbox */
+  height: 14px;
   accent-color: #4a90e2;
 }
+.form-options .forgot-password {
+  margin-top: -20px;
+  align-self: flex-end;
+}
 a.forgot-password,
-.signup-link a {
+.signup-link a,
+.form-options a {
   color: #4a90e2;
   text-decoration: none;
   font-weight: 500;
 }
 a.forgot-password:hover,
-.signup-link a:hover {
+.signup-link a:hover,
+.form-options a:hover {
   text-decoration: underline;
 }
 
 .signin-btn {
   width: 100%;
-  padding: 12px; /* THAY ĐỔI: Giảm padding */
+  padding: 10px; /* THAY ĐỔI: Giảm padding nút */
   background-color: #4a90e2;
   color: #ffffff;
   border: none;
-  border-radius: 8px;
-  font-size: 15px; /* THAY ĐỔI: Giảm cỡ chữ */
+  border-radius: 6px; /* THAY ĐỔI: Giảm bo góc */
+  font-size: 14px; /* THAY ĐỔI: Giảm cỡ chữ nút */
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-top: 5px;
 }
-.signin-btn:hover {
+.signin-btn:hover:not(:disabled) {
   background-color: #357abd;
+}
+.signin-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
 }
 
 .separator {
@@ -198,7 +214,7 @@ a.forgot-password:hover,
   align-items: center;
   text-align: center;
   color: #a0aec0;
-  margin: 20px 0; /* THAY ĐỔI: Giảm khoảng cách */
+  margin: 15px 0;
   font-size: 12px;
   font-weight: 500;
 }
@@ -210,21 +226,22 @@ a.forgot-password:hover,
 }
 .separator span {
   padding: 0 10px;
+  background-color: #ffffff;
 }
 
 .social-login-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* THAY ĐỔI: Giảm khoảng cách */
+  gap: 8px; /* THAY ĐỔI: Giảm khoảng cách */
   width: 100%;
 }
 
 .social-btn {
-  padding: 10px; /* THAY ĐỔI: Giảm padding */
+  padding: 8px; /* THAY ĐỔI: Giảm padding */
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 6px; /* THAY ĐỔI: Giảm bo góc */
   background-color: #ffffff;
-  font-size: 14px;
+  font-size: 13px; /* THAY ĐỔI: Giảm cỡ chữ */
   font-weight: 500;
   color: #4a5568;
   cursor: pointer;
@@ -242,7 +259,36 @@ a.forgot-password:hover,
   text-align: center;
   font-size: 14px;
   color: #718096;
-  margin-top: 25px; /* THAY ĐỔI: Giảm khoảng cách */
+  margin-top: 12px; /* THAY ĐỔI: Giảm khoảng cách */
+}
+
+/* Các lớp CSS cho thông báo lỗi/thành công */
+.form-field-error {
+  color: #d8000c;
+  font-size: 12px; /* THAY ĐỔI: Giảm cỡ chữ lỗi */
+  margin-top: 3px;
+  display: block;
+}
+
+.form-error,
+.form-success {
+  padding: 8px;
+  border-radius: 5px;
+  margin-bottom: 10px; /* THAY ĐỔI: Giảm khoảng cách */
+  font-size: 13px; /* THAY ĐỔI: Giảm cỡ chữ */
+  text-align: center;
+  border-width: 1px;
+  border-style: solid;
+}
+.form-error {
+  color: #d8000c;
+  background-color: #ffd2d2;
+  border-color: #d8000c;
+}
+.form-success {
+  color: green;
+  background-color: #e8f5e9;
+  border-color: #c8e6c9;
 }
 
 /* Responsive */
@@ -255,24 +301,20 @@ a.forgot-password:hover,
   .login-container {
     flex-direction: column;
     height: auto;
-    padding: 40px 20px 0px 20px;
+    padding: 20px;
+    gap: 40px;
   }
   .info-panel {
-    text-align: center;
-    flex-basis: auto;
-    height: auto;
-    padding: 0;
-  }
-  .features-list li,
-  .partners {
-    justify-content: center;
+    display: none;
   }
   .form-panel {
     flex-basis: auto;
     width: 100%;
-    height: 100px;
+    height: auto;
+    padding: 30px 20px;
   }
   .form-content {
-    margin-left: -200px;
+    width: 100%;
+    margin: 0;
   }
 }

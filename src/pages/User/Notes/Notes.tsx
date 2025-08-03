@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getNotes,
   createNote,
   updateNote,
   deleteNote,
-  linkGoalToNote,
-  unlinkGoalFromNote,
+  syncGoalsForNote,
 } from "../../../services/notesService";
 import { getGoals } from "../../../services/goalsService";
 import "../../../assets/css/User/notes.css";
@@ -19,21 +18,21 @@ import {
   faEllipsisVertical,
   faBullseye,
   faPaperclip,
+  faNoteSticky
 } from "@fortawesome/free-solid-svg-icons";
+// import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
 
-import { useSearch } from "../../../hooks/searchContext";
-
-interface NoteCard {
+interface NotesCard {
   id: string;
   title: string;
   content: string;
   updatedDate: string;
   color?: "purple" | "green" | "blue" | "yellow" | "red";
-  linkedGoal?: {
+  linkedGoals?: {
     id: string;
     type: "goal";
     title: string;
-  };
+  }[];
   attachments?: number;
 }
 
@@ -44,60 +43,18 @@ interface GoalOption {
 
 const NOTES_CACHE_KEY = "user_notes_cache";
 
-// NoteCardItem component tối ưu với React.memo
-const NoteCardItem = React.memo(
-  ({ note, onEdit }: { note: NoteCard; onEdit: (note: NoteCard) => void }) => (
-    <div
-      className={`note-card ${note.color ? `color-${note.color}` : ""}`}
-      onClick={() => onEdit(note)}
-    >
-      <div className="note-header">
-        <h3 className="note-title">{note.title}</h3>
-        <FontAwesomeIcon icon={faEllipsisVertical} className="note-menu" />
-      </div>
-      <div className="note-body">
-        <div className="note-content">{note.content}</div>
-        <div className="note-footer">
-          <span className="note-date">Updated: {note.updatedDate}</span>
-          <div className="note-meta">
-            {note.linkedGoal && (
-              <span
-                className="linked-goal"
-                title={`Linked to Goal: ${note.linkedGoal.title}`}
-              >
-                <FontAwesomeIcon icon={faBullseye} /> {note.linkedGoal.title}
-              </span>
-            )}
-            {note.attachments && (
-              <span>
-                <FontAwesomeIcon icon={faPaperclip} /> {note.attachments}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-);
-
 const NotesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<NoteCard | null>(null);
-
-  const [notes, setNotes] = useState<NoteCard[]>([]);
+  const [editingNote, setEditingNote] = useState<NotesCard | null>(null);
+  const [notes, setNotes] = useState<NotesCard[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Goal linking
   const [goals, setGoals] = useState<GoalOption[]>([]);
-  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
-
-  // Form state
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
   const [addForm, setAddForm] = useState({ title: "", content: "" });
   const [editForm, setEditForm] = useState({ title: "", content: "" });
 
-  // Lấy cache trước khi fetch API, chỉ loading nếu chưa có cache
   useEffect(() => {
     const cached = localStorage.getItem(NOTES_CACHE_KEY);
     if (cached) setNotes(JSON.parse(cached));
@@ -105,8 +62,7 @@ const NotesPage: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
-  // Fetch notes và đồng bộ cache, chỉ cập nhật nếu khác cache
-  const fetchNotes = useCallback(async () => {
+  const fetchNotes = async () => {
     try {
       const res = await getNotes();
       const rawNotes = Array.isArray(res.data) ? res.data : res.data.data;
@@ -122,17 +78,14 @@ const NotesPage: React.FC = () => {
             })
           : "",
         color: item.color,
-        linkedGoal: item.goal
-          ? {
-              id:
-                item.goal.goal_id?.toString() ?? item.goal.id?.toString() ?? "",
-              type: "goal",
-              title: item.goal.title,
-            }
-          : undefined,
+        linkedGoals:
+          item.goals?.map((g: any) => ({
+            id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
+            type: "goal",
+            title: g.title,
+          })) || [],
         attachments: item.attachments_count,
       }));
-      // So sánh dữ liệu mới và cũ, chỉ cập nhật nếu khác
       if (JSON.stringify(mapped) !== JSON.stringify(notes)) {
         setNotes(mapped);
         localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(mapped));
@@ -143,10 +96,9 @@ const NotesPage: React.FC = () => {
       }
       setNotes([]);
     }
-  }, [notes]);
+  };
 
-  // Fetch goals only when needed
-  const fetchGoalsList = useCallback(async () => {
+  const fetchGoalsList = async () => {
     if (goals.length > 0) return;
     try {
       const res = await getGoals();
@@ -158,163 +110,122 @@ const NotesPage: React.FC = () => {
         }))
       );
     } catch {}
-  }, [goals.length]);
+  };
 
-  // Open Add Modal
-  const openAddModal = useCallback(() => {
+  const handleGoalSelectionChange = (goalId: string) => {
+    setSelectedGoalIds((prev) =>
+      prev.includes(goalId)
+        ? prev.filter((id) => id !== goalId)
+        : [...prev, goalId]
+    );
+  };
+
+  const openAddModal = () => {
     setAddForm({ title: "", content: "" });
-    setSelectedGoalId("");
+    setSelectedGoalIds([]);
     fetchGoalsList();
     setIsAddModalOpen(true);
-  }, [fetchGoalsList]);
+  };
 
-  // Open Edit Modal
-  const openEditModal = useCallback(
-    (note: NoteCard) => {
-      setEditingNote(note);
-      setEditForm({ title: note.title, content: note.content });
-      setSelectedGoalId(note.linkedGoal?.id ?? "");
-      fetchGoalsList();
-      setIsEditModalOpen(true);
-    },
-    [fetchGoalsList]
-  );
+  const openEditModal = (note: NotesCard) => {
+    setEditingNote(note);
+    setEditForm({ title: note.title, content: note.content });
+    setSelectedGoalIds(note.linkedGoals?.map((g) => g.id) ?? []);
+    fetchGoalsList();
+    setIsEditModalOpen(true);
+  };
 
-  // Close Modals
-  const closeAddModal = useCallback(() => setIsAddModalOpen(false), []);
-  const closeEditModal = useCallback(() => {
+  const closeAddModal = () => setIsAddModalOpen(false);
+  const closeEditModal = () => {
     setIsEditModalOpen(false);
     setEditingNote(null);
-  }, []);
+  };
 
-  // Add Note (update state, không fetch lại toàn bộ)
-  const handleAddSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      try {
-        const payload = { title: addForm.title, content: addForm.content };
-        const res = await createNote(payload);
-        const item = res.data.note ?? res.data;
-        let linkedGoal = undefined;
-        if (selectedGoalId) {
-          await linkGoalToNote(item.note_id ?? item.id, {
-            goal_id: selectedGoalId,
-          });
-          const goal = goals.find((g) => g.id === selectedGoalId);
-          if (goal) {
-            linkedGoal = { id: goal.id, type: "goal", title: goal.title };
-          }
-        }
-        const newNote: NoteCard = {
-          id: item.note_id?.toString() ?? item.id?.toString() ?? "",
-          title: item.title,
-          content: item.content,
-          updatedDate: item.updated_at
-            ? new Date(item.updated_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              })
-            : "",
-          color: item.color,
-          linkedGoal,
-          attachments: item.attachments_count,
-        };
-        setNotes((prev) => {
-          const updated = [newNote, ...prev];
-          localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
-          return updated;
-        });
-        closeAddModal();
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
-        } else if (err.response?.data?.errors) {
-          alert(
-            Object.values(err.response.data.errors)
-              .map((v) => (Array.isArray(v) ? v.join(", ") : v))
-              .join("\n")
-          );
-        } else if (err.response?.data?.message) {
-          alert(err.response.data.message);
-        } else {
-          alert("Có lỗi khi thêm note!");
-        }
-      } finally {
-        setLoading(false);
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = { title: addForm.title, content: addForm.content };
+      const res = await createNote(payload);
+      const item = res.data.note ?? res.data;
+      const newNoteId = item.note_id?.toString() ?? item.id?.toString();
+
+      if (selectedGoalIds.length > 0) {
+        await syncGoalsForNote(newNoteId, selectedGoalIds);
       }
-    },
-    [addForm, selectedGoalId, goals, closeAddModal]
-  );
 
-  // Edit Note (update state, không fetch lại toàn bộ)
-  const handleEditSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!editingNote) return;
-      setLoading(true);
-      try {
-        const payload = { title: editForm.title, content: editForm.content };
-        await updateNote(editingNote.id, payload);
-        let linkedGoal = undefined;
-        if (selectedGoalId) {
-          await linkGoalToNote(editingNote.id, { goal_id: selectedGoalId });
-          const goal = goals.find((g) => g.id === selectedGoalId);
-          if (goal) {
-            linkedGoal = { id: goal.id, type: "goal", title: goal.title };
-          }
-        } else if (editingNote.linkedGoal?.id) {
-          await unlinkGoalFromNote(editingNote.id, editingNote.linkedGoal.id);
-        }
-        setNotes((prev) => {
-          const updated = prev.map((note) =>
-            note.id === editingNote.id
-              ? {
-                  ...note,
-                  title: payload.title,
-                  content: payload.content,
-                  updatedDate: new Date().toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  }),
-                  linkedGoal,
-                }
-              : note
-          );
-          localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
-          return updated;
-        });
-        closeEditModal();
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
-        } else if (err.response?.data?.errors) {
-          alert(
-            Object.values(err.response.data.errors)
-              .map((v) => (Array.isArray(v) ? v.join(", ") : v))
-              .join("\n")
-          );
-        } else if (err.response?.data?.message) {
-          alert(err.response.data.message);
-        } else {
-          alert("Có lỗi khi sửa note!");
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [editForm, selectedGoalId, editingNote, goals, closeEditModal]
-  );
+      const newLinkedGoals = goals
+        .filter((g) => selectedGoalIds.includes(g.id))
+        .map((g) => ({ id: g.id, type: "goal" as const, title: g.title }));
 
-  // Delete Note (update state, không fetch lại toàn bộ)
-  const handleDelete = useCallback(async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this note? This action cannot be undone."
-      )
-    ) {
+      const newNote: NotesCard = {
+        id: newNoteId,
+        title: item.title,
+        content: item.content,
+        updatedDate: new Date(item.updated_at).toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }),
+        color: item.color,
+        linkedGoals: newLinkedGoals,
+        attachments: item.attachments_count,
+      };
+
+      setNotes((prev) => {
+        const updated = [newNote, ...prev];
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      closeAddModal();
+    } catch (err: any) {
+      alert(err.message || "Failed to create note");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNote) return;
+    setLoading(true);
+    try {
+      const payload = { title: editForm.title, content: editForm.content };
+      await updateNote(editingNote.id, payload);
+      await syncGoalsForNote(editingNote.id, selectedGoalIds);
+
+      const updatedLinkedGoals = goals
+        .filter((g) => selectedGoalIds.includes(g.id))
+        .map((g) => ({ id: g.id, type: "goal" as const, title: g.title }));
+
+      setNotes((prev) => {
+        const updated = prev.map((note) =>
+          note.id === editingNote.id
+            ? {
+                ...note,
+                ...payload,
+                updatedDate: new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                }),
+                linkedGoals: updatedLinkedGoals,
+              }
+            : note
+        );
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      closeEditModal();
+    } catch (err: any) {
+      alert(err.message || "Failed to update note");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure?")) {
       setLoading(true);
       try {
         if (editingNote) {
@@ -327,123 +238,175 @@ const NotesPage: React.FC = () => {
         }
         closeEditModal();
       } catch (err: any) {
-        if (err.response?.status === 401) {
-          alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
-        } else {
-          alert("Có lỗi khi xóa note!");
-        }
+        alert(err.message || "Failed to delete note");
       } finally {
         setLoading(false);
       }
     }
-  }, [editingNote, closeEditModal]);
+  };
 
-  // Chỉ loading khi chưa có cache
   const showLoading = notes.length === 0 && loading;
 
-  // Memo hóa danh sách notes
-  // Filter và memo hóa danh sách notes
-  const { searchTerm } = useSearch();
+  const renderGoalsCheckboxes = () => (
+    <div className="notes-modal-group">
+      <label>Liên kết với Goal</label>
+      <div className="notes-checkbox-group">
+        {goals.map((goal) => (
+          <div key={goal.id} className="notes-checkbox-item">
+            <input
+              type="checkbox"
+              id={`goal-checkbox-${goal.id}`}
+              value={goal.id}
+              checked={selectedGoalIds.includes(goal.id)}
+              onChange={() => handleGoalSelectionChange(goal.id)}
+            />
+            <label htmlFor={`goal-checkbox-${goal.id}`}>{goal.title}</label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
-  const renderedNotes = useMemo(() => {
-    if (notes.length === 0) return null;
+  const renderLoading = () => (
+    <div className="notes-empty-state">
+      <FontAwesomeIcon
+        icon={faNoteSticky}
+        className="notes-empty-state-icon notes-loading"
+      />
+      <p>Loading your notes...</p>
+    </div>
+  );
 
-    const filtered = notes.filter((note) => {
-      const titleMatch = note.title
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const contentMatch = note.content
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const goalTitleMatch = note.linkedGoal?.title
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      return titleMatch || contentMatch || goalTitleMatch;
-    });
-
-    if (filtered.length === 0) {
-      return (
-        <div style={{ textAlign: "center", width: "100%" }}>
-          No matching notes found.
-        </div>
-      );
-    }
-
-    return filtered.map((note) => (
-      <NoteCardItem key={note.id} note={note} onEdit={openEditModal} />
-    ));
-  }, [notes, searchTerm, openEditModal]);
+  const renderEmptyState = () => (
+    <div className="notes-empty-state">
+      <FontAwesomeIcon icon={faNoteSticky} className="notes-empty-state-icon" />
+      <h3>No notes yet</h3>
+      <p>Create your first note by clicking the "New Note" button</p>
+      <button
+        className="notes-btn notes-btn-primary"
+        onClick={openAddModal}
+        style={{ marginTop: "1rem" }}
+      >
+        <FontAwesomeIcon icon={faPlus} /> Create First Note
+      </button>
+    </div>
+  );
 
   return (
-    <main className="main-content">
-      <section className="notes-section">
-        <div className="content-header">
-          <h1 className="page-title">My Notes</h1>
-          <div className="action-buttons">
-            <div className="toolbar-group">
-              <button
-                className={`btn-icon ${viewMode === "grid" ? "active" : ""}`}
-                onClick={() => setViewMode("grid")}
-                title="Grid View"
-              >
-                <FontAwesomeIcon icon={faThLarge} />
-              </button>
-              <button
-                className={`btn-icon ${viewMode === "list" ? "active" : ""}`}
-                onClick={() => setViewMode("list")}
-                title="List View"
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            </div>
-            <div className="toolbar-group">
-              <button className="btn btn-secondary btn-sm">
-                <FontAwesomeIcon icon={faFilter} /> Filter
-              </button>
-              <button className="btn btn-secondary btn-sm">
-                <FontAwesomeIcon icon={faSortAmountDown} /> Sort
-              </button>
-            </div>
-            <button className="btn btn-primary" onClick={openAddModal}>
-              <FontAwesomeIcon icon={faPlus} /> New Note
+    <main className="notes-main-content">
+      <section className="notes-container-section">
+        <h1 className="notes-page-title">My Notes</h1>
+
+        <div className="notes-content-header">
+          <div style={{ flex: 1 }}></div>
+          <button
+            className="notes-btn notes-btn-primary"
+            onClick={openAddModal}
+          >
+            <FontAwesomeIcon icon={faPlus} /> New Note
+          </button>
+          <div className="notes-toolbar-group">
+            <button
+              className={`notes-btn-icon ${
+                viewMode === "grid" ? "active" : ""
+              }`}
+              onClick={() => setViewMode("grid")}
+            >
+              <FontAwesomeIcon icon={faThLarge} />
+            </button>
+            <button
+              className={`notes-btn-icon ${
+                viewMode === "list" ? "active" : ""
+              }`}
+              onClick={() => setViewMode("list")}
+            >
+              <FontAwesomeIcon icon={faBars} />
             </button>
           </div>
         </div>
 
-        <div className={`notes-container ${viewMode}-view`} id="notes-list">
-          {showLoading ? (
-            <div style={{ textAlign: "center", width: "100%" }}>Loading...</div>
-          ) : (
-            renderedNotes
-          )}
+        <div className={`notes-main-container ${viewMode}-view`}>
+          {showLoading
+            ? renderLoading()
+            : notes.length === 0
+            ? renderEmptyState()
+            : notes.map((note) => (
+                <div
+                  key={note.id}
+                  className={`notes-card ${
+                    note.color ? `notes-color-${note.color}` : ""
+                  }`}
+                  onClick={() => openEditModal(note)}
+                >
+                  <div className="notes-card-header">
+                    <h3 className="notes-card-title">{note.title}</h3>
+                    <FontAwesomeIcon
+                      icon={faEllipsisVertical}
+                      className="notes-card-menu"
+                    />
+                  </div>
+                  <div className="notes-card-body">
+                    <div className="notes-card-content">{note.content}</div>
+                    <div className="notes-card-footer">
+                      <span className="notes-card-date">
+                        Updated: {note.updatedDate}
+                      </span>
+                      <div className="notes-card-meta">
+                        {note.linkedGoals && note.linkedGoals.length > 0 && (
+                          <div className="notes-linked-items-container">
+                            <FontAwesomeIcon
+                              icon={faBullseye}
+                              className="notes-meta-icon"
+                            />
+                            <div className="notes-tags-wrapper">
+                              {note.linkedGoals.map((goal) => (
+                                <span
+                                  key={goal.id}
+                                  className="notes-linked-goal-tag"
+                                  title={goal.title}
+                                >
+                                  {goal.title}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {note.attachments && (
+                          <div className="notes-attachments-container">
+                            <FontAwesomeIcon
+                              icon={faPaperclip}
+                              className="notes-meta-icon"
+                            />
+                            <span>{note.attachments}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
         </div>
       </section>
 
-      {/* Add Note Modal */}
       {isAddModalOpen && (
-        <div className="note-modal-overlay" onClick={closeAddModal}>
+        <div className="notes-modal-overlay" onClick={closeAddModal}>
           <div
-            className="note-modal-content"
+            className="notes-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="note-modal-header">
+            <div className="notes-modal-header">
               <h2>Add New Note</h2>
-              <button className="note-modal-close-btn" onClick={closeAddModal}>
+              <button className="notes-modal-close-btn" onClick={closeAddModal}>
                 ×
               </button>
             </div>
-            <div className="note-modal-body">
-              <form
-                className="note-modal-form"
-                id="note-modal-add-form"
-                onSubmit={handleAddSubmit}
-              >
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-title-input-add">Title</label>
+            <div className="notes-modal-body">
+              <form className="notes-modal-form" onSubmit={handleAddSubmit}>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-title-input-add">Title</label>
                   <input
                     type="text"
-                    id="note-modal-title-input-add"
-                    placeholder="Enter note title"
+                    id="notes-modal-title-input-add"
                     required
                     value={addForm.title}
                     onChange={(e) =>
@@ -451,43 +414,26 @@ const NotesPage: React.FC = () => {
                     }
                   />
                 </div>
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-content-input-add">Content</label>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-content-input-add">Content</label>
                   <textarea
-                    id="note-modal-content-input-add"
-                    placeholder="Write your note here..."
+                    id="notes-modal-content-input-add"
                     value={addForm.content}
                     onChange={(e) =>
                       setAddForm((f) => ({ ...f, content: e.target.value }))
                     }
                   ></textarea>
                 </div>
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-goal-select">
-                    Liên kết với Goal
-                  </label>
-                  <select
-                    id="note-modal-goal-select"
-                    value={selectedGoalId}
-                    onChange={(e) => setSelectedGoalId(e.target.value)}
-                  >
-                    <option value="">-- Không liên kết --</option>
-                    {goals.map((goal) => (
-                      <option key={goal.id} value={goal.id}>
-                        {goal.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="note-modal-footer">
+                {renderGoalsCheckboxes()}
+                <div className="notes-modal-footer">
                   <button
-                    className="btn btn-secondary"
-                    onClick={closeAddModal}
                     type="button"
+                    className="notes-btn notes-btn-secondary"
+                    onClick={closeAddModal}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
+                  <button type="submit" className="notes-btn notes-btn-primary">
                     Save Note
                   </button>
                 </div>
@@ -497,31 +443,28 @@ const NotesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Note Modal */}
       {isEditModalOpen && editingNote && (
-        <div className="note-modal-overlay" onClick={closeEditModal}>
+        <div className="notes-modal-overlay" onClick={closeEditModal}>
           <div
-            className="note-modal-content"
+            className="notes-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="note-modal-header">
+            <div className="notes-modal-header">
               <h2>Edit Note</h2>
-              <button className="note-modal-close-btn" onClick={closeEditModal}>
+              <button
+                className="notes-modal-close-btn"
+                onClick={closeEditModal}
+              >
                 ×
               </button>
             </div>
-            <div className="note-modal-body">
-              <form
-                className="note-modal-form"
-                id="note-modal-edit-form"
-                onSubmit={handleEditSubmit}
-              >
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-title-input-edit">Title</label>
+            <div className="notes-modal-body">
+              <form className="notes-modal-form" onSubmit={handleEditSubmit}>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-title-input-edit">Title</label>
                   <input
                     type="text"
-                    id="note-modal-title-input-edit"
-                    placeholder="Enter note title"
+                    id="notes-modal-title-input-edit"
                     required
                     value={editForm.title}
                     onChange={(e) =>
@@ -529,51 +472,36 @@ const NotesPage: React.FC = () => {
                     }
                   />
                 </div>
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-content-input-edit">Content</label>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-content-input-edit">
+                    Content
+                  </label>
                   <textarea
-                    id="note-modal-content-input-edit"
-                    placeholder="Write your note here..."
+                    id="notes-modal-content-input-edit"
                     value={editForm.content}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, content: e.target.value }))
                     }
                   ></textarea>
                 </div>
-                <div className="note-modal-group">
-                  <label htmlFor="note-modal-goal-select-edit">
-                    Liên kết với Goal
-                  </label>
-                  <select
-                    id="note-modal-goal-select-edit"
-                    value={selectedGoalId}
-                    onChange={(e) => setSelectedGoalId(e.target.value)}
-                  >
-                    <option value="">-- Không liên kết --</option>
-                    {goals.map((goal) => (
-                      <option key={goal.id} value={goal.id}>
-                        {goal.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="note-modal-footer">
+                {renderGoalsCheckboxes()}
+                <div className="notes-modal-footer">
                   <button
-                    className="btn btn-danger"
-                    onClick={handleDelete}
                     type="button"
+                    className="notes-btn notes-btn-danger"
+                    onClick={handleDelete}
                   >
                     Delete
                   </button>
                   <button
-                    className="btn btn-secondary"
-                    onClick={closeEditModal}
                     type="button"
+                    className="notes-btn notes-btn-secondary"
+                    onClick={closeEditModal}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    Save Note
+                  <button type="submit" className="notes-btn notes-btn-primary">
+                    Save Changes
                   </button>
                 </div>
               </form>

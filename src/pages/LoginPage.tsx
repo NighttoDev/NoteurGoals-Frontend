@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+// src/pages/LoginPage.tsx
+
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const LoginPage: React.FC = () => {
@@ -7,43 +9,71 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Lỗi chung từ API hoặc từ Social Callback
   const [error, setError] = useState<string | null>(null);
+  // Lỗi validation cho từng trường input
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     password?: string;
   }>({});
+  // Thông báo thành công (sau khi xác thực email)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // --- HOOKS ---
   const navigate = useNavigate();
+  const location = useLocation();
 
   // --- API & APP CONFIG ---
-  const API_BASE_URL = "http://localhost:8000/api";
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  // --- LOGIC XỬ LÝ THÔNG BÁO TỪ CÁC TRANG TRƯỚC ---
+  useEffect(() => {
+    // 1. Kiểm tra thông báo thành công từ trang xác thực email
+    if (location.state?.successMessage) {
+      setSuccessMessage(location.state.successMessage);
+      // Xóa state để không hiển thị lại khi refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
 
-  // Validate input
+    // 2. Kiểm tra thông báo lỗi từ trang Social Auth Callback
+    if (location.state?.errorMessage) {
+      setError(location.state.errorMessage);
+      // Xóa state để không hiển thị lại khi refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  // --- VALIDATION PHÍA CLIENT ---
   const validate = () => {
+    // ... (code giữ nguyên, đã rất tốt)
     const errors: { email?: string; password?: string } = {};
     if (!email.trim()) {
-      errors.email = "Email is required";
+      errors.email = "Please type your email.";
     } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
-      errors.email = "Invalid email format";
+      errors.email = "Email format is not valid.";
     }
     if (!password) {
-      errors.password = "Password is required";
+      errors.password = "Please type your password.";
     } else if (password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
+      errors.password = "Password must be at least 8 characters.";
     }
     return errors;
   };
 
+  // --- PHƯƠNG THỨC ĐĂNG NHẬP BẰNG EMAIL & PASSWORD ---
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Reset tất cả các thông báo cũ
     setError(null);
     setFieldErrors({});
-    const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    setSuccessMessage(null);
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       return;
     }
+
     setLoading(true);
 
     try {
@@ -56,22 +86,19 @@ const LoginPage: React.FC = () => {
         const { token, user } = response.data.data;
         localStorage.setItem("auth_token", token);
         localStorage.setItem("user_info", JSON.stringify(user));
-        navigate("/dashboard");
+        navigate("/dashboard"); // Chuyển hướng đến dashboard
       } else {
         setError(response.data.message || "An unknown error occurred.");
       }
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data.message || "Login failed.");
+        setError(err.response.data.message || "An error occurred when logging in.");
         if (err.response.data.verification_required) {
-          console.warn(
-            "Account verification required:",
-            err.response.data.user_email
-          );
+          navigate("/verify-email", { state: { email } });
         }
       } else {
-        setError("Cannot connect to server. Please check your network.");
-        console.error("Unknown login error:", err);
+        setError("Can't connect to server. Please try again.");
+        console.error("Login error:", err);
       }
     } finally {
       setLoading(false);
@@ -81,7 +108,7 @@ const LoginPage: React.FC = () => {
   const handleGoogleLogin = () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!googleClientId) {
-      alert("Config error: Google Client ID is not set.");
+      alert("Configuration error: Google Client ID is not set.");
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/google/callback-direct`;
@@ -101,7 +128,7 @@ const LoginPage: React.FC = () => {
   const handleFacebookLogin = () => {
     const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
     if (!facebookAppId) {
-      alert("Config error: Facebook App ID is not set.");
+      alert("Configuration error: Facebook App ID is not set.");
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/facebook/callback-direct`;
@@ -115,24 +142,28 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="form-content">
-      <h2>Sign in</h2>
-      <p className="subtitle">
-        Sign in to discover the power of smart recording
-      </p>
+      <h2>Sign In</h2>
+      <p className="subtitle">Sign in to discover the power of smart notes</p>
 
-      <form onSubmit={handleEmailLogin}>
+      {/* Success message */}
+      {successMessage && <p className="form-success">{successMessage}</p>}
+
+      {/* General error (from API or Social Login) */}
+      {error && <p className="form-error">{error}</p>}
+
+      <form onSubmit={handleEmailLogin} noValidate>
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
             type="email"
             id="email"
-            placeholder="Enter your email address"
+            placeholder="enter@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
           />
           {fieldErrors.email && (
-            <small style={{ color: "red" }}>{fieldErrors.email}</small>
+            <small className="form-field-error">{fieldErrors.email}</small>
           )}
         </div>
         <div className="form-group">
@@ -140,29 +171,20 @@ const LoginPage: React.FC = () => {
           <input
             type="password"
             id="password"
-            placeholder="At least 8 characters"
+            placeholder="Minimum 8 characters required"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
           {fieldErrors.password && (
-            <small style={{ color: "red" }}>{fieldErrors.password}</small>
+            <small className="form-field-error">{fieldErrors.password}</small>
           )}
         </div>
-
-        {error && (
-          <p
-            className="form-error"
-            style={{ color: "red", textAlign: "center" }}
-          >
-            {error}
-          </p>
-        )}
 
         <div className="form-options">
           <div className="remember-me">
             <input type="checkbox" id="remember" disabled={loading} />
-            <label htmlFor="remember">Remember login</label>
+            <label htmlFor="remember">Remember me</label>
           </div>
           <Link to="/forgot-password" className="forgot-password">
             Forgot password?
@@ -170,12 +192,12 @@ const LoginPage: React.FC = () => {
         </div>
 
         <button type="submit" className="signin-btn" disabled={loading}>
-          {loading ? "Processing..." : "Sign in"}
+          {loading ? "Processing..." : "Sign In"}
         </button>
       </form>
 
       <div className="separator">
-        <span></span>
+        <span>OR</span>
       </div>
 
       <div className="social-login-buttons">
@@ -228,7 +250,7 @@ const LoginPage: React.FC = () => {
       </div>
 
       <p className="signup-link">
-        Don't have an account? <Link to="/register">Register</Link>
+        Don't have an account? <Link to="/register">Sign up</Link>
       </p>
     </div>
   );
