@@ -32,7 +32,7 @@ const PaymentCallback = () => {
             if (Object.keys(params).length === 0 || !params.vnp_TxnRef) {
                 setError('Invalid data returned or transaction has been cancelled.');
                 // Sau 3 giây, chuyển về trang settings
-                setTimeout(() => navigate('/dashboard/settings#subscription'), 3000);
+                setTimeout(() => navigate('/settings#subscription'), 3000);
                 return;
             }
 
@@ -44,14 +44,14 @@ const PaymentCallback = () => {
                 setMessage('Verification successful! Your package has been activated.');
                 sessionStorage.setItem('payment_status', 'success');
                 // Chờ 3 giây để người dùng đọc thông báo rồi chuyển hướng
-                setTimeout(() => navigate('/dashboard/settings#subscription'), 3000);
+                setTimeout(() => navigate('/settings#subscription'), 3000);
 
             } catch (err: any) {
                 // Nếu API trả về lỗi (4xx, 5xx)
                 const errorMessage = err.response?.data?.message || 'Transaction failed. Please try again.';
                 setError(errorMessage);
                 sessionStorage.setItem('payment_status', 'failed');
-                setTimeout(() => navigate('/dashboard/settings#subscription'), 3000);
+                setTimeout(() => navigate('/settings#subscription'), 3000);
             }
         };
 

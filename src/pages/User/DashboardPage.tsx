@@ -251,9 +251,7 @@ const DashboardPage = () => {
     });
   };
 
-  if (loading) {
-    return <div className="dsd-loading-screen">Đang tải dữ liệu...</div>;
-  }
+  
 
   return (
     <main className="dsd-main-content">

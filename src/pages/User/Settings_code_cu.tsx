@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import axios, { AxiosError } from "axios";
 import "../../assets/css/User/settings.css";
 import {
@@ -10,7 +12,6 @@ import {
   FaUserShield,
   FaCamera,
   FaCheckCircle,
-  FaCogs,
   FaSignOutAlt,
 } from "react-icons/fa";
 
@@ -35,6 +36,7 @@ interface User {
   registration_type: "email" | "google" | "facebook";
   role?: "user" | "admin";
 }
+
 interface SubscriptionPlan {
   plan_id: number;
   name: string;
@@ -49,24 +51,26 @@ interface UserSubscription {
   plan_id: number;
   start_date: string;
   end_date: string;
-  payment_status: 'active' | 'cancelled' | 'expired';
+  payment_status: "active" | "cancelled" | "expired";
   plan: SubscriptionPlan;
 }
+
 interface ApiError {
   message?: string;
   errors?: { [key: string]: string[] };
 }
 
 // --- COMPONENT ---
-const SettingsPage = () => {
+export default function SettingsPage() {
   const navigate = useNavigate();
 
   // --- STATES ---
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState<string>("profile");
   const [user, setUser] = useState<User | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(
     "/default-avatar.png"
   );
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [profileData, setProfileData] = useState({ displayName: "" });
   const [passwordData, setPasswordData] = useState({
@@ -74,34 +78,43 @@ const SettingsPage = () => {
     new_password: "",
     new_password_confirmation: "",
   });
-  
   const [notifications, setNotifications] = useState({
     eventReminders: true,
     goalProgress: true,
     friendActivity: false,
     aiSuggestions: true,
-    autoRenewal: true,
   });
+
   const [loading, setLoading] = useState({
     profile: false,
     password: false,
     delete: false,
+    logout: false,
   });
   const [error, setError] = useState<{
     type?: string;
     message?: string;
     errors?: any;
   }>({});
+
   const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
-  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(
+    null
+  );
+  const [subscriptionLoading, setSubscriptionLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // --- HANDLERS & EFFECTS ---
   const handleLogout = useCallback(async (isForced = false) => {
-    setLoading(prev => ({ ...prev, logout: true }));
+    setLoading((prev) => ({ ...prev, logout: true }));
     if (!isForced) {
-        try { await api.post('/logout'); } catch(err) { console.error("Logout API failed, but logging out locally anyway."); }
+      try {
+        await api.post("/logout");
+      } catch {
+        console.warn("Logout API failed, proceeding locally");
+      }
     }
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_info");
@@ -110,7 +123,7 @@ const SettingsPage = () => {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const response = await api.get('/user/profile');
+      const response = await api.get("/user/profile");
       const fetchedUser: User = response.data.data;
       setUser(fetchedUser);
       setProfileData({ displayName: fetchedUser.display_name });
@@ -126,12 +139,12 @@ const SettingsPage = () => {
   const fetchSubscriptionData = useCallback(async () => {
     setSubscriptionLoading(true);
     try {
-      const [plansResponse, mySubResponse] = await Promise.all([
-        api.get('/subscriptions/plans'),
-        api.get('/subscriptions/my-current')
+      const [plansRes, subRes] = await Promise.all([
+        api.get("/subscriptions/plans"),
+        api.get("/subscriptions/my-current"),
       ]);
-      setAllPlans(plansResponse.data);
-      setMySubscription(mySubResponse.data);
+      setAllPlans(plansRes.data);
+      setMySubscription(subRes.data);
     } catch (err) {
       console.error("Failed to fetch subscription data:", err);
     } finally {
@@ -140,17 +153,14 @@ const SettingsPage = () => {
   }, []);
 
   useEffect(() => {
-    // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
-    const paymentStatus = sessionStorage.getItem('payment_status');
-    if (paymentStatus === 'success') {
-        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
-    } else if (paymentStatus === 'failed') {
-        alert('Thanh toán không thành công. Vui lòng thử lại.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    const paymentStatus = sessionStorage.getItem("payment_status");
+    if (paymentStatus === "success") {
+      alert("Thanh toán thành công! Gói của bạn đã được cập nhật.");
+      sessionStorage.removeItem("payment_status");
+    } else if (paymentStatus === "failed") {
+      alert("Thanh toán không thành công. Vui lòng thử lại.");
+      sessionStorage.removeItem("payment_status");
     }
-
-    // Luôn fetch dữ liệu mới nhất khi component tải
     fetchUserData();
     fetchSubscriptionData();
   }, [fetchUserData, fetchSubscriptionData]);
@@ -158,36 +168,21 @@ const SettingsPage = () => {
   useEffect(() => {
     const hash = window.location.hash.substring(1);
     if (
-      hash &&
-      ["profile", "account", "subscription", "notifications"].includes(
+      ["profile", "account", "subscription", "notifications", "admin"].includes(
         hash
       )
     ) {
       setActiveTab(hash);
     }
   }, []);
-  const handleCancelSubscription = async () => {
-    if (!mySubscription) return;
-    if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.")) return;
 
-    setActionLoading(prev => ({ ...prev, cancel: true }));
-    try {
-      const response = await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
-      setMySubscription(response.data.subscription);
-      alert('Hủy gói đăng ký thành công.');
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
-    } finally {
-      setActionLoading(prev => ({ ...prev, cancel: false }));
-    }
-  };
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     window.history.pushState(null, "", `#${tab}`);
   };
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
+    const file = e.target.files?.[0];
+    if (file) {
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
@@ -195,27 +190,25 @@ const SettingsPage = () => {
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading((prev) => ({ ...prev, profile: true }));
+    setLoading((p) => ({ ...p, profile: true }));
     setError({});
-
     const formData = new FormData();
     formData.append("display_name", profileData.displayName);
     if (avatarFile) formData.append("avatar", avatarFile);
-
     try {
-      const response = await api.post("/user/profile/update", formData, {
+      const res = await api.post("/user/profile/update", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      localStorage.setItem("user_info", JSON.stringify(response.data.data));
+      localStorage.setItem("user_info", JSON.stringify(res.data.data));
       alert("Cập nhật thông tin thành công!");
       window.location.reload();
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
-        const apiError = err.response.data as ApiError;
+        const apiErr = err.response.data as ApiError;
         setError({
           type: "profile",
-          message: apiError.message || "Cập nhật thất bại.",
-          errors: apiError.errors,
+          message: apiErr.message || "Cập nhật thất bại.",
+          errors: apiErr.errors,
         });
       } else {
         setError({
@@ -224,9 +217,23 @@ const SettingsPage = () => {
         });
       }
     } finally {
-      setLoading((prev) => ({ ...prev, profile: false }));
+      setLoading((p) => ({ ...p, profile: false }));
     }
   };
+  const handleNotificationToggle = (key: keyof typeof notifications) => {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  if (!user) {
+    return (
+      <main className="settings-main-content">
+        <h1 className="settings-page-title">Settings</h1>
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          Đang tải dữ liệu người dùng...
+        </div>
+      </main>
+    );
+  }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,7 +242,7 @@ const SettingsPage = () => {
       setError({ type: "password", message: "Mật khẩu xác nhận không khớp." });
       return;
     }
-    setLoading((prev) => ({ ...prev, password: true }));
+    setLoading((p) => ({ ...p, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
       alert("Đổi mật khẩu thành công!");
@@ -246,11 +253,11 @@ const SettingsPage = () => {
       });
     } catch (err: any) {
       if (err instanceof AxiosError && err.response) {
-        const apiError = err.response.data as ApiError;
+        const apiErr = err.response.data as ApiError;
         setError({
           type: "password",
-          message: apiError.message || "Đổi mật khẩu thất bại.",
-          errors: apiError.errors,
+          message: apiErr.message || "Đổi mật khẩu thất bại.",
+          errors: apiErr.errors,
         });
       } else {
         setError({
@@ -259,66 +266,68 @@ const SettingsPage = () => {
         });
       }
     } finally {
-      setLoading((prev) => ({ ...prev, password: false }));
+      setLoading((p) => ({ ...p, password: false }));
     }
   };
 
   const handleDeleteAccount = async () => {
     if (
-      window.confirm(
+      !window.confirm(
         "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác."
       )
-    ) {
-      setLoading((prev) => ({ ...prev, delete: true }));
-      try {
-        await api.post("/user/account/delete");
-        alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user_info");
-        window.location.href = "/login";
-      } catch (err: any) {
-        alert(
-          err.response?.data?.message ||
-            "Không thể xóa tài khoản. Vui lòng thử lại."
-        );
-      } finally {
-        setLoading((prev) => ({ ...prev, delete: false }));
-      }
+    )
+      return;
+    setLoading((p) => ({ ...p, delete: true }));
+    try {
+      await api.post("/user/account/delete");
+      alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+      handleLogout(true);
+    } catch (err: any) {
+      alert(
+        err.response?.data?.message ||
+          "Không thể xóa tài khoản. Vui lòng thử lại."
+      );
+    } finally {
+      setLoading((p) => ({ ...p, delete: false }));
     }
   };
-  const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-  const handleGoToCheckout = (planId: number) => {
+
+  const handleGoToCheckout = (planId: number) =>
     navigate(`/dashboard/checkout/${planId}`);
+  const handleCancelSubscription = async () => {
+    if (!mySubscription) return;
+    if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không?"))
+      return;
+    setActionLoading((p) => ({ ...p, cancel: true }));
+    try {
+      const res = await api.post(
+        `/subscriptions/cancel/${mySubscription.subscription_id}`
+      );
+      setMySubscription(res.data.subscription);
+      alert("Hủy gói đăng ký thành công.");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Có lỗi xảy ra.");
+    } finally {
+      setActionLoading((p) => ({ ...p, cancel: false }));
+    }
   };
 
+  const formatDate = (d: string) => new Date(d).toLocaleDateString("vi-VN");
   const formatPrice = (p: number) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(p);
 
-  if (!user) {
+  if (!user)
     return (
-      <main className="settings-main-content">
-        <h1 className="settings-page-title">Settings</h1>
-        <div className="settings-loading-container">
-          <div className="settings-loading-spinner">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>
-          <p>Loading user data...</p>
+      <main className="main-content">
+        <h1 className="page-title">Settings</h1>
+        <div style={{ textAlign: "center", padding: "50px" }}>
+          Đang tải dữ liệu người dùng...
         </div>
       </main>
     );
-  }
 
   return (
     <main className="settings-main-content">
@@ -331,7 +340,7 @@ const SettingsPage = () => {
               <a
                 href="#profile"
                 className={`settings-nav-link ${
-                  activeTab === "profile" ? "settings-active" : ""
+                  activeTab === "profile" ? "active" : ""
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
@@ -345,7 +354,7 @@ const SettingsPage = () => {
               <a
                 href="#account"
                 className={`settings-nav-link ${
-                  activeTab === "account" ? "settings-active" : ""
+                  activeTab === "account" ? "active" : ""
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
@@ -359,7 +368,7 @@ const SettingsPage = () => {
               <a
                 href="#subscription"
                 className={`settings-nav-link ${
-                  activeTab === "subscription" ? "settings-active" : ""
+                  activeTab === "subscription" ? "active" : ""
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
@@ -373,7 +382,7 @@ const SettingsPage = () => {
               <a
                 href="#notifications"
                 className={`settings-nav-link ${
-                  activeTab === "notifications" ? "settings-active" : ""
+                  activeTab === "notifications" ? "active" : ""
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
@@ -383,23 +392,30 @@ const SettingsPage = () => {
                 <FaBell /> Notifications
               </a>
             </li>
-            
+            {user.role === "admin" && (
+              <li>
+                <Link to="/admin" className="settings-nav-link">
+                  <FaUserShield /> Admin Panel
+                </Link>
+              </li>
+            )}
             <li>
               <button
-                className="settings-nav-link settings-logout-link"
-                onClick={() => handleLogout(false)}
+                className="settings-nav-link logout-link"
+                onClick={() => handleLogout()}
+                disabled={loading.logout}
               >
-                <FaSignOutAlt /> Logout
+                <FaSignOutAlt /> {loading.logout ? "Logging out..." : "Logout"}
               </button>
             </li>
           </ul>
         </nav>
-
         <div className="settings-content">
+          {/* Profile Section */}
           <section
             id="profile"
             className={`settings-section ${
-              activeTab === "profile" ? "settings-active" : ""
+              activeTab === "profile" ? "active" : ""
             }`}
           >
             <div className="settings-section-header">
@@ -409,12 +425,12 @@ const SettingsPage = () => {
             <form onSubmit={handleProfileSubmit}>
               <div className="settings-section-body">
                 {error.type === "profile" && error.message && !error.errors && (
-                  <p className="settings-form-error">{error.message}</p>
+                  <p className="form-error">{error.message}</p>
                 )}
-                <div className="settings-form-group">
+                <div className="form-group">
                   <label>Profile Picture</label>
-                  <div className="settings-avatar-upload-group">
-                    <div className="settings-avatar-preview">
+                  <div className="avatar-upload-group">
+                    <div className="avatar-preview">
                       <img
                         src={avatarPreview}
                         alt="Current Avatar"
@@ -424,8 +440,7 @@ const SettingsPage = () => {
                       />
                       <label
                         htmlFor="avatar-file-input"
-                        className="settings-avatar-upload-btn"
-                        title="Đổi ảnh đại diện"
+                        className="avatar-upload-btn"
                       >
                         <FaCamera />
                       </label>
@@ -437,22 +452,19 @@ const SettingsPage = () => {
                       />
                     </div>
                     <div>
-                      <p>Click on the camera icon to upload a new photo.</p>
-                      <p
-                        className="settings-text-light"
-                        style={{ fontSize: "0.8rem" }}
-                      >
+                      <p>Click camera to upload new photo.</p>
+                      <p style={{ fontSize: "0.8rem" }} className="text-light">
                         PNG, JPG, GIF up to 5MB.
                       </p>
                     </div>
                   </div>
                   {error.type === "profile" && error.errors?.avatar && (
-                    <small className="settings-form-field-error">
+                    <small className="form-field-error">
                       {error.errors.avatar[0]}
                     </small>
                   )}
                 </div>
-                <div className="settings-form-group">
+                <div className="form-group">
                   <label htmlFor="displayName">Display Name</label>
                   <input
                     type="text"
@@ -466,7 +478,7 @@ const SettingsPage = () => {
                     }
                   />
                   {error.type === "profile" && error.errors?.display_name && (
-                    <small className="settings-form-field-error">
+                    <small className="form-field-error">
                       {error.errors.display_name[0]}
                     </small>
                   )}
@@ -475,7 +487,7 @@ const SettingsPage = () => {
               <div className="settings-section-footer">
                 <button
                   type="submit"
-                  className="settings-btn settings-btn-primary"
+                  className="btn btn-primary"
                   disabled={loading.profile}
                 >
                   {loading.profile ? "Saving..." : "Save Changes"}
@@ -484,10 +496,11 @@ const SettingsPage = () => {
             </form>
           </section>
 
+          {/* Account Section */}
           <section
             id="account"
             className={`settings-section ${
-              activeTab === "account" ? "settings-active" : ""
+              activeTab === "account" ? "active" : ""
             }`}
           >
             <div className="settings-section-header">
@@ -496,7 +509,7 @@ const SettingsPage = () => {
             </div>
             <form>
               <div className="settings-section-body">
-                <div className="settings-form-group">
+                <div className="form-group">
                   <label htmlFor="email">Email Address</label>
                   <input
                     type="email"
@@ -506,10 +519,10 @@ const SettingsPage = () => {
                     disabled
                   />
                   <p
-                    className="settings-text-light"
                     style={{ fontSize: "0.8rem", marginTop: "4px" }}
+                    className="text-light"
                   >
-                    Email address cannot be changed at this time.
+                    Email address cannot be changed.
                   </p>
                 </div>
               </div>
@@ -521,7 +534,7 @@ const SettingsPage = () => {
               <div
                 className="settings-section-header"
                 style={{
-                  borderTop: "1px solid var(--border-main)",
+                  borderTop: "1px solid var(--border-color)",
                   borderRadius: 0,
                 }}
               >
@@ -529,18 +542,17 @@ const SettingsPage = () => {
               </div>
               <div className="settings-section-body">
                 {user.registration_type !== "email" ? (
-                  <p className="settings-form-notice">
-                    You logged in with a social account, so you cannot change
-                    your password here.
+                  <p className="form-notice">
+                    Logged in via social account; password change unavailable.
                   </p>
                 ) : (
                   <>
                     {error.type === "password" &&
                       error.message &&
                       !error.errors && (
-                        <p className="settings-form-error">{error.message}</p>
+                        <p className="form-error">{error.message}</p>
                       )}
-                    <div className="settings-form-group">
+                    <div className="form-group">
                       <label htmlFor="current_password">Current Password</label>
                       <input
                         type="password"
@@ -553,15 +565,16 @@ const SettingsPage = () => {
                           }))
                         }
                         required
+                        autoComplete="current-password" // thêm dòng này
                       />
                       {error.type === "password" &&
                         error.errors?.current_password && (
-                          <small className="settings-form-field-error">
+                          <small className="form-field-error">
                             {error.errors.current_password[0]}
                           </small>
                         )}
                     </div>
-                    <div className="settings-form-group">
+                    <div className="form-group">
                       <label htmlFor="new_password">New Password</label>
                       <input
                         type="password"
@@ -574,15 +587,16 @@ const SettingsPage = () => {
                           }))
                         }
                         required
+                        autoComplete="new-password" // thêm dòng này
                       />
                       {error.type === "password" &&
                         error.errors?.new_password && (
-                          <small className="settings-form-field-error">
+                          <small className="form-field-error">
                             {error.errors.new_password[0]}
                           </small>
                         )}
                     </div>
-                    <div className="settings-form-group">
+                    <div className="form-group">
                       <label htmlFor="new_password_confirmation">
                         Confirm New Password
                       </label>
@@ -597,6 +611,7 @@ const SettingsPage = () => {
                           }))
                         }
                         required
+                        autoComplete="new-password" // thêm dòng này
                       />
                     </div>
                   </>
@@ -606,7 +621,7 @@ const SettingsPage = () => {
                 <div className="settings-section-footer">
                   <button
                     type="submit"
-                    className="settings-btn settings-btn-primary"
+                    className="btn btn-primary"
                     disabled={loading.password}
                   >
                     {loading.password ? "Setting..." : "Set New Password"}
@@ -614,10 +629,7 @@ const SettingsPage = () => {
                 </div>
               )}
             </form>
-            <div
-              className="settings-danger-zone"
-              style={{ marginTop: "1.5rem" }}
-            >
+            <div className="danger-zone" style={{ marginTop: "1.5rem" }}>
               <div className="settings-section-header">
                 <h2>Danger Zone</h2>
               </div>
@@ -630,15 +642,11 @@ const SettingsPage = () => {
                 }}
               >
                 <div>
-                  <h3 style={{ fontWeight: 500 }}>Delete this account</h3>
-                  <p style={{ color: "var(--text-light)" }}>
-                    Once you delete your account, there is no going back. Please
-                    be certain.
-                  </p>
+                  <h3>Delete this account</h3>
+                  <p className="text-light">Once deleted, cannot be undone.</p>
                 </div>
                 <button
-                  type="button"
-                  className="settings-btn settings-btn-danger"
+                  className="btn btn-danger"
                   onClick={handleDeleteAccount}
                   disabled={loading.delete}
                 >
@@ -648,82 +656,126 @@ const SettingsPage = () => {
             </div>
           </section>
 
+          {/* Subscription Section */}
           <section
             id="subscription"
             className={`settings-section ${
-              activeTab === "subscription" ? "settings-active" : ""
+              activeTab === "subscription" ? "active" : ""
             }`}
           >
             <div className="settings-section-header">
               <h2>Subscription</h2>
-              <p>Manage your billing and subscription plan.</p>
+              <p>Manage billing and plan.</p>
             </div>
-            <div className="settings-section-body">
-              <div>
-                <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
-                <p style={{ color: "var(--text-light)" }}>
-                  You are currently on the{" "}
-                  <strong style={{ color: "var(--primary-main)" }}>
-                    Premium Monthly
-                  </strong>{" "}
-                  plan.
-                </p>
-                <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
-                  Your subscription will renew on July 22, 2025.
-                </p>
+            {subscriptionLoading ? (
+              <div style={{ textAlign: "center", padding: "50px" }}>
+                Đang tải thông tin gói đăng ký...
               </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Auto-Renewal</h3>
-                  <p>
-                    Your plan will automatically renew. You can cancel anytime.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.autoRenewal}
-                    onChange={() => handleNotificationToggle("autoRenewal")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
-                Available Plans
-              </h3>
-              <div className="plans-grid">
-                  {allPlans.map(plan => (
-                    <div key={plan.plan_id} className={`plan-card ${mySubscription?.plan_id === plan.plan_id ? 'current' : ''}`}>
+            ) : (
+              <div className="settings-section-body">
+                <h3>Current Plan</h3>
+                {mySubscription?.plan ? (
+                  <>
+                    <p className="text-light">
+                      You're on{" "}
+                      <strong className="text-primary">
+                        {mySubscription.plan.name}
+                      </strong>
+                      .
+                    </p>
+                    {mySubscription.payment_status === "active" ? (
+                      <>
+                        <p
+                          className="text-light"
+                          style={{ fontSize: "0.9rem" }}
+                        >
+                          Expires {formatDate(mySubscription.end_date)}.
+                        </p>
+                        <button
+                          className="btn btn-danger"
+                          onClick={handleCancelSubscription}
+                          disabled={actionLoading.cancel}
+                        >
+                          {actionLoading.cancel
+                            ? "Processing..."
+                            : "Cancel Subscription"}
+                        </button>
+                      </>
+                    ) : (
+                      <p className="form-notice">
+                        Cancelled; valid until{" "}
+                        {formatDate(mySubscription.end_date)}.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-light">You're on Free plan.</p>
+                )}
+
+                <h3 style={{ marginTop: "2rem" }}>Available Plans</h3>
+                <div className="plans-grid">
+                  {allPlans.map((plan) => (
+                    <div
+                      key={plan.plan_id}
+                      className={`plan-card ${
+                        mySubscription?.plan_id === plan.plan_id
+                          ? "current"
+                          : ""
+                      }`}
+                    >
                       <h3>{plan.name}</h3>
-                      <p className="price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                      <p className="price">
+                        {formatPrice(plan.price)}{" "}
+                        <span>/ {plan.duration > 1 ? "years" : "month"}</span>
+                      </p>
                       <ul>
-                          <li><FaCheckCircle /> Unlimited Goals</li>
-                          <li><FaCheckCircle /> AI Suggestions</li>
-                          <li><FaCheckCircle /> Advanced Collaboration</li>
-                          {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                        <li>
+                          <FaCheckCircle /> Unlimited Goals
+                        </li>
+                        <li>
+                          <FaCheckCircle /> AI Suggestions
+                        </li>
+                        <li>
+                          <FaCheckCircle /> Advanced Collaboration
+                        </li>
+                        {plan.duration > 1 && (
+                          <li>
+                            <FaCheckCircle /> Priority Support
+                          </li>
+                        )}
                       </ul>
-                      <button 
-                          className={`btn ${(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active') ? 'btn-secondary' : 'btn-primary'}`}
-                          disabled={(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active')}
-                          onClick={() => handleGoToCheckout(plan.plan_id)}
+                      <button
+                        className={`btn ${
+                          mySubscription?.plan_id === plan.plan_id &&
+                          mySubscription.payment_status === "active"
+                            ? "btn-secondary"
+                            : "btn-primary"
+                        }`}
+                        disabled={
+                          mySubscription?.plan_id === plan.plan_id &&
+                          mySubscription?.payment_status === "active"
+                        }
+                        onClick={() => handleGoToCheckout(plan.plan_id)}
                       >
-                          { (mySubscription?.plan_id === plan.plan_id && mySubscription.payment_status === 'active')
-                              ? 'Current Plan' 
-                              : mySubscription
-                                  ? 'Upgrade Plan'
-                                  : 'Subscribe Now'
-                          }
+                        {mySubscription?.plan_id === plan.plan_id &&
+                        mySubscription.payment_status === "active"
+                          ? "Current Plan"
+                          : mySubscription
+                          ? "Upgrade Plan"
+                          : "Subscribe Now"}
                       </button>
                     </div>
                   ))}
                 </div>
-            </div>
+              </div>
+            )}
           </section>
 
+          {/* Notifications Section */}
           <section
             id="notifications"
             className={`settings-section ${
-              activeTab === "notifications" ? "settings-active" : ""
+              activeTab === "notifications" ? "active" : ""
             }`}
           >
             <div className="settings-section-header">
@@ -731,76 +783,30 @@ const SettingsPage = () => {
               <p>Choose how you want to be notified.</p>
             </div>
             <div className="settings-section-body">
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Event Reminders</h3>
-                  <p>Receive notifications for your upcoming events.</p>
+              {Object.entries(notifications).map(([key, label]) => (
+                <div key={key} className="notification-item">
+                  <div className="notification-text">
+                    <h3>{key}</h3>
+                    <p>Enable {key} notifications.</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={notifications[key as keyof typeof notifications]}
+                      onChange={() =>
+                        handleNotificationToggle(
+                          key as keyof typeof notifications
+                        )
+                      }
+                    />
+                    <span className="slider"></span>
+                  </label>
                 </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.eventReminders}
-                    onChange={() => handleNotificationToggle("eventReminders")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Goal Progress Updates</h3>
-                  <p>
-                    Get notified when a collaborator makes progress on a shared
-                    goal.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.goalProgress}
-                    onChange={() => handleNotificationToggle("goalProgress")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Friend Activity</h3>
-                  <p>
-                    Receive notifications for new friend requests and
-                    acceptances.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.friendActivity}
-                    onChange={() => handleNotificationToggle("friendActivity")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>AI Suggestions</h3>
-                  <p>
-                    Allow our AI to send you helpful suggestions and insights.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.aiSuggestions}
-                    onChange={() => handleNotificationToggle("aiSuggestions")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
+              ))}
             </div>
           </section>
         </div>
       </div>
     </main>
   );
-};
-
-export default SettingsPage;
+}
