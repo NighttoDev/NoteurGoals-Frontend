@@ -5,7 +5,81 @@
   Focus: Full-screen UI, Gradient Typography, Intelligent Layout
 ================================================================
 */
+/* ... CSS hiện có của bạn ... */
 
+/* === THÊM MỚI CSS CHO MODAL TÌM KIẾM BẠN BÈ === */
+
+.friends-modal-body .friends-modal-group input {
+  width: 100%;
+  box-sizing: border-box; /* Đảm bảo padding không làm tăng width */
+}
+
+.friends-search-results {
+  margin-top: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.search-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+.search-result-item:hover {
+  background-color: #f9f9f9;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+}
+
+.search-result-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.search-result-email {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.search-loading,
+.search-no-results {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Kích thước nhỏ hơn cho button trong danh sách */
+.friends-btn.friends-btn-sm {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
 /* --- 0. ROOT & GENERAL STYLES --- */
 :root {
   --primary-glow: rgba(167, 139, 250, 0.4);
