@@ -1,26 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import echo from '../../../services/echo'; // Giả sử echo.ts nằm trong src/services/
-import { getMessageHistory, sendMessage } from '../../../services/friendsService'; // Giả sử friendsService.ts nằm trong src/services/
-import "../../../assets/css/user/ChatWindow.css"; // <-- ĐƯỜNG DẪN CSS ĐÃ ĐƯỢC SỬA
+import echo from '../../../services/echo';
+import { getMessageHistory, sendMessage } from '../../../services/friendsService';
+import "../../../assets/css/user/ChatWindow.css";
 
-// Interface cho một đối tượng tin nhắn
+// --- INTERFACES (Không đổi) ---
+interface Sender { user_id: number; name: string; avatar?: string; }
 interface Message {
   id: number;
   content: string;
   sender_id: number;
   receiver_id: number;
   created_at: string;
-  sender: {
-    user_id: number;
-    name: string; // Tên này sẽ là display_name từ backend
-    avatar?: string; // Tên này sẽ là avatar_url từ backend
-  }
+  sender?: Sender;
 }
-
-// Interface cho các props mà component này sẽ nhận
 interface ChatWindowProps {
   friend: { id: string; name:string; avatar?: string };
-  currentUserId: string; // ID của người dùng đang đăng nhập
+  currentUserId: string;
   onClose: () => void;
 }
 
@@ -28,9 +23,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ friend, currentUserId, onClose 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Hàm để tự động cuộn xuống tin nhắn mới nhất
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -39,11 +34,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ friend, currentUserId, onClose 
     scrollToBottom();
   }, [messages]);
 
-  // Effect chính: Lấy tin nhắn cũ và Lắng nghe tin nhắn mới
   useEffect(() => {
     let isMounted = true;
-
-    // 1. Lấy lịch sử chat từ API
     const fetchHistory = async () => {
       setIsLoading(true);
       try {
@@ -61,60 +53,77 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ friend, currentUserId, onClose 
     };
     fetchHistory();
 
-    // 2. Lắng nghe kênh riêng tư qua Laravel Echo
-    const user1 = Math.min(parseInt(currentUserId, 10), parseInt(friend.id, 10));
-    const user2 = Math.max(parseInt(currentUserId, 10), parseInt(friend.id, 10));
-    const channelName = `chat.${user1}.${user2}`;
+    const channelName = `chat.${Math.min(parseInt(currentUserId, 10), parseInt(friend.id, 10))}.${Math.max(parseInt(currentUserId, 10), parseInt(friend.id, 10))}`;
 
     echo.private(channelName)
-      .listen('MessageSent', (messageData: any) => { // Nhận dữ liệu từ broadcastWith
+      .listen('MessageSent', (messageData: Message) => {
         if (isMounted) {
-          const newMessage: Message = {
-              ...messageData,
-              sender: { // Ánh xạ lại cấu trúc sender từ broadcastWith
-                  user_id: messageData.sender.user_id,
-                  name: messageData.sender.name,
-                  avatar: messageData.sender.avatar,
-              }
-          };
-          setMessages(prevMessages => [...prevMessages, newMessage]);
+            setMessages(prevMessages => {
+                if (prevMessages.some(msg => msg.id === messageData.id)) {
+                    return prevMessages.map(msg => msg.id === messageData.id ? messageData : msg);
+                }
+                return [...prevMessages, messageData];
+            });
         }
       });
 
-    // 3. Dọn dẹp: rời khỏi kênh khi component bị đóng (unmount)
     return () => {
       isMounted = false;
       echo.leave(channelName);
     };
   }, [friend.id, currentUserId]);
 
-
-  // Hàm xử lý khi người dùng gửi tin nhắn
+  // === SỬA LỖI LẬT TIN NHẮN TẠI ĐÂY ===
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
 
+    const messageContent = newMessage;
+    setNewMessage('');
+    setIsSending(true);
+
+    // 1. Tạo tin nhắn tạm với sender_id là ID của user hiện tại trên frontend
     const tempId = Date.now();
     const optimisticMessage: Message = {
       id: tempId,
-      content: newMessage,
-      sender_id: parseInt(currentUserId),
+      content: messageContent,
+      sender_id: parseInt(currentUserId, 10),
       receiver_id: parseInt(friend.id),
       created_at: new Date().toISOString(),
       sender: { user_id: parseInt(currentUserId), name: 'You', avatar: '' }
     };
-
+    
+    // 2. Hiển thị tin nhắn tạm này ngay lập tức. Nó sẽ luôn nằm bên phải.
     setMessages(prev => [...prev, optimisticMessage]);
-    const messageContent = newMessage;
-    setNewMessage('');
 
     try {
       const response = await sendMessage(friend.id, messageContent);
-      setMessages(prev => prev.map(msg => msg.id === tempId ? response.data : msg));
+      
+      // 3. Cập nhật tin nhắn tạm bằng dữ liệu thật từ server
+      // NHƯNG chỉ lấy những gì cần thiết (id, created_at)
+      // và giữ lại sender_id đúng của tin nhắn tạm.
+      setMessages(prev => prev.map(msg => {
+          if (msg.id === tempId) {
+            // Trả về một object mới bằng cách kết hợp:
+            // - Tất cả thuộc tính của tin nhắn tạm (...msg)
+            // - Ghi đè `id` và `created_at` bằng giá trị thật từ server.
+            return { 
+              ...msg, 
+              id: response.data.id, 
+              created_at: response.data.created_at 
+            };
+          }
+          return msg;
+        })
+      );
+      
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert("Could not send message. Please try again.");
+      alert("Could not send message.");
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      setNewMessage(messageContent);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -131,8 +140,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ friend, currentUserId, onClose 
         ) : (
           messages.map((msg) => (
             <div 
-              key={`${msg.id}-${msg.created_at}`} // Thêm created_at để đảm bảo key duy nhất
-              className={`chat-message ${msg.sender_id.toString() === currentUserId ? 'sent' : 'received'}`}
+              key={`${msg.id}-${msg.created_at}`}
+              className={`chat-message ${msg.sender_id.toString() === currentUserId.toString() ? 'sent' : 'received'}`}
             >
               <p>{msg.content}</p>
             </div>
@@ -146,9 +155,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ friend, currentUserId, onClose 
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
+          disabled={isSending}
           autoFocus
         />
-        <button type="submit">Send</button>
+        <button type="submit" disabled={isSending}>
+          {isSending ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
+        </button>
       </form>
     </div>
   );
