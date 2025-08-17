@@ -50,6 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS
           </NavLink>
+          <NavLink to="/trash" className={getNavLinkClass}>
+            <AiOutlineSetting /> TRASH
+          </NavLink>
         </nav>
       </div>
 

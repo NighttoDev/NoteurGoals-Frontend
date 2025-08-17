@@ -1,0 +1,37 @@
+.unified-trash-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.unified-trash-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.trash-tabs {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 1.5rem;
+}
+
+.tab-button {
+  padding: 1rem 1.5rem;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #666;
+  position: relative;
+  bottom: -2px; /* Dịch nút xuống để đường kẻ dưới trùng với border-bottom của container */
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+  font-weight: bold;
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+/* Tái sử dụng CSS từ trashPage.css cũ nếu có */
+/* (Bạn có thể copy các style cho .trashed-note-item, .trash-empty... từ file trước) */

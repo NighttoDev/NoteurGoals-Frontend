@@ -25,6 +25,7 @@ import {
   updateMilestone,
   deleteMilestone,
 } from "../../../services/goalsService";
+import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
 
 // --- INTERFACES ---
@@ -99,153 +100,91 @@ const statusTags: { [key: string]: string } = {
 const GoalCard = memo(
   ({
     goal,
-    onEdit,
     onMilestoneToggle,
   }: {
     goal: Goal;
-    onEdit: (goal: Goal) => void;
     onMilestoneToggle: (milestoneId: string, isCompleted: boolean) => void;
-  }) => (
-    <div
-      className={`goals-card${
-        goal.status === "cancelled" ? " goals-is-cancelled" : ""
-      }`}
-      data-status={goal.status}
-    >
-      <div className="goals-card-header">
-        <div className="goals-title-container">
-          <span
-            className="goals-sharing-status"
-            title={
-              goal.shares?.[0]?.share_type
-                ? sharingTitles[goal.shares[0].share_type]
-                : "Private"
-            }
-          >
-            <FontAwesomeIcon
-              icon={
+  }) => {
+    const navigate = useNavigate();
+    return (
+      <div
+        className={`goals-card${
+          goal.status === "cancelled" ? " goals-is-cancelled" : ""
+        }`}
+        data-status={goal.status}
+        onClick={() => navigate(`/goals/${goal.goal_id}`)}
+      >
+        <div className="goals-card-header">
+          <div className="goals-title-container">
+            <span
+              className="goals-sharing-status"
+              title={
                 goal.shares?.[0]?.share_type
-                  ? sharingIcons[goal.shares[0].share_type]
-                  : sharingIcons.private
+                  ? sharingTitles[goal.shares[0].share_type]
+                  : "Private"
               }
-            />
-          </span>
-          <h3 className="goals-card-title">{goal.title}</h3>
-        </div>
-        <FontAwesomeIcon
-          icon={faEllipsisV}
-          className="goals-card-menu"
-          onClick={() => onEdit(goal)}
-          style={{ cursor: "pointer" }}
-        />
-      </div>
-      <div className="goals-card-description">{goal.description}</div>
-      <div className="goals-card-dates">
-        <FontAwesomeIcon icon={faCalendarAlt} />
-        <span>
-          {goal.start_date
-            ? new Date(goal.start_date).toLocaleDateString("en-GB", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              })
-            : ""}
-        </span>
-        <span className="goals-date-separator">→</span>
-        <span>
-          {goal.end_date
-            ? new Date(goal.end_date).toLocaleDateString("en-GB", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              })
-            : ""}
-        </span>
-      </div>
-      {goal.status && statusTags[goal.status] && (
-        <div className={`goals-card-status goals-status-tag-${goal.status}`}>
-          {statusTags[goal.status]}
-        </div>
-      )}
-      <div className="goals-card-progress">
-        <div className="goals-progress-bar">
-          <div
-            className="goals-progress-fill"
-            style={{
-              width: `${goal.progress ? goal.progress.progress_value : 0}%`,
-            }}
-          ></div>
-        </div>
-        <div className="goals-progress-text">
-          <span>Progress</span>
-          <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
-        </div>
-      </div>
-      {goal.milestones && goal.milestones.length > 0 && (
-        <div className="goals-card-milestones">
-          <h4>Milestones</h4>
-          {goal.milestones.map((milestone) => (
-            <div
-              key={milestone.milestone_id || milestone.title}
-              className="goals-milestone-item"
             >
-              <input
-                type="checkbox"
-                className="goals-milestone-checkbox"
-                id={milestone.milestone_id}
-                checked={!!milestone.is_completed}
-                onChange={(e) =>
-                  onMilestoneToggle(milestone.milestone_id!, e.target.checked)
+              <FontAwesomeIcon
+                icon={
+                  goal.shares?.[0]?.share_type
+                    ? sharingIcons[goal.shares[0].share_type]
+                    : sharingIcons.private
                 }
               />
-              <label
-                htmlFor={milestone.milestone_id}
-                className="goals-milestone-text"
-              >
-                {milestone.title}
-              </label>
-              <span className="goals-milestone-date">
-                {milestone.deadline
-                  ? new Date(milestone.deadline).toLocaleDateString("en-GB", {
-                      month: "short",
-                      day: "2-digit",
-                    })
-                  : ""}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="goals-card-footer">
-        <div className="goals-card-collaborators">
-          {goal.collaborators && goal.collaborators.length > 0 && (
-            <div className="goals-user-avatars">
-              {goal.collaborators.map((collaborator) => (
-                <img
-                  key={collaborator.collab_id}
-                  src={collaborator.avatar}
-                  alt={collaborator.name}
-                  title={collaborator.name}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="goals-card-stats">
-          {goal.notesCount ? (
-            <span>
-              <FontAwesomeIcon icon={faStickyNote} /> {goal.notesCount}
             </span>
-          ) : null}
-          {goal.attachmentsCount ? (
-            <span>
-              <FontAwesomeIcon icon={faPaperclip} /> {goal.attachmentsCount}
-            </span>
-          ) : null}
+            <h3 className="goals-card-title">{goal.title}</h3>
+          </div>
+          <FontAwesomeIcon
+            icon={faEllipsisV}
+            className="goals-card-menu"
+            style={{ cursor: "pointer" }}
+          />
+        </div>
+        <div className="goals-card-description">{goal.description}</div>
+        <div className="goals-card-dates">
+          <FontAwesomeIcon icon={faCalendarAlt} />
+          <span>
+            {goal.start_date
+              ? new Date(goal.start_date).toLocaleDateString("en-GB", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                })
+              : ""}
+          </span>
+          <span className="goals-date-separator">→</span>
+          <span>
+            {goal.end_date
+              ? new Date(goal.end_date).toLocaleDateString("en-GB", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                })
+              : ""}
+          </span>
+        </div>
+        {goal.status && statusTags[goal.status] && (
+          <div className={`goals-card-status goals-status-tag-${goal.status}`}>
+            {statusTags[goal.status]}
+          </div>
+        )}
+        <div className="goals-card-progress">
+          <div className="goals-progress-bar">
+            <div
+              className="goals-progress-fill"
+              style={{
+                width: `${goal.progress ? goal.progress.progress_value : 0}%`,
+              }}
+            ></div>
+          </div>
+          <div className="goals-progress-text">
+            <span>Progress</span>
+            <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    );
+  }
 );
 
 // --- GOALS PAGE COMPONENT ---
@@ -674,14 +613,7 @@ const GoalsPage: React.FC = () => {
             </div>
           ) : filteredGoals.length > 0 ? (
             filteredGoals.map((goal) => (
-              <GoalCard
-                key={goal.goal_id}
-                goal={goal}
-                onEdit={() => openModal("edit", goal)}
-                onMilestoneToggle={(milestoneId, isCompleted) =>
-                  handleMilestoneToggle(goal.goal_id, milestoneId, isCompleted)
-                }
-              />
+              <GoalCard key={goal.goal_id} goal={goal} />
             ))
           ) : (
             <div className="goals-no-goals-found">
@@ -748,116 +680,6 @@ const GoalsPage: React.FC = () => {
                         setForm((f) => ({ ...f, end_date: e.target.value }))
                       }
                     />
-                  </div>
-                </div>
-
-                <div className="goals-form-group">
-                  <label>Milestones</label>
-                  <div>
-                    {milestones.map((m, idx) => (
-                      <div
-                        key={m.milestone_id || idx}
-                        className="goals-form-milestone"
-                      >
-                        <input
-                          type="text"
-                          placeholder="Milestone title"
-                          value={m.title}
-                          onChange={(e) =>
-                            updateMilestoneHandler(idx, "title", e.target.value)
-                          }
-                        />
-                        <input
-                          type="date"
-                          value={m.deadline}
-                          onChange={(e) =>
-                            updateMilestoneHandler(
-                              idx,
-                              "deadline",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="goals-form-remove-milestone"
-                          onClick={() => removeMilestone(idx)}
-                        >
-                          <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="goals-btn goals-btn-secondary"
-                    onClick={addMilestone}
-                  >
-                    <FontAwesomeIcon icon={faPlus} /> Add Milestone
-                  </button>
-                </div>
-
-                <div className="goals-form-group-inline">
-                  <div className="goals-form-group">
-                    <label htmlFor="goal-collaborators">Collaborators</label>
-                    {editingGoal && editingGoal.collaborators.length > 0 && (
-                      <div className="goals-form-collaborators-list">
-                        {editingGoal.collaborators.map((c) => (
-                          <div
-                            key={c.user_id}
-                            className="goals-form-collaborator-item"
-                          >
-                            <img
-                              src={c.avatar}
-                              alt={c.name}
-                              className="goals-form-collaborator-avatar"
-                            />
-                            <button
-                              type="button"
-                              className="goals-form-collaborator-remove"
-                              onClick={() =>
-                                handleRemoveCollaborator(c.user_id)
-                              }
-                              disabled={loading}
-                            >
-                              <FontAwesomeIcon icon={faTimes} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="goals-form-add-collaborator">
-                      <input
-                        type="text"
-                        placeholder="Add by email..."
-                        value={collaboratorInput}
-                        onChange={(e) => setCollaboratorInput(e.target.value)}
-                        disabled={loading || modalMode === "add"}
-                      />
-                      <button
-                        type="button"
-                        className="goals-btn goals-btn-secondary"
-                        onClick={handleAddCollaborator}
-                        disabled={
-                          loading || !editingGoal || !collaboratorInput.trim()
-                        }
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                  <div className="goals-form-group">
-                    <label htmlFor="goal-sharing-select">Sharing</label>
-                    <select
-                      id="goal-sharing-select"
-                      value={form.sharing_type}
-                      onChange={handleChangeSharing}
-                      disabled={loading}
-                    >
-                      <option value="private">Private</option>
-                      <option value="friends">Friends Only</option>
-                      <option value="public">Public</option>
-                    </select>
                   </div>
                 </div>
 
