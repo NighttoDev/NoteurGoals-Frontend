@@ -85,7 +85,7 @@ const router = createBrowserRouter([
 
           // *** MỚI: Route cho trang checkout, có `:planId` động ***
           // Đã sửa lại đường dẫn để tường minh hơn, ví dụ: /checkout/2
-          { path: "dashboard/checkout/:planId", element: <CheckoutPage /> },
+          { path: "checkout/:planId", element: <CheckoutPage /> },
         ],
       },
     ],

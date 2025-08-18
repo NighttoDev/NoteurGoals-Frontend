@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import echo from '../../../services/echo';
 import { getMessageHistory, sendMessage } from '../../../services/friendsService';
-import "../../../assets/css/user/ChatWindow.css";
+import "../../../assets/css/User/ChatWindow.css";
 
 // --- INTERFACES (Không đổi) ---
 interface Sender { user_id: number; name: string; avatar?: string; }
