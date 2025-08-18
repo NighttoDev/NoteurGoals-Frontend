@@ -8,8 +8,6 @@ import {
   faCalendarAlt,
   faStickyNote,
   faPaperclip,
-  faEllipsisV,
-  faTimes,
   faEdit,
   faTrash,
   faPlus,
@@ -28,6 +26,7 @@ import CollaboratorList from "../../../components/User/CollaboratorList";
 import ProgressChart from "../../../components/User/ProgressChart";
 import "../../../assets/css/User/GoalDetail.css";
 
+// --- Interfaces ---
 type Status = "in_progress" | "completed" | "new" | "cancelled";
 type Sharing = "private" | "friends" | "public";
 
@@ -44,8 +43,11 @@ interface Collaborator {
   goal_id: string;
   user_id: string;
   role: string;
-  name?: string;
-  avatar?: string;
+  user?: {
+    // Giả sử API trả về thông tin user lồng nhau để hiển thị
+    display_name: string;
+    avatar: string;
+  };
 }
 
 interface GoalShare {
@@ -69,13 +71,14 @@ interface Goal {
   end_date: string;
   status: Status;
   milestones: Milestone[];
-  collaborators: Collaborator[];
-  shares?: GoalShare[];
+  collaborations: Collaborator[]; // Khớp với tên quan hệ trong API response
+  share?: GoalShare;
   progress?: GoalProgress;
   notesCount?: number;
   attachmentsCount?: number;
 }
 
+// --- Constants ---
 const sharingIcons = {
   private: faLock,
   friends: faUserFriends,
@@ -93,6 +96,12 @@ const statusTags: { [key: string]: string } = {
   completed: "Completed",
   new: "New",
   cancelled: "Cancelled",
+};
+
+// --- Helper function ---
+const formatDateForInput = (dateString: string) => {
+  if (!dateString) return "";
+  return dateString.substring(0, 10); // Lấy phần 'YYYY-MM-DD'
 };
 
 const GoalDetailPage: React.FC = () => {
@@ -113,26 +122,40 @@ const GoalDetailPage: React.FC = () => {
   const [shareType, setShareType] = useState<Sharing>("private");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  // Fetch goal details
+  // Fetch goal details (Đã sửa lỗi)
   const fetchGoalDetails = useCallback(async () => {
     if (!goalId) return;
 
     setLoading(true);
+    setError("");
     try {
       const response = await getGoal(goalId);
+
+      // === SỬA LỖI QUAN TRỌNG: Xử lý linh hoạt cấu trúc API response ===
       const goalData = response.data.data || response.data;
+      // =================================================================
+
+      // Kiểm tra để đảm bảo goalData là một object hợp lệ
+      if (!goalData || typeof goalData !== "object") {
+        throw new Error("Invalid data structure received from API.");
+      }
+
       setGoal(goalData);
       setFormData({
         title: goalData.title,
         description: goalData.description,
-        start_date: goalData.start_date,
-        end_date: goalData.end_date,
+        start_date: formatDateForInput(goalData.start_date),
+        end_date: formatDateForInput(goalData.end_date),
         status: goalData.status,
       });
-      setShareType(goalData.shares?.[0]?.share_type || "private");
-    } catch (err) {
-      setError("Failed to load goal details");
-      console.error(err);
+      setShareType(goalData.share?.share_type || "private");
+    } catch (err: any) {
+      console.error("ERROR FETCHING GOAL:", err.response || err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to load goal details";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -155,23 +178,16 @@ const GoalDetailPage: React.FC = () => {
   // Save goal updates
   const handleSaveGoal = async () => {
     if (!goalId || !goal) return;
-
     setLoading(true);
+    setError("");
     try {
-      await updateGoal(goalId, {
-        title: formData.title,
-        description: formData.description,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        status: formData.status,
-      });
-
-      // Refresh data after update
-      await fetchGoalDetails();
+      await updateGoal(goalId, formData);
+      await fetchGoalDetails(); // Làm mới dữ liệu
       setEditMode(false);
-    } catch (err) {
-      setError("Failed to update goal");
-      console.error(err);
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to update goal";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -180,14 +196,15 @@ const GoalDetailPage: React.FC = () => {
   // Delete goal
   const handleDeleteGoal = async () => {
     if (!goalId) return;
-
     setLoading(true);
+    setError("");
     try {
       await deleteGoal(goalId);
-      navigate("/goals"); // Redirect to goals list after deletion
-    } catch (err) {
-      setError("Failed to delete goal");
-      console.error(err);
+      navigate("/goals"); // Chuyển hướng sau khi xóa
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete goal";
+      setError(errorMessage);
     } finally {
       setLoading(false);
       setIsDeleteConfirmOpen(false);
@@ -197,17 +214,16 @@ const GoalDetailPage: React.FC = () => {
   // Add collaborator
   const handleAddCollaborator = async () => {
     if (!goalId || !newCollaboratorEmail.trim()) return;
-
     setLoading(true);
+    setError("");
     try {
-      await addCollaborator(goalId, {
-        email: newCollaboratorEmail.trim(),
-      });
+      await addCollaborator(goalId, { email: newCollaboratorEmail.trim() });
       setNewCollaboratorEmail("");
-      await fetchGoalDetails(); // Refresh collaborators list
-    } catch (err) {
-      setError("Failed to add collaborator");
-      console.error(err);
+      await fetchGoalDetails();
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to add collaborator";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -216,14 +232,15 @@ const GoalDetailPage: React.FC = () => {
   // Remove collaborator
   const handleRemoveCollaborator = async (userId: string) => {
     if (!goalId) return;
-
     setLoading(true);
+    setError("");
     try {
       await removeCollaborator(goalId, userId);
-      await fetchGoalDetails(); // Refresh collaborators list
-    } catch (err) {
-      setError("Failed to remove collaborator");
-      console.error(err);
+      await fetchGoalDetails();
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to remove collaborator";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -232,24 +249,25 @@ const GoalDetailPage: React.FC = () => {
   // Update sharing settings
   const handleUpdateSharing = async (newShareType: Sharing) => {
     if (!goalId) return;
-
     setLoading(true);
+    setError("");
     try {
-      await updateShareSettings(goalId, {
-        share_type: newShareType,
-      });
+      await updateShareSettings(goalId, { share_type: newShareType });
       setShareType(newShareType);
-      await fetchGoalDetails(); // Refresh goal data
-    } catch (err) {
-      setError("Failed to update sharing settings");
-      console.error(err);
+      // Không cần fetch lại vì API đã trả về goal mới, nhưng fetch lại cho an toàn
+      await fetchGoalDetails();
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to update sharing settings";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -266,10 +284,19 @@ const GoalDetailPage: React.FC = () => {
     );
   }
 
+  if (error && !goal) {
+    return (
+      <div className="goal-detail-error">
+        <p>{error}</p>
+        <button onClick={() => navigate("/goals")}>Back to Goals</button>
+      </div>
+    );
+  }
+
   if (!goal) {
     return (
       <div className="goal-detail-error">
-        <p>{error || "Goal not found"}</p>
+        <p>Goal not found.</p>
         <button onClick={() => navigate("/goals")}>Back to Goals</button>
       </div>
     );
@@ -301,7 +328,7 @@ const GoalDetailPage: React.FC = () => {
           </div>
         </div>
         <div className="goal-detail-header-right">
-          {!editMode && (
+          {!editMode ? (
             <>
               <button
                 className="btn-edit"
@@ -318,20 +345,13 @@ const GoalDetailPage: React.FC = () => {
                 <FontAwesomeIcon icon={faTrash} /> Delete
               </button>
             </>
-          )}
-          {editMode && (
+          ) : (
             <>
               <button
                 className="btn-cancel"
                 onClick={() => {
                   setEditMode(false);
-                  setFormData({
-                    title: goal.title,
-                    description: goal.description,
-                    start_date: goal.start_date,
-                    end_date: goal.end_date,
-                    status: goal.status,
-                  });
+                  fetchGoalDetails();
                 }}
                 disabled={loading}
               >
@@ -353,7 +373,6 @@ const GoalDetailPage: React.FC = () => {
       <div className="goal-detail-content">
         {/* Left Column */}
         <div className="goal-detail-left">
-          {/* Description Section */}
           <section className="goal-section">
             <h2>Description</h2>
             {editMode ? (
@@ -362,13 +381,13 @@ const GoalDetailPage: React.FC = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 className="goal-description-input"
+                rows={5}
               />
             ) : (
-              <p>{goal.description || "No description provided"}</p>
+              <p>{goal.description || "No description provided."}</p>
             )}
           </section>
 
-          {/* Dates Section */}
           <section className="goal-section">
             <h2>Timeline</h2>
             <div className="goal-dates">
@@ -383,7 +402,7 @@ const GoalDetailPage: React.FC = () => {
                     onChange={handleInputChange}
                   />
                 ) : (
-                  <span>{formatDate(goal.start_date)}</span>
+                  <span>{formatDateForDisplay(goal.start_date)}</span>
                 )}
               </div>
               <div className="goal-date">
@@ -397,13 +416,12 @@ const GoalDetailPage: React.FC = () => {
                     onChange={handleInputChange}
                   />
                 ) : (
-                  <span>{formatDate(goal.end_date)}</span>
+                  <span>{formatDateForDisplay(goal.end_date)}</span>
                 )}
               </div>
             </div>
           </section>
 
-          {/* Status Section (editable) */}
           {editMode && (
             <section className="goal-section">
               <h2>Status</h2>
@@ -421,7 +439,6 @@ const GoalDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* Sharing Settings Section */}
           <section className="goal-section">
             <h2>Sharing Settings</h2>
             <div className="sharing-options">
@@ -444,40 +461,30 @@ const GoalDetailPage: React.FC = () => {
 
         {/* Right Column */}
         <div className="goal-detail-right">
-          {/* Progress Section */}
           <section className="goal-section">
             <h2>Progress</h2>
             <ProgressChart progress={goal.progress?.progress_value || 0} />
           </section>
 
-          {/* Milestones Section */}
           <section className="goal-section">
             <div className="section-header">
               <h2>Milestones</h2>
-              <button
-                className="btn-add-milestone"
-                onClick={() => {
-                  // This would open a modal or inline form to add a new milestone
-                  // Implementation depends on your UI approach
-                }}
-              >
-                <FontAwesomeIcon icon={faPlus} /> Add
-              </button>
             </div>
             <MilestoneList
               milestones={goal.milestones || []}
               goalId={goal.goal_id}
               onRefresh={fetchGoalDetails}
+              goalStartDate={goal.start_date}
+              goalEndDate={goal.end_date}
             />
           </section>
 
-          {/* Collaborators Section */}
           <section className="goal-section">
             <div className="section-header">
               <h2>Collaborators</h2>
             </div>
             <CollaboratorList
-              collaborators={goal.collaborators || []}
+              collaborators={goal.collaborations || []}
               onRemove={handleRemoveCollaborator}
             />
             <div className="add-collaborator">
@@ -496,7 +503,6 @@ const GoalDetailPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Attachments & Notes (optional) */}
           {(goal.notesCount || goal.attachmentsCount) && (
             <section className="goal-section">
               <h2>Related Items</h2>
@@ -519,14 +525,13 @@ const GoalDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Confirm Deletion</h3>
             <p>
-              Are you sure you want to delete this goal? This action cannot be
-              undone.
+              Are you sure you want to delete this goal? This action will move
+              it to the trash.
             </p>
             <div className="modal-actions">
               <button
@@ -547,7 +552,6 @@ const GoalDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="error-message">
           <p>{error}</p>

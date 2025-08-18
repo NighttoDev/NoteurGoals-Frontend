@@ -7,8 +7,6 @@ import {
   faUserFriends,
   faGlobeAmericas,
   faCalendarAlt,
-  faStickyNote,
-  faPaperclip,
   faEllipsisV,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
@@ -17,16 +15,9 @@ import {
   createGoal,
   updateGoal,
   deleteGoal,
-  addCollaborator,
-  removeCollaborator,
-  updateShareSettings,
-  getGoal,
-  createMilestone,
-  updateMilestone,
-  deleteMilestone,
 } from "../../../services/goalsService";
 import { useNavigate } from "react-router-dom";
-import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
+import { useSearch } from "../../../hooks/searchContext";
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -71,7 +62,8 @@ interface Goal {
   status: Status;
   milestones: Milestone[];
   collaborators: Collaborator[];
-  shares?: GoalShare[];
+  shares?: GoalShare[]; // Sửa lại để khớp với API: share là object, không phải array
+  share?: GoalShare;
   progress?: GoalProgress;
   notesCount?: number;
   attachmentsCount?: number;
@@ -96,96 +88,88 @@ const statusTags: { [key: string]: string } = {
   cancelled: "Cancelled",
 };
 
-// --- GOAL CARD COMPONENT ---
-const GoalCard = memo(
-  ({
-    goal,
-    onMilestoneToggle,
-  }: {
-    goal: Goal;
-    onMilestoneToggle: (milestoneId: string, isCompleted: boolean) => void;
-  }) => {
-    const navigate = useNavigate();
-    return (
-      <div
-        className={`goals-card${
-          goal.status === "cancelled" ? " goals-is-cancelled" : ""
-        }`}
-        data-status={goal.status}
-        onClick={() => navigate(`/goals/${goal.goal_id}`)}
-      >
-        <div className="goals-card-header">
-          <div className="goals-title-container">
-            <span
-              className="goals-sharing-status"
-              title={
-                goal.shares?.[0]?.share_type
-                  ? sharingTitles[goal.shares[0].share_type]
-                  : "Private"
+// --- GOAL CARD COMPONENT (Đã sửa: loại bỏ prop không dùng) ---
+const GoalCard = memo(({ goal }: { goal: Goal }) => {
+  const navigate = useNavigate();
+  return (
+    <div
+      className={`goals-card${
+        goal.status === "cancelled" ? " goals-is-cancelled" : ""
+      }`}
+      data-status={goal.status}
+      onClick={() => navigate(`/goals/${goal.goal_id}`)}
+    >
+      <div className="goals-card-header">
+        <div className="goals-title-container">
+          <span
+            className="goals-sharing-status"
+            title={
+              goal.share?.share_type
+                ? sharingTitles[goal.share.share_type]
+                : "Private"
+            }
+          >
+            <FontAwesomeIcon
+              icon={
+                goal.share?.share_type
+                  ? sharingIcons[goal.share.share_type]
+                  : sharingIcons.private
               }
-            >
-              <FontAwesomeIcon
-                icon={
-                  goal.shares?.[0]?.share_type
-                    ? sharingIcons[goal.shares[0].share_type]
-                    : sharingIcons.private
-                }
-              />
-            </span>
-            <h3 className="goals-card-title">{goal.title}</h3>
-          </div>
-          <FontAwesomeIcon
-            icon={faEllipsisV}
-            className="goals-card-menu"
-            style={{ cursor: "pointer" }}
-          />
-        </div>
-        <div className="goals-card-description">{goal.description}</div>
-        <div className="goals-card-dates">
-          <FontAwesomeIcon icon={faCalendarAlt} />
-          <span>
-            {goal.start_date
-              ? new Date(goal.start_date).toLocaleDateString("en-GB", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                })
-              : ""}
+            />
           </span>
-          <span className="goals-date-separator">→</span>
-          <span>
-            {goal.end_date
-              ? new Date(goal.end_date).toLocaleDateString("en-GB", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                })
-              : ""}
-          </span>
+          <h3 className="goals-card-title">{goal.title}</h3>
         </div>
-        {goal.status && statusTags[goal.status] && (
-          <div className={`goals-card-status goals-status-tag-${goal.status}`}>
-            {statusTags[goal.status]}
-          </div>
-        )}
-        <div className="goals-card-progress">
-          <div className="goals-progress-bar">
-            <div
-              className="goals-progress-fill"
-              style={{
-                width: `${goal.progress ? goal.progress.progress_value : 0}%`,
-              }}
-            ></div>
-          </div>
-          <div className="goals-progress-text">
-            <span>Progress</span>
-            <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
-          </div>
+        <FontAwesomeIcon
+          icon={faEllipsisV}
+          className="goals-card-menu"
+          style={{ cursor: "pointer" }}
+        />
+      </div>
+      <div className="goals-card-description">{goal.description}</div>
+      <div className="goals-card-dates">
+        <FontAwesomeIcon icon={faCalendarAlt} />
+        <span>
+          {goal.start_date
+            ? new Date(goal.start_date).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })
+            : ""}
+        </span>
+        <span className="goals-date-separator">→</span>
+        <span>
+          {goal.end_date
+            ? new Date(goal.end_date).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })
+            : ""}
+        </span>
+      </div>
+      {goal.status && statusTags[goal.status] && (
+        <div className={`goals-card-status goals-status-tag-${goal.status}`}>
+          {statusTags[goal.status]}
+        </div>
+      )}
+      <div className="goals-card-progress">
+        <div className="goals-progress-bar">
+          <div
+            className="goals-progress-fill"
+            style={{
+              width: `${goal.progress ? goal.progress.progress_value : 0}%`,
+            }}
+          ></div>
+        </div>
+        <div className="goals-progress-text">
+          <span>Progress</span>
+          <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
         </div>
       </div>
-    );
-  }
-);
+    </div>
+  );
+});
 
 // --- GOALS PAGE COMPONENT ---
 const GoalsPage: React.FC = () => {
@@ -199,54 +183,60 @@ const GoalsPage: React.FC = () => {
     description: "",
     start_date: "",
     end_date: "",
-    sharing_type: "private" as Sharing,
-    collaborators: "",
+    share_type: "private" as Sharing, // Sửa tên để khớp API
   });
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [deletedMilestoneIds, setDeletedMilestoneIds] = useState<string[]>([]);
-  const [collaboratorInput, setCollaboratorInput] = useState("");
+  const [milestones, setMilestones] = useState<
+    Omit<Milestone, "goal_id" | "milestone_id">[]
+  >([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
 
-  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+  const { searchTerm } = useSearch();
 
   // Fetch goals
-  const fetchGoals = useCallback(() => {
+  const fetchGoals = useCallback(async () => {
     setLoading(true);
-    getGoals()
-      .then((res) => {
-        const data = (res.data.data || res.data).map((g: Goal) => ({
-          ...g,
-          milestones: g.milestones ?? [],
-          collaborators: g.collaborators ?? [],
-        }));
-        setGoals(data);
-      })
-      .catch(() => setErrorMsg("Failed to load goals."))
-      .finally(() => setLoading(false));
-  }, []);
+    try {
+      const res = await getGoals({ status: filter, search: searchTerm });
+      // API trả về object phân trang, dữ liệu nằm trong res.data.data
+      const goalsData = res.data.data || res.data || [];
+      setGoals(goalsData);
+    } catch (err) {
+      setErrorMsg("Failed to load goals.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, searchTerm]);
 
   useEffect(() => {
-    fetchGoals();
+    // Thêm debounce để tránh gọi API liên tục khi gõ search
+    const handler = setTimeout(() => {
+      fetchGoals();
+    }, 300); // Đợi 300ms sau khi người dùng ngừng gõ
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [fetchGoals]);
 
   // Move highlight bar
   useEffect(() => {
-    const activeBtn = document.querySelector(
-      ".goals-filter-btn.goals-active"
+    const activeBtn = filterTabsRef.current?.querySelector(
+      ".goals-active"
     ) as HTMLElement;
-    const highlight = highlightRef.current;
-    const container = filterTabsRef.current;
-    if (activeBtn && highlight && container) {
+    if (activeBtn && highlightRef.current && filterTabsRef.current) {
+      const containerRect = filterTabsRef.current.getBoundingClientRect();
       const btnRect = activeBtn.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      highlight.style.left = `${btnRect.left - containerRect.left}px`;
-      highlight.style.width = `${btnRect.width}px`;
+      highlightRef.current.style.left = `${
+        btnRect.left - containerRect.left
+      }px`;
+      highlightRef.current.style.width = `${btnRect.width}px`;
     }
-  }, [filter]);
+  }, [filter, goals]); // Thêm goals để cập nhật khi dữ liệu load xong
 
   // Modal open/close logic
   const openModal = useCallback((mode: "add" | "edit", goal?: Goal) => {
@@ -258,20 +248,11 @@ const GoalsPage: React.FC = () => {
       setForm({
         title: goal.title,
         description: goal.description,
-        start_date: goal.start_date,
-        end_date: goal.end_date,
-        sharing_type: goal.shares?.[0]?.share_type || "private",
-        collaborators: (goal.collaborators ?? []).map((c) => c.name).join(", "),
+        start_date: goal.start_date.substring(0, 10),
+        end_date: goal.end_date.substring(0, 10),
+        share_type: goal.share?.share_type || "private",
       });
-      setMilestones(
-        (goal.milestones ?? []).map((m) => ({
-          milestone_id: m.milestone_id,
-          title: m.title,
-          deadline: m.deadline,
-          is_completed: m.is_completed,
-        }))
-      );
-      setDeletedMilestoneIds([]);
+      setMilestones(goal.milestones || []);
     } else {
       setEditingGoal(null);
       setForm({
@@ -279,138 +260,53 @@ const GoalsPage: React.FC = () => {
         description: "",
         start_date: "",
         end_date: "",
-        sharing_type: "private",
-        collaborators: "",
+        share_type: "private",
       });
       setMilestones([]);
     }
-    setCollaboratorInput("");
   }, []);
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setErrors({});
     setEditingGoal(null);
-    setCollaboratorInput("");
   }, []);
 
   // Validate form
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.title.trim()) newErrors.title = "Title is required";
-    if (!form.description.trim())
-      newErrors.description = "Description is required";
     if (!form.start_date) newErrors.start_date = "Start date is required";
     if (!form.end_date) newErrors.end_date = "End date is required";
     if (form.start_date && form.end_date && form.start_date > form.end_date)
       newErrors.end_date = "End date must be after start date";
-    milestones.forEach((m, idx) => {
-      if (!m.title.trim())
-        newErrors[`milestone-title-${idx}`] = "Milestone title required";
-      if (!m.deadline)
-        newErrors[`milestone-deadline-${idx}`] = "Milestone deadline required";
-    });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  // Filter logic with search
-  const filteredGoals = goals.filter(
-    (g) =>
-      (filter === "all" || g.status === filter) &&
-      (!searchTerm ||
-        g.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Milestone handlers
-  const addMilestone = useCallback(() => {
-    setMilestones((prev) => [...prev, { title: "", deadline: "" }]);
-  }, []);
-  const updateMilestoneHandler = useCallback(
-    (idx: number, field: "title" | "deadline", value: string) => {
-      setMilestones((prev) =>
-        prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m))
-      );
-    },
-    []
-  );
-  const removeMilestone = useCallback((idx: number) => {
-    setMilestones((prev) => {
-      const removed = prev[idx];
-      if (removed.milestone_id) {
-        setDeletedMilestoneIds((ids) =>
-          ids.includes(removed.milestone_id!)
-            ? ids
-            : [...ids, removed.milestone_id!]
-        );
-      }
-      return prev.filter((_, i) => i !== idx);
-    });
-  }, []);
 
   // Form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
+
+    const goalData = {
+      ...form,
+      milestones: milestones,
+    };
+
     try {
       if (modalMode === "add") {
-        const res = await createGoal({
-          title: form.title,
-          description: form.description,
-          start_date: form.start_date,
-          end_date: form.end_date,
-          sharing_type: form.sharing_type,
-          milestones: milestones.map((m) => ({
-            title: m.title,
-            deadline: m.deadline
-              ? new Date(m.deadline).toISOString().slice(0, 10)
-              : "",
-          })),
-        });
-        setGoals((prev) => [...prev, res.data.data || res.data]);
-      } else if (modalMode === "edit" && editingGoal) {
-        if (deletedMilestoneIds.length > 0) {
-          await Promise.all(
-            deletedMilestoneIds.map((id) =>
-              deleteMilestone(id).catch((err) => {
-                if (err?.response?.status !== 404) throw err;
-              })
-            )
-          );
-        }
-        const newMilestones = milestones.filter((m) => !m.milestone_id);
-        if (newMilestones.length > 0) {
-          await Promise.all(
-            newMilestones.map((m) =>
-              createMilestone(editingGoal.goal_id, {
-                title: m.title,
-                deadline: m.deadline
-                  ? new Date(m.deadline).toISOString().slice(0, 10)
-                  : "",
-              })
-            )
-          );
-        }
-
-        const res = await updateGoal(editingGoal.goal_id, {
-          title: form.title,
-          description: form.description,
-          start_date: form.start_date,
-          end_date: form.end_date,
-        });
-
-        const updatedGoalData = await getGoal(editingGoal.goal_id);
-        const finalGoal = updatedGoalData.data.data || updatedGoalData.data;
-
-        setGoals((prev) =>
-          prev.map((g) => (g.goal_id === editingGoal.goal_id ? finalGoal : g))
-        );
+        await createGoal(goalData);
+      } else if (editingGoal) {
+        // Trong chế độ edit, không gửi milestones vì đã có trang detail để quản lý
+        const { milestones: _, ...updateData } = goalData;
+        await updateGoal(editingGoal.goal_id, updateData);
       }
       closeModal();
+      fetchGoals(); // Tải lại danh sách goals sau khi lưu
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || "Failed to save goal.");
+      setErrorMsg(err?.response?.data?.message || "Failed to save the goal.");
     } finally {
       setLoading(false);
     }
@@ -422,127 +318,12 @@ const GoalsPage: React.FC = () => {
     setLoading(true);
     try {
       await deleteGoal(editingGoal.goal_id);
-      setGoals((prev) => prev.filter((g) => g.goal_id !== editingGoal.goal_id));
       closeModal();
+      fetchGoals(); // Tải lại danh sách
     } catch (err) {
-      setErrorMsg("Failed to delete goal.");
+      setErrorMsg("Failed to delete the goal.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Collaborator handlers
-  const handleAddCollaborator = async () => {
-    if (!editingGoal || !collaboratorInput.trim()) return;
-    setLoading(true);
-    try {
-      const res = await addCollaborator(editingGoal.goal_id, {
-        email: collaboratorInput.trim(),
-      });
-      const updatedGoalData = res.data.data || res.data;
-      setEditingGoal(updatedGoalData);
-      setGoals((prev) =>
-        prev.map((g) =>
-          g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
-        )
-      );
-      setCollaboratorInput("");
-    } catch {
-      setErrorMsg("Failed to add collaborator.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveCollaborator = async (userId: string) => {
-    if (!editingGoal) return;
-    setLoading(true);
-    try {
-      const res = await removeCollaborator(editingGoal.goal_id, userId);
-      const updatedGoalData = res.data.data || res.data;
-      setEditingGoal(updatedGoalData);
-      setGoals((prev) =>
-        prev.map((g) =>
-          g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
-        )
-      );
-    } catch {
-      setErrorMsg("Failed to remove collaborator.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // --- HÀM MỚI ĐỂ CẬP NHẬT MILESTONE ---
-  const handleMilestoneToggle = useCallback(
-    async (goalId: string, milestoneId: string, isCompleted: boolean) => {
-      setGoals((prevGoals) =>
-        prevGoals.map((g) => {
-          if (g.goal_id === goalId) {
-            return {
-              ...g,
-              milestones: g.milestones.map((m) =>
-                m.milestone_id === milestoneId
-                  ? { ...m, is_completed: isCompleted }
-                  : m
-              ),
-            };
-          }
-          return g;
-        })
-      );
-
-      try {
-        const res = await updateMilestone(milestoneId, {
-          is_completed: isCompleted,
-        });
-        const updatedGoalData = res.data.data || res.data;
-
-        setGoals((prevGoals) =>
-          prevGoals.map((g) =>
-            g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
-          )
-        );
-      } catch (err: any) {
-        setErrorMsg("Failed to update milestone. Reverting changes.");
-        fetchGoals();
-      }
-    },
-    [fetchGoals]
-  );
-
-  // Sharing handler
-  const handleChangeSharing = async (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const newSharingType = e.target.value as Sharing;
-    setForm((f) => ({ ...f, sharing_type: newSharingType }));
-
-    if (editingGoal) {
-      setLoading(true);
-      try {
-        await updateShareSettings(editingGoal.goal_id, {
-          share_type: newSharingType,
-        });
-        const res = await getGoal(editingGoal.goal_id);
-        const updatedGoalData = res.data.data || res.data;
-        setEditingGoal(updatedGoalData);
-        setGoals((prev) =>
-          prev.map((g) =>
-            g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
-          )
-        );
-      } catch (err: any) {
-        setErrorMsg(
-          err?.response?.data?.message || "Failed to update sharing."
-        );
-        setForm((f) => ({
-          ...f,
-          sharing_type: editingGoal.shares?.[0]?.share_type || "private",
-        }));
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -572,9 +353,8 @@ const GoalsPage: React.FC = () => {
                   >
                     {s === "all"
                       ? "All"
-                      : s === "in_progress"
-                      ? "In Progress"
-                      : s.charAt(0).toUpperCase() + s.slice(1)}
+                      : s.charAt(0).toUpperCase() +
+                        s.slice(1).replace("_", " ")}
                   </button>
                 )
               )}
@@ -599,25 +379,17 @@ const GoalsPage: React.FC = () => {
         <div className="goals-grid">
           {loading ? (
             <div className="goals-loading-container">
-              <div className="goals-loading-spinner">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-              </div>
+              <div className="goals-loading-spinner"></div>
               <p>Loading your goals...</p>
             </div>
-          ) : filteredGoals.length > 0 ? (
-            filteredGoals.map((goal) => (
+          ) : goals.length > 0 ? (
+            goals.map((goal) => (
+              // --- SỬA LỖI: THÊM key PROP VÀO ĐÂY ---
               <GoalCard key={goal.goal_id} goal={goal} />
             ))
           ) : (
             <div className="goals-no-goals-found">
-              No goals found for the selected filter.
+              No goals found. Try changing your filters or creating a new goal!
             </div>
           )}
         </div>
@@ -638,7 +410,12 @@ const GoalsPage: React.FC = () => {
             <div className="goals-modal-body">
               <form className="goals-form" onSubmit={handleSubmit} noValidate>
                 <div className="goals-form-group">
-                  <label htmlFor="goal-title-input">Title</label>
+                  <label htmlFor="goal-title-input">
+                    Title{" "}
+                    {errors.title && (
+                      <span className="error-text">({errors.title})</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     id="goal-title-input"
@@ -660,7 +437,14 @@ const GoalsPage: React.FC = () => {
                 </div>
                 <div className="goals-form-group-inline">
                   <div className="goals-form-group">
-                    <label htmlFor="goal-start-date">Start Date</label>
+                    <label htmlFor="goal-start-date">
+                      Start Date{" "}
+                      {errors.start_date && (
+                        <span className="error-text">
+                          ({errors.start_date})
+                        </span>
+                      )}
+                    </label>
                     <input
                       type="date"
                       id="goal-start-date"
@@ -671,7 +455,12 @@ const GoalsPage: React.FC = () => {
                     />
                   </div>
                   <div className="goals-form-group">
-                    <label htmlFor="goal-end-date">End Date</label>
+                    <label htmlFor="goal-end-date">
+                      End Date{" "}
+                      {errors.end_date && (
+                        <span className="error-text">({errors.end_date})</span>
+                      )}
+                    </label>
                     <input
                       type="date"
                       id="goal-end-date"

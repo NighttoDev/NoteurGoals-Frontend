@@ -20,12 +20,16 @@ interface MilestoneListProps {
   milestones: Milestone[];
   goalId: string;
   onRefresh: () => void;
+  goalStartDate: string;
+  goalEndDate: string;
 }
 
 const MilestoneList: React.FC<MilestoneListProps> = ({
   milestones,
   goalId,
   onRefresh,
+  goalStartDate,
+  goalEndDate,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Milestone>({
@@ -53,6 +57,11 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
 
   const handleUpdateMilestone = async (milestoneId: string) => {
     if (!editForm.title || !editForm.deadline) return;
+    // Validate deadline within goal range
+    if (!isWithinGoalRange(editForm.deadline)) {
+      alert("Deadline của milestone phải nằm trong khoảng thời gian của goal");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -104,6 +113,11 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
       alert("Vui lòng điền đầy đủ thông tin");
       return;
     }
+    // Validate deadline within goal range
+    if (!isWithinGoalRange(newMilestone.deadline)) {
+      alert("Deadline của milestone phải nằm trong khoảng thời gian của goal");
+      return;
+    }
 
     setLoading(true);
 
@@ -119,14 +133,19 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
         setIsAdding(false);
         // Có thể thêm toast notification ở đây
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = "Lỗi khi thêm milestone";
 
-      if (err.response) {
-        if (err.response.status === 403) {
+      if (typeof err === "object" && err !== null && "response" in err) {
+        const response = (
+          err as {
+            response?: { status?: number; data?: { message?: string } };
+          }
+        ).response;
+        if (response?.status === 403) {
           errorMessage = "Bạn không có quyền thực hiện hành động này";
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
+        } else if (response?.data?.message) {
+          errorMessage = response.data.message;
         }
       }
 
@@ -143,6 +162,24 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
       month: "short",
       year: "numeric",
     });
+  };
+
+  const toDateInputValue = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().split("T")[0];
+  };
+
+  // Helpers
+  const isWithinGoalRange = (isoDate: string) => {
+    if (!goalStartDate || !goalEndDate) return true;
+    const time = new Date(isoDate).getTime();
+    const start = new Date(goalStartDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(goalEndDate);
+    end.setHours(23, 59, 59, 999);
+    return time >= start.getTime() && time <= end.getTime();
   };
 
   return (
@@ -170,10 +207,15 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
               />
               <input
                 type="date"
-                value={editForm.deadline}
+                value={toDateInputValue(editForm.deadline)}
                 onChange={(e) =>
-                  setEditForm({ ...editForm, deadline: e.target.value })
+                  setEditForm({
+                    ...editForm,
+                    deadline: new Date(e.target.value).toISOString(),
+                  })
                 }
+                min={toDateInputValue(goalStartDate)}
+                max={toDateInputValue(goalEndDate)}
               />
               <div className="milestone-edit-actions">
                 <button onClick={handleCancelEdit} disabled={loading}>
@@ -244,11 +286,15 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
 
           <input
             type="date"
-            value={newMilestone.deadline}
+            value={toDateInputValue(newMilestone.deadline)}
             onChange={(e) =>
-              setNewMilestone({ ...newMilestone, deadline: e.target.value })
+              setNewMilestone({
+                ...newMilestone,
+                deadline: new Date(e.target.value).toISOString(),
+              })
             }
-            min={new Date().toISOString().split("T")[0]} // Không cho chọn ngày trong quá khứ
+            min={toDateInputValue(goalStartDate)}
+            max={toDateInputValue(goalEndDate)}
           />
           {!newMilestone.deadline && (
             <span className="error-text">Deadline is required</span>
