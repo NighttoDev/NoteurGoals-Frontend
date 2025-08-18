@@ -91,7 +91,7 @@ const CheckoutPage: React.FC = () => {
   }
 
   if (error || !plan) {
-    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>{error || "Gói không hợp lệ."} <button onClick={() => navigate('/settings#subscription')}>Quay lại</button></p></main>;
+    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>{error || "Gói không hợp lệ."} <button onClick={() => navigate('/dashboard/settings#subscription')}>Quay lại</button></p></main>;
   }
 
   return (
