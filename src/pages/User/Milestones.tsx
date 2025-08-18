@@ -15,8 +15,10 @@ import {
   faFlagCheckered,
   faCalendarCheck,
   faSpinner,
+  faSquare,
+  faSquareCheck,
 } from "@fortawesome/free-solid-svg-icons";
-import { faSquare, faSquareCheck } from "@fortawesome/free-regular-svg-icons";
+// import { faSquare, faSquareCheck } from "@fortawesome/free-regular-svg-icons";
 
 // Interface for a single milestone card
 interface MilestoneCard {

@@ -1,7 +1,5 @@
-// --- START OF FILE DashboardPage.tsx ---
-
 import React, { useState, useEffect } from "react";
-import "../../assets/css/User/dashboard.css"; // Đảm bảo đường dẫn này chính xác
+import "../../assets/css/User/dashboard.css";
 import {
   BsBell,
   BsCalendar3,
@@ -21,7 +19,12 @@ import {
   FiStar,
 } from "react-icons/fi";
 
-// --- START: Định nghĩa kiểu dữ liệu từ API ---
+// Import services
+import { getGoals } from "../../services/goalsService";
+import { getEvents } from "../../services/eventService";
+import { getFriendsData } from "../../services/friendsService";
+
+// --- Type Definitions ---
 interface ICurrentUser {
   id: number;
   displayName: string;
@@ -56,6 +59,7 @@ interface IFriendRequest {
   id: number;
   displayName: string;
   avatar: string;
+  friendship_id: string;
 }
 
 interface IScheduleEvent {
@@ -71,7 +75,6 @@ interface IActivity {
   time: string;
   type: "completed" | "comment" | "new_task";
 }
-// --- END: Định nghĩa kiểu dữ liệu từ API ---
 
 const DashboardPage = () => {
   const [currentUser, setCurrentUser] = useState<ICurrentUser | null>(null);
@@ -89,207 +92,168 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ---- GIẢ LẬP GỌI API - Thay thế phần này bằng API thật ----
-    const fetchDashboardData = () => {
-      // Dữ liệu người dùng: SELECT ... FROM Users JOIN UserProfiles ON ... WHERE user_id = ?
-      const mockCurrentUser: ICurrentUser = {
-        id: 39,
-        displayName: "Hạnh Vy Nguyễn Trần",
-        is_premium: false, // Đổi thành true để ẩn CTA
-      };
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const goalsRes = await getGoals();
+        const goals = goalsRes.data.data;
 
-      // Dữ liệu thống kê
-      const mockStats: IStats = {
-        inProgressGoals: 8, // SQL: SELECT COUNT(*) FROM Goals WHERE status = 'in_progress' AND user_id = ?
-        overdueGoals: 2, // SQL: SELECT COUNT(*) FROM Goals WHERE end_date < CURDATE() AND status != 'completed' AND user_id = ?
-        dueTodayTasks: 3, // SQL: SELECT COUNT(*) FROM Events WHERE DATE(event_time) = CURDATE() AND user_id = ?
-        completedThisWeek: 12, // SQL: SELECT COUNT(*) FROM Goals WHERE status = 'completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND user_id = ?
-      };
+        const eventsRes = await getEvents();
+        const events = eventsRes.data.data;
 
-      // Dữ liệu công việc sắp tới: SELECT ... FROM Goals ... WHERE end_date > CURDATE() ORDER BY end_date ASC
-      const mockUpcomingTasks: IUpcomingTask[] = [
-        {
-          id: 1,
-          title: "Review and Finalize Project Proposal",
-          project: "Marketing Campaign",
-          dueDate: "20/TH6",
-          priority: "high",
-          progress: 75,
-        },
-        {
-          id: 2,
-          title: "Chuẩn bị slide cho buổi họp team",
-          project: "Team Meeting",
-          dueDate: "21/TH6",
-          priority: "medium",
-          progress: 30,
-        },
-        // Thêm nhiều task để test cuộn
-        {
-          id: 3,
-          title: "Task 3",
-          project: "Project A",
-          dueDate: "22/TH6",
-          priority: "low",
-          progress: 10,
-        },
-        {
-          id: 4,
-          title: "Task 4",
-          project: "Project B",
-          dueDate: "23/TH6",
-          priority: "high",
-          progress: 90,
-        },
-        {
-          id: 5,
-          title: "Task 5",
-          project: "Project C",
-          dueDate: "24/TH6",
-          priority: "medium",
-          progress: 50,
-        },
-        {
-          id: 6,
-          title: "Task 6",
-          project: "Project D",
-          dueDate: "25/TH6",
-          priority: "low",
-          progress: 20,
-        },
-      ];
+        const friendsRes = await getFriendsData();
+        const { requests } = friendsRes.data;
 
-      // Mục tiêu cộng tác: SELECT ... FROM GoalCollaboration JOIN Goals ON ... WHERE GoalCollaboration.user_id = ?
-      const mockCollaborativeGoals: ICollaborativeGoal[] = [
-        {
-          id: 1,
-          title: "Phát triển ứng dụng di động",
-          owner: "Nguyễn Duy Mạnh",
-          members: [
-            { avatar: "https://i.pravatar.cc/40?img=4" },
-            { avatar: "https://i.pravatar.cc/40?img=5" },
-            { avatar: "https://i.pravatar.cc/40?img=6" },
-          ],
-          progress: 60,
-        },
-        {
-          id: 2,
-          title: "Kế hoạch ra mắt sản phẩm Q3",
-          owner: "Trần Viết Khang",
-          members: [
-            { avatar: "https://i.pravatar.cc/40?img=7" },
-            { avatar: "https://i.pravatar.cc/40?img=8" },
-          ],
-          progress: 25,
-        },
-        // Thêm nhiều goal để test cuộn
-        {
-          id: 3,
-          title: "Goal 3",
-          owner: "Owner 3",
-          members: [{ avatar: "https://i.pravatar.cc/40?img=1" }],
-          progress: 80,
-        },
-        {
-          id: 4,
-          title: "Goal 4",
-          owner: "Owner 4",
-          members: [{ avatar: "https://i.pravatar.cc/40?img=2" }],
-          progress: 40,
-        },
-      ];
+        // 4. Get user info from localStorage (or a separate API if available)
+        const userInfo = JSON.parse(localStorage.getItem("user_info") || "{}");
+        setCurrentUser({
+          id: userInfo.user_id,
+          displayName: userInfo.display_name,
+          is_premium: userInfo.is_premium || false,
+        });
 
-      // Lời mời kết bạn: SELECT ... FROM Friendships JOIN Users ON ... WHERE user_id_2 = ? AND status = 'pending'
-      const mockFriendRequests: IFriendRequest[] = [
-        {
-          id: 1,
-          displayName: "N. Đức Thành",
-          avatar: "https://i.pravatar.cc/40?img=9",
-        },
-      ];
+        // 5. Calculate statistics
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
 
-      // Lịch trình: SELECT ... FROM Events WHERE user_id = ? AND event_time >= CURDATE() ORDER BY event_time ASC
-      const mockScheduleEvents: IScheduleEvent[] = [
-        {
-          id: 1,
-          title: "Họp team hàng tuần",
-          time: new Date(new Date().setHours(9, 0, 0, 0)),
-        },
-        {
-          id: 2,
-          title: "Review dự án với khách hàng",
-          time: new Date(new Date().setDate(new Date().getDate() + 1)),
-        },
-        {
-          id: 3,
-          title: "Nộp báo cáo tháng",
-          time: new Date(new Date().setDate(new Date().getDate() + 3)),
-        },
-      ];
+        const inProgressGoals = goals.filter(
+          (g: any) => g.status === "in_progress"
+        ).length;
+        const overdueGoals = goals.filter(
+          (g: any) => g.status !== "completed" && g.end_date < todayStr
+        ).length;
+        const completedThisWeek = goals.filter((g: any) => {
+          if (g.status !== "completed" || !g.updated_at) return false;
+          const updated = new Date(g.updated_at);
+          const diff =
+            (now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24);
+          return diff <= 7;
+        }).length;
 
-      // Hoạt động gần đây: SELECT ... FROM UserLogs ...
-      const mockActivities: IActivity[] = [
-        {
-          id: 1,
-          user: "Alex",
-          action: 'đã hoàn thành công việc "Q4 2024 Website Redesign"',
-          time: "15 phút trước",
-          type: "completed",
-        },
-        {
-          id: 2,
-          user: "Maria",
-          action: 'đã bình luận trong "Mobile App UI/UX Redesign".',
-          time: "1 giờ trước",
-          type: "comment",
-        },
-      ];
+        // 6. Today's tasks (events for the day)
+        const dueTodayTasks = events.filter((e: any) => {
+          const eventDate = new Date(e.event_time).toISOString().slice(0, 10);
+          return eventDate === todayStr;
+        }).length;
 
-      setCurrentUser(mockCurrentUser);
-      setStats(mockStats);
-      setUpcomingTasks(mockUpcomingTasks);
-      setCollaborativeGoals(mockCollaborativeGoals);
-      setFriendRequests(mockFriendRequests);
-      setScheduleEvents(mockScheduleEvents);
-      setRecentActivities(mockActivities);
-      setLoading(false);
+        setStats({
+          inProgressGoals,
+          overdueGoals,
+          completedThisWeek,
+          dueTodayTasks,
+        });
+
+        // 7. Upcoming tasks (upcoming events)
+        setUpcomingTasks(
+          events
+            .filter((e: any) => new Date(e.event_time) >= now)
+            .slice(0, 6)
+            .map((e: any) => ({
+              id: e.id,
+              title: e.title,
+              project: e.goal?.title || "No project",
+              dueDate: new Date(e.event_time).toLocaleDateString("en-US"),
+              priority: e.priority || "medium",
+              progress: e.progress || 0,
+            }))
+        );
+
+        // 8. Collaborative goals (goals with multiple collaborators)
+        setCollaborativeGoals(
+          goals
+            .filter(
+              (g: any) =>
+                Array.isArray(g.collaborators) && g.collaborators.length > 1
+            )
+            .map((g: any) => ({
+              id: g.id,
+              title: g.title,
+              owner: g.owner?.display_name || "Unknown",
+              members: g.collaborators.map((c: any) => ({
+                avatar: c.avatar_url || "/default-avatar.png",
+              })),
+              progress: g.progress || 0,
+            }))
+        );
+
+        // 9. Friend requests
+        setFriendRequests(
+          (requests || []).map((r: any) => ({
+            id: r.user_id,
+            displayName: r.display_name,
+            avatar: r.avatar_url || "/default-avatar.png",
+            friendship_id: r.friendship_id,
+          }))
+        );
+
+        // 10. Schedule events (upcoming events)
+        setScheduleEvents(
+          events
+            .filter((e: any) => new Date(e.event_time) >= now)
+            .slice(0, 5)
+            .map((e: any) => ({
+              id: e.id,
+              title: e.title,
+              time: new Date(e.event_time),
+            }))
+        );
+
+        // 11. Recent activities (backend-dependent, here demoed from goals)
+        setRecentActivities(
+          goals
+            .filter((g: any) => g.status === "completed")
+            .slice(-5)
+            .map((g: any, idx: number) => ({
+              id: g.id,
+              user: g.owner?.display_name || "You",
+              action: `completed the goal "${g.title}"`,
+              time: "Recently",
+              type: "completed",
+            }))
+        );
+      } catch (err) {
+        // Error handling
+        setStats(null);
+        setUpcomingTasks([]);
+        setCollaborativeGoals([]);
+        setFriendRequests([]);
+        setScheduleEvents([]);
+        setRecentActivities([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const timer = setTimeout(fetchDashboardData, 500);
-    return () => clearTimeout(timer);
+    fetchDashboardData();
   }, []);
 
-  // Helper function để định dạng ngày giờ
+  // Helper function to format date and time
   const formatDateTime = (date: Date) => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return `Hôm nay, ${date.toLocaleTimeString([], {
+      return `Today, ${date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
     }
     if (date.toDateString() === tomorrow.toDateString()) {
-      return `Ngày mai, ${date.toLocaleTimeString([], {
+      return `Tomorrow, ${date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
     }
-    return date.toLocaleDateString("vi-VN", {
+    return date.toLocaleDateString("en-US", {
       weekday: "long",
       day: "numeric",
       month: "numeric",
     });
   };
 
-  if (loading) {
-    return <div className="dsd-loading-screen">Đang tải dữ liệu...</div>;
-  }
-
   return (
-    <div className="dsd-main-content">
+    <main className="dsd-main-content">
       {/* Stats Section */}
       <div className="dsd-stats-grid">
         <div className="dsd-stat-card">
@@ -298,7 +262,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.inProgressGoals}</span>
-            <p>Đang tiến hành</p>
+            <p>In Progress</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -307,7 +271,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.overdueGoals}</span>
-            <p>Bị quá hạn</p>
+            <p>Overdue</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -316,7 +280,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.completedThisWeek}</span>
-            <p>Hoàn thành tuần này</p>
+            <p>Completed This Week</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -325,7 +289,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.dueTodayTasks}</span>
-            <p>Việc hôm nay</p>
+            <p>Due Today</p>
           </div>
         </div>
       </div>
@@ -337,18 +301,18 @@ const DashboardPage = () => {
           <div className="dsd-section-header">
             <div className="dsd-header-title">
               <BsHourglassSplit className="dsd-icon" />
-              <h2>Sắp đến hạn</h2>
+              <h2>Upcoming Tasks</h2>
             </div>
             <button className="dsd-add-task">
-              <FiPlus /> Thêm mới
+              <FiPlus /> Add New
             </button>
           </div>
           <div className="dsd-task-list">
             {upcomingTasks.map((task) => (
               <div className="dsd-task-item" key={task.id}>
                 <div className="dsd-task-time">
-                  <div className="dsd-date">{task.dueDate.split("/")[0]}</div>
-                  <div className="dsd-month">{task.dueDate.split("/")[1]}</div>
+                  <div className="dsd-date">{task.dueDate.split("/")[1]}</div>
+                  <div className="dsd-month">{task.dueDate.split("/")[0]}</div>
                 </div>
                 <div className="dsd-task-details">
                   <h3>{task.title}</h3>
@@ -357,9 +321,9 @@ const DashboardPage = () => {
                       <FiTarget /> {task.project}
                     </span>
                     <span className={`dsd-priority dsd-${task.priority}`}>
-                      {task.priority === "high" && "Ưu tiên cao"}
-                      {task.priority === "medium" && "Ưu tiên trung bình"}
-                      {task.priority === "low" && "Ưu tiên thấp"}
+                      {task.priority === "high" && "High Priority"}
+                      {task.priority === "medium" && "Medium Priority"}
+                      {task.priority === "low" && "Low Priority"}
                     </span>
                   </div>
                   <div className="dsd-task-progress">
@@ -382,7 +346,7 @@ const DashboardPage = () => {
           <div className="dsd-section-header">
             <div className="dsd-header-title">
               <FiUsers className="dsd-icon" />
-              <h2>Mục tiêu cộng tác</h2>
+              <h2>Collaborative Goals</h2>
             </div>
           </div>
           <div className="dsd-task-list">
@@ -404,7 +368,7 @@ const DashboardPage = () => {
                       <img key={index} src={member.avatar} alt="Member" />
                     ))}
                   </div>
-                  <span className="dsd-owner">Chủ sở hữu: {goal.owner}</span>
+                  <span className="dsd-owner">Owner: {goal.owner}</span>
                 </div>
               </div>
             ))}
@@ -419,10 +383,13 @@ const DashboardPage = () => {
                 <FiStar />
               </div>
               <div className="dsd-premium-text">
-                <h3>Nâng cấp Premium</h3>
-                <p>Mở khóa toàn bộ tính năng mạnh mẽ.</p>
+                <h3>Upgrade to Premium</h3>
+                <p>Unlock all powerful features.</p>
               </div>
-              <button>Nâng cấp ngay</button>
+              <button>
+                {" "}
+                <a href="/checkout">Upgrade Now</a>
+              </button>
             </div>
           )}
 
@@ -431,7 +398,7 @@ const DashboardPage = () => {
               <div className="dsd-section-header">
                 <div className="dsd-header-title">
                   <BsPersonPlus className="dsd-icon" />
-                  <h2>Lời mời kết bạn</h2>
+                  <h2>Friend Requests</h2>
                 </div>
               </div>
               {friendRequests.map((req) => (
@@ -439,8 +406,8 @@ const DashboardPage = () => {
                   <img src={req.avatar} alt={req.displayName} />
                   <span>{req.displayName}</span>
                   <div className="dsd-friend-actions">
-                    <button className="dsd-accept">Đồng ý</button>
-                    <button className="dsd-decline">Từ chối</button>
+                    <button className="dsd-accept">Accept</button>
+                    <button className="dsd-decline">Decline</button>
                   </div>
                 </div>
               ))}
@@ -453,13 +420,13 @@ const DashboardPage = () => {
                 onClick={() => setActiveTab("activity")}
                 className={activeTab === "activity" ? "dsd-active" : ""}
               >
-                Hoạt động
+                Activity
               </button>
               <button
                 onClick={() => setActiveTab("schedule")}
                 className={activeTab === "schedule" ? "dsd-active" : ""}
               >
-                Lịch trình
+                Schedule
               </button>
             </div>
 
@@ -503,9 +470,8 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 
 export default DashboardPage;
-// --- END OF FILE DashboardPage.tsx ---

@@ -18,8 +18,10 @@
   --text-on-primary: #ffffff;
 
   --accent-red: #ef4444;
+
   --accent-red-light: #fee2e2; /* Nền đỏ nhạt */
   --accent-red-dark: #b91c1c; /* Chữ đỏ đậm */
+
   --accent-red-glow: rgba(239, 68, 68, 0.3);
   --accent-green: #22c55e;
   --accent-blue: #3b82f6;
@@ -101,6 +103,7 @@
   gap: 1rem;
 }
 
+/* --- Button Styles (Đồng nhất với Notes) --- */
 .goals-btn {
   padding: 0.8rem 1.5rem;
   border-radius: var(--border-radius-md);
@@ -545,6 +548,7 @@
 }
 
 /* MỚI (Xanh dương) */
+
 .goals-status-tag-new {
   background-color: rgba(124, 58, 237, 0.1);
   color: var(--primary-deep);
@@ -557,12 +561,14 @@
 }
 
 /* HOÀN THÀNH (Xanh lá) */
+
 .goals-status-tag-completed {
   background-color: var(--accent-green-light);
   color: #047857;
 }
 
 /* ĐÃ HỦY (Xám) */
+
 .goals-status-tag-cancelled {
   background-color: var(--accent-grey-light);
   color: var(--text-light);

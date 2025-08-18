@@ -18,8 +18,9 @@ import {
   faEllipsisVertical,
   faBullseye,
   faPaperclip,
+  faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
-import { faNoteSticky } from "@fortawesome/free-regular-svg-icons";
+import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
 
 interface NotesCard {
   id: string;
@@ -54,9 +55,9 @@ const NotesPage: React.FC = () => {
   const [addForm, setAddForm] = useState({ title: "", content: "" });
   const [editForm, setEditForm] = useState({ title: "", content: "" });
 
+  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+
   useEffect(() => {
-    const cached = localStorage.getItem(NOTES_CACHE_KEY);
-    if (cached) setNotes(JSON.parse(cached));
     fetchNotes();
     // eslint-disable-next-line
   }, []);
@@ -246,6 +247,14 @@ const NotesPage: React.FC = () => {
 
   const showLoading = notes.length === 0 && loading;
 
+  // Lọc notes theo searchTerm
+  const filteredNotes = notes.filter(
+    (note) =>
+      !searchTerm ||
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const renderGoalsCheckboxes = () => (
     <div className="notes-modal-group">
       <label>Liên kết với Goal</label>
@@ -292,7 +301,10 @@ const NotesPage: React.FC = () => {
   );
 
   return (
-    <main className="notes-main-content">
+    <main
+      className="notes-main-content"
+      style={{ margin: "0", borderRadius: "0" }}
+    >
       <section className="notes-container-section">
         <h1 className="notes-page-title">My Notes</h1>
 
@@ -327,9 +339,9 @@ const NotesPage: React.FC = () => {
         <div className={`notes-main-container ${viewMode}-view`}>
           {showLoading
             ? renderLoading()
-            : notes.length === 0
+            : filteredNotes.length === 0
             ? renderEmptyState()
-            : notes.map((note) => (
+            : filteredNotes.map((note) => (
                 <div
                   key={note.id}
                   className={`notes-card ${

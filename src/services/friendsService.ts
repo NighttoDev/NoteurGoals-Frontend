@@ -35,6 +35,7 @@ export const getFriendsData = () => {
 
 /**
  * Lấy các mục tiêu được chia sẻ trong cộng đồng (Community Feed).
+ * (Đã có placeholder API ở backend)
  */
 export const getCommunityFeed = () => {
   return axiosAuth.get("/community/feed");
@@ -42,31 +43,30 @@ export const getCommunityFeed = () => {
 
 /**
  * Lấy danh sách gợi ý kết bạn từ server.
+ * (Đã có placeholder API ở backend)
  */
 export const getUserSuggestions = () => {
   return axiosAuth.get("/users/suggestions");
 };
 
 /**
+ * === ĐÃ SỬA VÀ HỢP NHẤT ===
  * Tìm kiếm người dùng theo query (tên hoặc email).
+ * Dùng cho cả thanh search chính và modal.
+ * Backend mong đợi tham số là 'query'.
  */
 export const searchUsers = (query: string) => {
-  // Mã hóa query để đảm bảo các ký tự đặc biệt được gửi đi an toàn
-  return axiosAuth.get(`/users/search?q=${encodeURIComponent(query)}`);
+  return axiosAuth.get(`/users/search?query=${encodeURIComponent(query)}`);
 };
 
 /**
- * Gửi lời mời kết bạn bằng email.
- */
-export const sendFriendRequestByEmail = (email: string) => {
-  return axiosAuth.post("/friends/request", { email });
-};
-
-/**
+ * === ĐÃ SỬA ===
  * Gửi lời mời kết bạn bằng User ID.
+ * Gọi đến route mới /friends/request/id.
  */
 export const sendFriendRequestById = (userId: string) => {
-  return axiosAuth.post("/friends/request", { user_id: userId });
+  // Backend mong đợi 'user_id'
+  return axiosAuth.post("/friends/request/id", { user_id: userId });
 };
 
 /**
@@ -88,7 +88,36 @@ export const deleteFriend = (friendshipId: string) => {
 
 /**
  * Báo cáo một người dùng.
+ * Lưu ý: Route này có thể bạn chưa tạo ở backend.
  */
 export const reportUser = (userId: string, reason: string) => {
+  // Đảm bảo bạn có route POST /api/user/{userId}/report ở backend
   return axiosAuth.post(`/user/${userId}/report`, { reason });
+};
+
+// === KHÔNG CẦN NỮA VÌ ĐÃ HỢP NHẤT ===
+// export const searchUsersForRequest = (query: string) => {
+//   return axiosAuth.get(`/users/search?query=${query}`);
+// };
+
+// === CÓ THỂ KHÔNG CẦN NỮA ===
+// Hàm này gửi bằng email, modal mới không còn dùng
+// export const sendFriendRequestByEmail = (email: string) => {
+//   return axiosAuth.post("/friends/request", { email });
+// };
+/**
+ * Lấy lịch sử tin nhắn với một người bạn.
+ * @param friendId ID của người bạn
+ */
+export const getMessageHistory = (friendId: string) => {
+  return axiosAuth.get(`/messages/${friendId}`);
+};
+
+/**
+ * Gửi một tin nhắn mới.
+ * @param receiverId ID của người nhận
+ * @param content Nội dung tin nhắn
+ */
+export const sendMessage = (receiverId: string, content: string) => {
+  return axiosAuth.post('/messages', { receiver_id: receiverId, content });
 };

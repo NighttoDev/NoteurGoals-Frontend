@@ -48,14 +48,14 @@ const LoginPage: React.FC = () => {
     // ... (code giữ nguyên, đã rất tốt)
     const errors: { email?: string; password?: string } = {};
     if (!email.trim()) {
-      errors.email = "Vui lòng nhập email.";
+      errors.email = "Please type your email.";
     } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email.trim())) {
-      errors.email = "Định dạng email không hợp lệ.";
+      errors.email = "Email format is not valid.";
     }
     if (!password) {
-      errors.password = "Vui lòng nhập mật khẩu.";
+      errors.password = "Please type your password.";
     } else if (password.length < 8) {
-      errors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
+      errors.password = "Password must be at least 8 characters.";
     }
     return errors;
   };
@@ -92,13 +92,16 @@ const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data.message || "Có lỗi xảy ra khi đăng nhập.");
+        setError(
+          err.response.data.message || "An error occurred when logging in."
+        );
+
         if (err.response.data.verification_required) {
           navigate("/verify-email", { state: { email } });
         }
       } else {
-        setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.");
-        console.error("Lỗi đăng nhập không xác định:", err);
+        setError("Can't connect to server. Please try again.");
+        console.error("Login error:", err);
       }
     } finally {
       setLoading(false);
@@ -108,7 +111,8 @@ const LoginPage: React.FC = () => {
   const handleGoogleLogin = () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!googleClientId) {
-      alert("Lỗi cấu hình: Google Client ID chưa được thiết lập.");
+      alert("Configuration error: Google Client ID is not set.");
+
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/google/callback-direct`;
@@ -128,7 +132,8 @@ const LoginPage: React.FC = () => {
   const handleFacebookLogin = () => {
     const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
     if (!facebookAppId) {
-      alert("Lỗi cấu hình: Facebook App ID chưa được thiết lập.");
+      alert("Configuration error: Facebook App ID is not set.");
+
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/facebook/callback-direct`;

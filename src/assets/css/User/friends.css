@@ -5,7 +5,81 @@
   Focus: Full-screen UI, Gradient Typography, Intelligent Layout
 ================================================================
 */
+/* ... CSS hiện có của bạn ... */
 
+/* === THÊM MỚI CSS CHO MODAL TÌM KIẾM BẠN BÈ === */
+
+.friends-modal-body .friends-modal-group input {
+  width: 100%;
+  box-sizing: border-box; /* Đảm bảo padding không làm tăng width */
+}
+
+.friends-search-results {
+  margin-top: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.search-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+.search-result-item:hover {
+  background-color: #f9f9f9;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+}
+
+.search-result-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.search-result-email {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.search-loading,
+.search-no-results {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Kích thước nhỏ hơn cho button trong danh sách */
+.friends-btn.friends-btn-sm {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
 /* --- 0. ROOT & GENERAL STYLES --- */
 :root {
   --primary-glow: rgba(167, 139, 250, 0.4);
@@ -147,6 +221,7 @@
   font-size: 0.95rem;
   box-shadow: var(--shadow-sm);
   letter-spacing: 0.025em;
+
   white-space: nowrap;
 }
 
@@ -192,6 +267,7 @@
 .friends-tabs {
   display: flex;
   border-bottom: 1px solid var(--border-main);
+
   overflow-x: auto;
   flex-shrink: 0;
 }
@@ -296,6 +372,7 @@
   font-size: 0.85rem;
   margin-bottom: 1rem;
   z-index: 1;
+
   word-break: break-all;
 }
 
@@ -356,6 +433,7 @@
   align-items: center;
   gap: 0.5rem;
   box-shadow: var(--shadow-sm);
+
   white-space: nowrap;
 }
 .friends-action-btn:hover {
@@ -370,6 +448,7 @@
   );
   color: white;
 }
+
 .friends-action-btn-accept:hover {
   box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
 }
@@ -378,6 +457,7 @@
   background-image: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%);
   color: white;
 }
+
 .friends-action-btn-reject:hover {
   box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
 }
@@ -390,6 +470,7 @@
   );
   color: white;
 }
+
 .friends-action-btn-message:hover {
   box-shadow: 0 10px 15px -3px var(--primary-glow);
 }
@@ -444,6 +525,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
   justify-content: center;
   min-height: 400px;
 }
@@ -452,23 +534,27 @@
   border-radius: var(--border-radius-lg);
   border: 1px dashed var(--border-main);
 }
+
 .friends-empty-image {
   width: 180px;
   height: 180px;
   margin-bottom: 1.5rem;
   opacity: 0.7;
 }
+
 .friends-empty-title {
   font-size: 1.5rem;
   color: var(--text-main);
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
+
 .friends-empty-message {
   color: var(--text-light);
   margin-bottom: 1.5rem;
   max-width: 400px;
 }
+
 .friends-loading {
   color: var(--text-light);
   font-weight: 500;
@@ -493,6 +579,7 @@
     opacity: 1;
   }
 }
+
 @keyframes friends-modalPopIn {
   0% {
     transform: scale(0.95) translateY(20px);
@@ -503,6 +590,7 @@
     opacity: 1;
   }
 }
+
 .friends-modal-overlay {
   position: fixed;
   inset: 0;
@@ -516,6 +604,7 @@
   animation: friends-modalFadeIn 0.3s ease forwards;
   padding: 1rem;
 }
+
 .friends-modal-content {
   background: var(--surface-main);
   border-radius: var(--border-radius-lg);
@@ -527,6 +616,7 @@
   flex-direction: column;
   animation: friends-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
 .friends-modal-header {
   display: flex;
   align-items: center;
@@ -535,6 +625,7 @@
   border-bottom: 1px solid var(--border-main);
   flex-shrink: 0;
 }
+
 .friends-modal-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -549,8 +640,10 @@
   background-clip: text;
   color: transparent;
 }
+
 .friends-modal-close-btn {
   background: 0 0;
+
   border: none;
   font-size: 1.8rem;
   color: var(--text-light);
@@ -563,11 +656,13 @@
   justify-content: center;
   transition: var(--transition-main);
 }
+
 .friends-modal-close-btn:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--primary-main);
   transform: rotate(90deg) scale(1.1);
 }
+
 .friends-modal-body {
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
@@ -576,6 +671,7 @@
 .friends-modal-form .friends-modal-group {
   margin-bottom: 1.25rem;
 }
+
 .friends-modal-form label {
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -583,6 +679,7 @@
   font-size: 0.9rem;
   display: block;
 }
+
 .friends-modal-form input[type="email"],
 .friends-modal-form textarea {
   width: 100%;
@@ -595,6 +692,7 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
   color: var(--text-main);
 }
+
 .friends-modal-form textarea {
   min-height: 120px;
   resize: vertical;
@@ -610,6 +708,7 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px var(--primary-glow);
   outline: none;
 }
+
 .friends-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -620,6 +719,7 @@
   border-top: 1px solid var(--border-main);
   flex-shrink: 0;
 }
+
 .friends-form-error {
   color: var(--accent-red);
   font-size: 0.85rem;

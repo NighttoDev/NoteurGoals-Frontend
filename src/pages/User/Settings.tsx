@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import "../../assets/css/User/settings.css";
 import {
@@ -35,6 +35,23 @@ interface User {
   registration_type: "email" | "google" | "facebook";
   role?: "user" | "admin";
 }
+interface SubscriptionPlan {
+  plan_id: number;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+}
+
+interface UserSubscription {
+  subscription_id: number;
+  user_id: number;
+  plan_id: number;
+  start_date: string;
+  end_date: string;
+  payment_status: 'active' | 'cancelled' | 'expired';
+  plan: SubscriptionPlan;
+}
 interface ApiError {
   message?: string;
   errors?: { [key: string]: string[] };
@@ -42,6 +59,8 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
+  const navigate = useNavigate();
+
   // --- STATES ---
   const [activeTab, setActiveTab] = useState("profile");
   const [user, setUser] = useState<User | null>(null);
@@ -55,6 +74,7 @@ const SettingsPage = () => {
     new_password: "",
     new_password_confirmation: "",
   });
+  
   const [notifications, setNotifications] = useState({
     eventReminders: true,
     goalProgress: true,
@@ -72,40 +92,95 @@ const SettingsPage = () => {
     message?: string;
     errors?: any;
   }>({});
+  const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
+  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
   // --- HANDLERS & EFFECTS ---
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/user/profile");
-        const fetchedUser: User = response.data.data;
-        setUser(fetchedUser);
-        setProfileData({ displayName: fetchedUser.display_name });
-        setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        if (err instanceof AxiosError && err.response?.status === 401) {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_info");
-          window.location.href = "/login";
-        }
-      }
-    };
-    fetchUser();
+  const handleLogout = useCallback(async (isForced = false) => {
+    setLoading(prev => ({ ...prev, logout: true }));
+    if (!isForced) {
+        try { await api.post('/logout'); } catch(err) { console.error("Logout API failed, but logging out locally anyway."); }
+    }
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_info");
+    window.location.href = "/login";
   }, []);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user/profile');
+      const fetchedUser: User = response.data.data;
+      setUser(fetchedUser);
+      setProfileData({ displayName: fetchedUser.display_name });
+      setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        handleLogout(true);
+      }
+    }
+  }, [handleLogout]);
+
+  const fetchSubscriptionData = useCallback(async () => {
+    setSubscriptionLoading(true);
+    try {
+      const [plansResponse, mySubResponse] = await Promise.all([
+        api.get('/subscriptions/plans'),
+        api.get('/subscriptions/my-current')
+      ]);
+      setAllPlans(plansResponse.data);
+      setMySubscription(mySubResponse.data);
+    } catch (err) {
+      console.error("Failed to fetch subscription data:", err);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
+    const paymentStatus = sessionStorage.getItem('payment_status');
+    if (paymentStatus === 'success') {
+        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    } else if (paymentStatus === 'failed') {
+        alert('Thanh toán không thành công. Vui lòng thử lại.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    }
+
+    // Luôn fetch dữ liệu mới nhất khi component tải
+    fetchUserData();
+    fetchSubscriptionData();
+  }, [fetchUserData, fetchSubscriptionData]);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
     if (
       hash &&
-      ["profile", "account", "subscription", "notifications", "admin"].includes(
+      ["profile", "account", "subscription", "notifications"].includes(
         hash
       )
     ) {
       setActiveTab(hash);
     }
   }, []);
+  const handleCancelSubscription = async () => {
+    if (!mySubscription) return;
+    if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.")) return;
 
+    setActionLoading(prev => ({ ...prev, cancel: true }));
+    try {
+      const response = await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
+      setMySubscription(response.data.subscription);
+      alert('Hủy gói đăng ký thành công.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, cancel: false }));
+    }
+  };
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     window.history.pushState(null, "", `#${tab}`);
@@ -211,20 +286,18 @@ const SettingsPage = () => {
       }
     }
   };
-  const handleLogout = async () => {
-    try {
-      await api.post("/logout");
-    } catch (err) {
-      console.error("Logout API failed");
-    } finally {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_info");
-      window.location.href = "/login";
-    }
-  };
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+  const handleGoToCheckout = (planId: number) => {
+    navigate(`/dashboard/checkout/${planId}`);
+  };
+
+  const formatPrice = (p: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(p);
 
   if (!user) {
     return (
@@ -310,20 +383,11 @@ const SettingsPage = () => {
                 <FaBell /> Notifications
               </a>
             </li>
-            {user.role === "admin" && (
-              <li>
-                <Link
-                  to="/admin"
-                  className={`settings-nav-link settings-admin-link`}
-                >
-                  <FaUserShield /> Admin Panel
-                </Link>
-              </li>
-            )}
+            
             <li>
               <button
                 className="settings-nav-link settings-logout-link"
-                onClick={handleLogout}
+                onClick={() => handleLogout(false)}
               >
                 <FaSignOutAlt /> Logout
               </button>
@@ -627,51 +691,32 @@ const SettingsPage = () => {
               <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
                 Available Plans
               </h3>
-              <div className="settings-plans-grid">
-                <div className="settings-plan-card settings-current">
-                  <h3>Premium Monthly</h3>
-                  <p className="settings-price">
-                    99.000đ <span>/ month</span>
-                  </p>
-                  <ul>
-                    <li>
-                      <FaCheckCircle /> Unlimited Goals
-                    </li>
-                    <li>
-                      <FaCheckCircle /> AI Suggestions
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Advanced Collaboration
-                    </li>
-                  </ul>
-                  <button
-                    className="settings-btn settings-btn-secondary"
-                    disabled
-                  >
-                    Current Plan
-                  </button>
+              <div className="plans-grid">
+                  {allPlans.map(plan => (
+                    <div key={plan.plan_id} className={`plan-card ${mySubscription?.plan_id === plan.plan_id ? 'current' : ''}`}>
+                      <h3>{plan.name}</h3>
+                      <p className="price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                      <ul>
+                          <li><FaCheckCircle /> Unlimited Goals</li>
+                          <li><FaCheckCircle /> AI Suggestions</li>
+                          <li><FaCheckCircle /> Advanced Collaboration</li>
+                          {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                      </ul>
+                      <button 
+                          className={`btn ${(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active') ? 'btn-secondary' : 'btn-primary'}`}
+                          disabled={(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active')}
+                          onClick={() => handleGoToCheckout(plan.plan_id)}
+                      >
+                          { (mySubscription?.plan_id === plan.plan_id && mySubscription.payment_status === 'active')
+                              ? 'Current Plan' 
+                              : mySubscription
+                                  ? 'Upgrade Plan'
+                                  : 'Subscribe Now'
+                          }
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div className="settings-plan-card">
-                  <h3>Premium Yearly</h3>
-                  <p className="settings-price">
-                    950.000đ <span>/ year</span>
-                  </p>
-                  <ul>
-                    <li>
-                      <FaCheckCircle /> All Premium Features
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Save 20%
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Priority Support
-                    </li>
-                  </ul>
-                  <button className="settings-btn settings-btn-primary">
-                    Upgrade to Yearly
-                  </button>
-                </div>
-              </div>
             </div>
           </section>
 

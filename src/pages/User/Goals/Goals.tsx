@@ -1,5 +1,3 @@
-// src/pages/User/Goals/Goals.tsx
-
 import React, { useState, useRef, useEffect, useCallback, memo } from "react";
 import "../../../assets/css/User/goals.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,9 +22,10 @@ import {
   updateShareSettings,
   getGoal,
   createMilestone,
-  updateMilestone, // Đảm bảo đã import
+  updateMilestone,
   deleteMilestone,
 } from "../../../services/goalsService";
+import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -101,11 +100,11 @@ const GoalCard = memo(
   ({
     goal,
     onEdit,
-    onMilestoneToggle, // THÊM PROP MỚI
+    onMilestoneToggle,
   }: {
     goal: Goal;
     onEdit: (goal: Goal) => void;
-    onMilestoneToggle: (milestoneId: string, isCompleted: boolean) => void; // THÊM KIỂU DỮ LIỆU
+    onMilestoneToggle: (milestoneId: string, isCompleted: boolean) => void;
   }) => (
     <div
       className={`goals-card${
@@ -163,7 +162,6 @@ const GoalCard = memo(
             : ""}
         </span>
       </div>
-      {/* Hiển thị tag status nếu có */}
       {goal.status && statusTags[goal.status] && (
         <div className={`goals-card-status goals-status-tag-${goal.status}`}>
           {statusTags[goal.status]}
@@ -195,7 +193,7 @@ const GoalCard = memo(
                 type="checkbox"
                 className="goals-milestone-checkbox"
                 id={milestone.milestone_id}
-                checked={!!milestone.is_completed} // Dùng !! để đảm bảo là boolean
+                checked={!!milestone.is_completed}
                 onChange={(e) =>
                   onMilestoneToggle(milestone.milestone_id!, e.target.checked)
                 }
@@ -273,6 +271,8 @@ const GoalsPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
+
+  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
 
   // Fetch goals
   const fetchGoals = useCallback(() => {
@@ -375,9 +375,13 @@ const GoalsPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Filter logic
+  // Filter logic with search
   const filteredGoals = goals.filter(
-    (g) => filter === "all" || g.status === filter
+    (g) =>
+      (filter === "all" || g.status === filter) &&
+      (!searchTerm ||
+        g.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        g.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Milestone handlers
@@ -533,7 +537,6 @@ const GoalsPage: React.FC = () => {
   // --- HÀM MỚI ĐỂ CẬP NHẬT MILESTONE ---
   const handleMilestoneToggle = useCallback(
     async (goalId: string, milestoneId: string, isCompleted: boolean) => {
-      // Optimistic Update: Cập nhật giao diện ngay lập tức
       setGoals((prevGoals) =>
         prevGoals.map((g) => {
           if (g.goal_id === goalId) {
@@ -556,7 +559,6 @@ const GoalsPage: React.FC = () => {
         });
         const updatedGoalData = res.data.data || res.data;
 
-        // Cập nhật lại state với dữ liệu chính xác từ server (bao gồm status mới)
         setGoals((prevGoals) =>
           prevGoals.map((g) =>
             g.goal_id === updatedGoalData.goal_id ? updatedGoalData : g
@@ -564,7 +566,6 @@ const GoalsPage: React.FC = () => {
         );
       } catch (err: any) {
         setErrorMsg("Failed to update milestone. Reverting changes.");
-        // Nếu có lỗi, fetch lại toàn bộ dữ liệu để đảm bảo đồng bộ
         fetchGoals();
       }
     },
@@ -607,7 +608,10 @@ const GoalsPage: React.FC = () => {
   };
 
   return (
-    <main className="goals-main-content">
+    <main
+      className="goals-main-content"
+      style={{ margin: "0", borderRadius: "0" }}
+    >
       <section className="goals-section">
         <h1 className="goals-page-title">My Goals</h1>
         <div className="goals-header">
@@ -657,7 +661,6 @@ const GoalsPage: React.FC = () => {
           {loading ? (
             <div className="goals-loading-container">
               <div className="goals-loading-spinner">
-                {/* 8 divs để tạo 8 chấm xoay tròn */}
                 <div></div>
                 <div></div>
                 <div></div>
