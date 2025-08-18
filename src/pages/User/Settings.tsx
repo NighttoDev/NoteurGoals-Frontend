@@ -172,8 +172,9 @@ const SettingsPage = () => {
 
     setActionLoading(prev => ({ ...prev, cancel: true }));
     try {
-      const response = await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
-      setMySubscription(response.data.subscription);
+      await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
+      // Sau khi hủy trên backend, fetch lại dữ liệu để đảm bảo UI đồng bộ với DB
+      await fetchSubscriptionData();
       alert('Hủy gói đăng ký thành công.');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
@@ -290,7 +291,7 @@ const SettingsPage = () => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
   const handleGoToCheckout = (planId: number) => {
-    navigate(`/dashboard/checkout/${planId}`);
+    navigate(`/checkout/${planId}`);
   };
 
   const formatPrice = (p: number) =>
@@ -659,64 +660,90 @@ const SettingsPage = () => {
               <p>Manage your billing and subscription plan.</p>
             </div>
             <div className="settings-section-body">
-              <div>
-                <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
-                <p style={{ color: "var(--text-light)" }}>
-                  You are currently on the{" "}
-                  <strong style={{ color: "var(--primary-main)" }}>
-                    Premium Monthly
-                  </strong>{" "}
-                  plan.
-                </p>
-                <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
-                  Your subscription will renew on July 22, 2025.
-                </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
+                  {mySubscription ? (
+                    <>
+                      <p style={{ color: 'var(--text-light)' }}>
+                        You are currently on the{' '}
+                        <strong style={{ color: 'var(--primary-main)' }}>
+                          {mySubscription.plan?.name || '—'}
+                        </strong>{' '}plan.
+                      </p>
+                      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                        Status: <strong style={{ textTransform: 'capitalize' }}>{mySubscription.payment_status}</strong>
+                        {mySubscription.end_date && mySubscription.payment_status === 'active' && (
+                          <> • Renews on <strong>{new Date(mySubscription.end_date).toLocaleDateString('vi-VN')}</strong></>
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p style={{ color: 'var(--text-light)' }}>You have no active subscription.</p>
+                  )}
+                </div>
+                <div>
+                  {mySubscription && mySubscription.payment_status === 'active' && (
+                    <button
+                      type="button"
+                      className="settings-btn settings-btn-danger"
+                      onClick={handleCancelSubscription}
+                      disabled={actionLoading.cancel}
+                    >
+                      {actionLoading.cancel ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="settings-notification-item">
+
+              <div className="settings-notification-item" style={{ marginTop: '1rem' }}>
                 <div className="settings-notification-text">
                   <h3>Auto-Renewal</h3>
-                  <p>
-                    Your plan will automatically renew. You can cancel anytime.
-                  </p>
+                  <p>Your plan will automatically renew. You can cancel anytime.</p>
                 </div>
                 <label className="settings-toggle-switch">
                   <input
                     type="checkbox"
                     checked={notifications.autoRenewal}
-                    onChange={() => handleNotificationToggle("autoRenewal")}
+                    onChange={() => handleNotificationToggle('autoRenewal')}
                   />
                   <span className="settings-slider"></span>
                 </label>
               </div>
-              <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
-                Available Plans
-              </h3>
-              <div className="plans-grid">
-                  {allPlans.map(plan => (
-                    <div key={plan.plan_id} className={`plan-card ${mySubscription?.plan_id === plan.plan_id ? 'current' : ''}`}>
-                      <h3>{plan.name}</h3>
-                      <p className="price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
-                      <ul>
-                          <li><FaCheckCircle /> Unlimited Goals</li>
-                          <li><FaCheckCircle /> AI Suggestions</li>
-                          <li><FaCheckCircle /> Advanced Collaboration</li>
-                          {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
-                      </ul>
-                      <button 
-                          className={`btn ${(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active') ? 'btn-secondary' : 'btn-primary'}`}
-                          disabled={(mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active')}
-                          onClick={() => handleGoToCheckout(plan.plan_id)}
-                      >
-                          { (mySubscription?.plan_id === plan.plan_id && mySubscription.payment_status === 'active')
-                              ? 'Current Plan' 
-                              : mySubscription
-                                  ? 'Upgrade Plan'
-                                  : 'Subscribe Now'
-                          }
-                      </button>
-                    </div>
-                  ))}
-                </div>
+
+              <h3 style={{ fontWeight: 500, marginTop: '2rem' }}>Available Plans</h3>
+              {(() => {
+                const monthlyPlan = allPlans.find(p => p.duration === 1);
+                const yearlyPlan = allPlans.find(p => p.duration > 1);
+                const plansToShow = [monthlyPlan, yearlyPlan].filter(Boolean) as SubscriptionPlan[];
+                const fallbackPlans = plansToShow.length === 0 ? allPlans.slice(0, 2) : plansToShow;
+                return (
+                  <div className="settings-plans-grid">
+                    {fallbackPlans.map(plan => {
+                      const isCurrent = mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active';
+                      return (
+                        <div key={plan.plan_id} className={`settings-plan-card ${isCurrent ? 'settings-current' : ''}`}>
+                          <h3>{plan.name}</h3>
+                          <p className="settings-price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                          <ul>
+                            <li><FaCheckCircle /> Unlimited Goals</li>
+                            <li><FaCheckCircle /> AI Suggestions</li>
+                            <li><FaCheckCircle /> Advanced Collaboration</li>
+                            {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                          </ul>
+                          <button
+                            className={`settings-btn ${isCurrent ? 'settings-btn-secondary' : 'settings-btn-primary'}`}
+                            disabled={isCurrent}
+                            onClick={() => handleGoToCheckout(plan.plan_id)}
+                          >
+                            {isCurrent ? 'Current Plan' : (mySubscription ? 'Upgrade Plan' : 'Subscribe Now')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </section>
 
