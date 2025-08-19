@@ -20,6 +20,7 @@ import {
 } from "../../services/eventService";
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
+import { useToastHelpers } from "../../hooks/toastContext";
 
 interface Event {
   event_id: string;
@@ -31,6 +32,7 @@ interface Event {
 }
 
 const Schedule: React.FC = () => {
+  const toast = useToastHelpers();
   const { addNotification, removeNotification } = useNotifications();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -116,7 +118,7 @@ const Schedule: React.FC = () => {
       console.log("Sự kiện đã được định dạng thành công:", formattedEvents);
       setEvents(formattedEvents as Event[]);
     } catch (error: any) {
-      alert(
+      toast.error(
         "Không thể tải danh sách sự kiện! Vui lòng kiểm tra Console (F12) để biết chi tiết."
       );
 
@@ -333,7 +335,7 @@ const Schedule: React.FC = () => {
       closeAddModal();
       await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
     } finally {
       setIsSubmitting(false);
     }
@@ -369,7 +371,7 @@ const Schedule: React.FC = () => {
       closeEditModal();
       await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
     } finally {
       setIsSubmitting(false);
     }
@@ -383,7 +385,7 @@ const Schedule: React.FC = () => {
       closeEditModal();
       await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
     } finally {
       setIsDeleting(false);
     }

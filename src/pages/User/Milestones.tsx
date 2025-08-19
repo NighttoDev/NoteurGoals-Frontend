@@ -8,6 +8,7 @@ import {
   deleteMilestone,
 } from "../../services/milestonesService"; // ASSUMED: This service file exists
 import "../../assets/css/User/milestones.css";
+import { useToastHelpers } from "../../hooks/toastContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
@@ -55,6 +56,7 @@ const formatDateForInput = (dateString: string) => {
 };
 
 const MilestonesPage: React.FC = () => {
+  const toast = useToastHelpers();
   const { goalId } = useParams<{ goalId: string }>();
   const [milestones, setMilestones] = useState<MilestoneCard[]>([]);
   const [goalTitle, setGoalTitle] = useState<string>("");
@@ -105,7 +107,7 @@ const MilestonesPage: React.FC = () => {
       const goalData = goalRes.data.goal ?? goalRes.data;
       setGoalTitle(goalData.title);
     } catch (err) {
-      alert("Failed to load milestones data.");
+      toast.error("Failed to load milestones data.");
       setMilestones([]);
     } finally {
       setLoading(false);
@@ -142,8 +144,9 @@ const MilestonesPage: React.FC = () => {
       await createMilestone(goalId, payload);
       await fetchData(); // Re-fetch to get the latest data
       closeAddModal();
+      toast.success("Milestone created successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to create milestone");
+      toast.error(err.message || "Failed to create milestone");
     } finally {
       setLoading(false);
     }
@@ -158,8 +161,9 @@ const MilestonesPage: React.FC = () => {
       await updateMilestone(editingMilestone.id, payload);
       await fetchData(); // Re-fetch to get the latest data
       closeEditModal();
+      toast.success("Milestone updated successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to update milestone");
+      toast.error(err.message || "Failed to update milestone");
     } finally {
       setLoading(false);
     }
@@ -172,8 +176,9 @@ const MilestonesPage: React.FC = () => {
         await deleteMilestone(editingMilestone.id);
         await fetchData(); // Re-fetch
         closeEditModal();
+        toast.success("Milestone deleted successfully!");
       } catch (err: any) {
-        alert(err.message || "Failed to delete milestone");
+        toast.error(err.message || "Failed to delete milestone");
       } finally {
         setLoading(false);
       }

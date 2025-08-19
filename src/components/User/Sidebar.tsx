@@ -1,6 +1,3 @@
-
-// Sidebar.tsx
-
 import React, { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
@@ -12,7 +9,7 @@ import {
 } from "react-icons/ai";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
 import { BiNote, BiMessageDetail } from "react-icons/bi";
-import { FiUsers, FiUser } from "react-icons/fi";
+import { FiUsers, FiUser, FiUserCheck } from "react-icons/fi";
 import "../../assets/css/User/sidebar.css";
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
@@ -42,28 +39,46 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
   const newNotificationCount = notifications.filter((n) => !n.seen).length;
 
-  // BỘ LẮNG NGHE TIN NHẮN MỚI TOÀN CỤC
+  // BỘ LẮNG NGHE SỰ KIỆN TOÀN CỤC
   useEffect(() => {
     if (user && user.id) {
       const userChannel = `private-App.User.${user.id}`;
-      echo
-        .private(userChannel)
-        .listen("NewMessageNotification", (data: any) => {
-          const { sender_id, sender_name, message_content } = data;
-          const notificationId = `new-message-${sender_id}`;
-          const shortMessage =
-            message_content.length > 30
-              ? `${message_content.substring(0, 30)}...`
-              : message_content;
+      const channel = echo.private(userChannel);
 
-          addNotification({
-            id: notificationId,
-            type: "new_message",
-            message: `New message from ${sender_name}: "${shortMessage}"`,
-            link: "/friends",
-          });
+      // LẮNG NGHE THÔNG BÁO CÓ TIN NHẮN MỚI
+      channel.listen("NewMessageNotification", (data: any) => {
+        const { sender_id, sender_name, message_content } = data;
+        const notificationId = `new-message-${sender_id}`;
+        
+        // Rút gọn tin nhắn để hiển thị preview
+        const shortMessage =
+          message_content.length > 30
+            ? `${message_content.substring(0, 30)}...`
+            : message_content;
+
+        // Thêm thông báo vào context
+        addNotification({
+          id: notificationId,
+          type: "new_message",
+          message: `New message from ${sender_name}: "${shortMessage}"`,
+          link: "/friends", // Chuyển hướng đến trang chat khi click
         });
+      });
 
+      // Lắng nghe lời mời kết bạn được chấp nhận
+      channel.listen("FriendRequestAccepted", (data: any) => {
+        const { accepter_id, accepter_name } = data;
+        const notificationId = `friend-accepted-${accepter_id}`;
+
+        addNotification({
+          id: notificationId,
+          type: "friend_request_accepted",
+          message: `${accepter_name} has accepted your friend request.`,
+          link: "/friends",
+        });
+      });
+      
+      // Hàm dọn dẹp khi component unmount
       return () => {
         echo.leave(userChannel);
       };
@@ -114,6 +129,13 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     switch (type) {
       case "friend_request":
         return <FiUsers className="notification-item-icon" />;
+      case "friend_request_accepted":
+        return (
+          <FiUserCheck
+            className="notification-item-icon"
+            style={{ color: "#10b981" }}
+          />
+        );
       case "event_upcoming":
         return (
           <BsCalendar3
@@ -135,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             style={{ color: "#10b981" }}
           />
         );
-      case "new_message": // <-- Icon cho tin nhắn mới
+      case "new_message":
         return <BiMessageDetail className="notification-item-icon" />;
       default:
         return <AiOutlineBell className="notification-item-icon" />;

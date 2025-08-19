@@ -86,7 +86,7 @@ const router = createBrowserRouter([
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
           { path: "settings", element: <Settings /> },
-          { path: "dashboard/checkout/:planId", element: <CheckoutPage /> },
+          { path: "checkout/:planId", element: <CheckoutPage /> },
         ],
       },
     ],

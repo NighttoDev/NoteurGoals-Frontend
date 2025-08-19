@@ -387,10 +387,7 @@ const DashboardPage = () => {
                 <h3>Upgrade to Premium</h3>
                 <p>Unlock all powerful features.</p>
               </div>
-              <button>
-                {" "}
-                <a href="/checkout">Upgrade Now</a>
-              </button>
+              <a href="/settings#subscription" className="dsd-upgrade-btn">Upgrade Now</a>
             </div>
           )}
 

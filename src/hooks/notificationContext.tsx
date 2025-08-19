@@ -17,7 +17,8 @@ export interface Notification {
     | "event_upcoming"
     | "event_ongoing"
     | "event_finished"
-    | "new_message"; // <-- ĐÃ THÊM
+    | "new_message"
+    | "friend_request_accepted"; // <-- THÊM DÒNG NÀY
   message: string;
   link: string;
   timestamp: Date;

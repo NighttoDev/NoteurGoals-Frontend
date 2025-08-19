@@ -1,18 +1,19 @@
-
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import "../../assets/css/User/friends.css";
 import {
   getFriendsData,
   getUserSuggestions,
-  getCommunityFeed,
   sendFriendRequestById,
   respondFriendRequest,
   deleteFriend,
   reportUser,
   searchUsers,
+  getCollaborators,
 } from "../../services/friendsService";
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
+import { useToastHelpers } from "../../hooks/toastContext";
+import { useConfirm } from "../../hooks/confirmContext";
 import ChatWindow from "../User/Chat/ChatWindow";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
 
@@ -32,14 +33,9 @@ interface UserCardData {
     | "request_received"
     | "not_friends";
 }
-interface SharedGoal {
-  goal_id: string;
-  title: string;
-  description: string;
-  status: string;
-  owner: { id: string; name: string; avatar?: string };
-}
-type ActiveTab = "friends" | "requests" | "community-feed" | "find-people";
+
+type ActiveTab = "friends" | "requests" | "collaborators" | "find-people";
+
 interface Friend {
   friendship_id: string;
   id: string;
@@ -53,22 +49,26 @@ interface Request extends Friend {
 
 const FriendsPage: React.FC = () => {
   const { addNotification } = useNotifications();
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
 
- const [activeChat, setActiveChat] = useState<UserCardData | null>(null);
- // Determine current user id from localStorage instead of hard-coding
- const [currentUserId, setCurrentUserId] = useState<string | null>(null);
- useEffect(() => {
-   try {
-     const stored = localStorage.getItem("user_info");
-     if (!stored) return;
-     const parsed = JSON.parse(stored);
-     // Try common fields: user_id, id, nested user.id
-     const idCandidate = parsed?.user_id ?? parsed?.id ?? parsed?.user?.id ?? parsed?.user?.user_id;
-     if (idCandidate != null) setCurrentUserId(String(idCandidate));
-   } catch (e) {
-     console.warn("Could not parse user_info from localStorage", e);
-   }
- }, []);
+  const [activeChat, setActiveChat] = useState<UserCardData | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user_info");
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      const idCandidate =
+        parsed?.user_id ??
+        parsed?.id ??
+        parsed?.user?.id ??
+        parsed?.user?.user_id;
+      if (idCandidate != null) setCurrentUserId(String(idCandidate));
+    } catch (e) {
+      console.warn("Could not parse user_info from localStorage", e);
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("friends");
   const [loadedTabs, setLoadedTabs] = useState<Set<ActiveTab>>(
@@ -76,8 +76,8 @@ const FriendsPage: React.FC = () => {
   );
   const [friends, setFriends] = useState<UserCardData[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
-  const [communityGoals, setCommunityGoals] = useState<SharedGoal[]>([]);
   const [suggestions, setSuggestions] = useState<UserCardData[]>([]);
+  const [collaborators, setCollaborators] = useState<UserCardData[]>([]);
 
   const { searchTerm } = useSearch();
   const [mainSearchResults, setMainSearchResults] = useState<UserCardData[]>(
@@ -87,10 +87,7 @@ const FriendsPage: React.FC = () => {
   const mainSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [loading, setLoading] = useState(true);
-
-  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>({});
 
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -98,11 +95,8 @@ const FriendsPage: React.FC = () => {
   const [reportReason, setReportReason] = useState("");
 
   const [modalSearchQuery, setModalSearchQuery] = useState("");
-  const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>(
-    []
-  );
+  const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>([]);
   const [isModalSearching, setIsModalSearching] = useState(false);
-
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const modalSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -149,10 +143,9 @@ const FriendsPage: React.FC = () => {
     mainSearchTimeout.current = setTimeout(async () => {
       try {
         const response = await searchUsers(searchTerm);
-
-        const mappedResults = response.data.users.map((user: any) => ({
+        const mappedResults = (response.data.users || []).map((user: any) => ({
           ...user,
-          id: user.user_id,
+          id: user.user_id || user.id,
         }));
         setMainSearchResults(mappedResults);
       } catch (err) {
@@ -173,10 +166,9 @@ const FriendsPage: React.FC = () => {
     modalSearchTimeout.current = setTimeout(async () => {
       try {
         const response = await searchUsers(modalSearchQuery);
-
-        const mappedResults = response.data.users.map((user: any) => ({
+        const mappedResults = (response.data.users || []).map((user: any) => ({
           ...user,
-          id: user.user_id,
+          id: user.user_id || user.id,
         }));
         setModalSearchResults(mappedResults);
       } catch (err) {
@@ -195,16 +187,12 @@ const FriendsPage: React.FC = () => {
     if (loadedTabs.has(tab)) return;
     setLoading(true);
     try {
-      if (tab === "community-feed") {
-        const response = await getCommunityFeed();
-        setCommunityGoals(response.data.goals || []);
+      if (tab === "collaborators") {
+        const response = await getCollaborators();
+        setCollaborators(response.data.data || []);
       } else if (tab === "find-people") {
         const response = await getUserSuggestions();
-        const mappedSuggestions = response.data.users.map((user: any) => ({
-          ...user,
-          id: user.user_id,
-        }));
-        setSuggestions(mappedSuggestions || []);
+        setSuggestions(response.data.users || []);
       }
       setLoadedTabs((prev) => new Set(prev).add(tab));
     } catch (err) {
@@ -218,12 +206,12 @@ const FriendsPage: React.FC = () => {
     setLoadingUserId(userId);
     try {
       await sendFriendRequestById(userId);
-      alert("Friend request sent successfully!");
+      toast.success("Friend request sent successfully!");
       setModalSearchResults((prev) =>
         prev.filter((user) => user.id !== userId)
       );
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to send friend request!");
+      toast.error(err?.response?.data?.message || "Failed to send friend request!");
     } finally {
       setLoadingUserId(null);
     }
@@ -239,12 +227,14 @@ const FriendsPage: React.FC = () => {
         );
       setSuggestions(updateUserState);
       setMainSearchResults(updateUserState);
+      setCollaborators(updateUserState);
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to send request.");
+      toast.error(err?.response?.data?.message || "Failed to send request.");
     } finally {
       setCardLoading((prev) => ({ ...prev, [userId]: false }));
     }
   };
+
   const handleRequestResponse = async (
     friendshipId: string,
     status: "accepted" | "rejected"
@@ -252,9 +242,26 @@ const FriendsPage: React.FC = () => {
     setLoadingUserId(friendshipId);
     try {
       await respondFriendRequest(friendshipId, status);
+
+      // --- START: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
+      if (status === "accepted") {
+        const acceptedRequest = requests.find(
+          (req) => req.friendship_id === friendshipId
+        );
+        if (acceptedRequest) {
+          addNotification({
+            id: `accepted-${friendshipId}`,
+            type: "friend_request_accepted", // Sử dụng type mới
+            message: `You are now friends with ${acceptedRequest.name}.`,
+            link: "/friends",
+          });
+        }
+      }
+      // --- END: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
+      
       fetchInitialData();
     } catch (err) {
-      alert(
+      toast.error(
         `Failed to ${status === "accepted" ? "accept" : "reject"} request.`
       );
     } finally {
@@ -263,15 +270,20 @@ const FriendsPage: React.FC = () => {
   };
 
   const handleDeleteFriendship = async (friendshipId: string) => {
-    if (
-      window.confirm("Are you sure you want to remove this friend/request?")
-    ) {
+    const ok = await confirm({
+      title: "Remove friend",
+      message: "Are you sure you want to remove this friend/request?",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (ok) {
       setLoadingUserId(friendshipId);
       try {
         await deleteFriend(friendshipId);
         fetchInitialData();
       } catch (err) {
-        alert("Failed to remove friend/request.");
+        toast.error("Failed to remove friend/request.");
       } finally {
         setLoadingUserId(null);
       }
@@ -281,22 +293,24 @@ const FriendsPage: React.FC = () => {
   const handleReportUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userToReport || !reportReason.trim()) {
-      alert("Please provide a reason for reporting.");
+      toast.error("Please provide a reason for reporting.");
       return;
     }
     setLoadingUserId(userToReport.id);
     try {
       await reportUser(userToReport.id, reportReason);
-      alert(`User ${userToReport.name} has been reported.`);
+      toast.success(`User ${userToReport.name} has been reported.`);
       setShowReportModal(false);
       setUserToReport(null);
       setReportReason("");
     } catch (err) {
-      alert("Failed to submit report.");
+      toast.error("Failed to submit report.");
     } finally {
       setLoadingUserId(null);
     }
   };
+
+  // ... (phần còn lại của file giữ nguyên) ...
   const renderUserCard = (
     user: UserCardData,
     type: "friend" | "suggestion" | "searchResult"
@@ -403,12 +417,12 @@ const FriendsPage: React.FC = () => {
           )}
         </h3>
         <p className="friends-email">{user.email}</p>
-        {user.mutual_friends_count && user.mutual_friends_count > 0 && (
+        {user.mutual_friends_count && user.mutual_friends_count > 0 ? (
           <p className="friends-mutual">
             <i className="fas fa-users"></i> {user.mutual_friends_count} mutual
             friend{user.mutual_friends_count > 1 ? "s" : ""}
           </p>
-        )}
+        ) : null}
         <div className="friends-stats">
           <span>
             <i className="fas fa-bullseye"></i> {user.total_goals || 0} Goals
@@ -549,23 +563,23 @@ const FriendsPage: React.FC = () => {
             )}
           </div>
         );
-      case "community-feed":
+      case "collaborators":
         return (
           <div className="friends-grid">
-            {communityGoals.length === 0 ? (
+            {collaborators.length === 0 ? (
               <div className="friends-empty-state">
-                <h3 className="friends-empty-title">Community Feed is Quiet</h3>
+                 <img
+                  src="/images/no-collaborators.svg"
+                  alt="No collaborators"
+                  className="friends-empty-image"
+                />
+                <h3 className="friends-empty-title">No Collaborators Found</h3>
                 <p className="friends-empty-message">
-                  No one has shared a public goal yet. Be the first!
+                  When you add collaborators to your goals, they will appear here.
                 </p>
               </div>
             ) : (
-              communityGoals.map((goal) => (
-                <div className="friends-card" key={goal.goal_id}>
-                  <h3>{goal.title}</h3>
-                  <p>{goal.description}</p>
-                </div>
-              ))
+              collaborators.map((user) => renderUserCard(user, "suggestion"))
             )}
           </div>
         );
@@ -606,7 +620,7 @@ const FriendsPage: React.FC = () => {
             {[
               { key: "friends", label: "Friends" },
               { key: "requests", label: "Requests" },
-              { key: "community-feed", label: "Community" },
+              { key: "collaborators", label: "Collaborators" },
               { key: "find-people", label: "Suggestions" },
             ].map((tab) => (
               <div

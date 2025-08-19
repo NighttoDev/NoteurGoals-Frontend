@@ -26,6 +26,8 @@ import {
   deleteMilestone,
 } from "../../../services/goalsService";
 import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
+import { useToastHelpers } from "../../../hooks/toastContext";
+import { useConfirm } from "../../../hooks/confirmContext";
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -250,6 +252,8 @@ const GoalCard = memo(
 
 // --- GOALS PAGE COMPONENT ---
 const GoalsPage: React.FC = () => {
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
