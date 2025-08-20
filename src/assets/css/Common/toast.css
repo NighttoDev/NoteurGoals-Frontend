@@ -1,0 +1,93 @@
+:root{
+  --rv-success: #16a34a;
+  --rv-info: #2563eb;
+  --rv-warning: #d97706;
+  --rv-error: #dc2626;
+  --rv-surface: #ffffff;
+  --rv-text: #111827;
+  --rv-muted: #6b7280;
+  --rv-shadow: 0 15px 35px rgba(0,0,0,.12), 0 5px 15px rgba(0,0,0,.08);
+  --rv-radius: 12px;
+}
+
+.rv-toast-container{
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none; /* container không nhận click */
+}
+
+.rv-toast{
+  min-width: 280px;
+  max-width: 420px;
+  background: var(--rv-surface);
+  color: var(--rv-text);
+  border-radius: var(--rv-radius);
+  box-shadow: var(--rv-shadow);
+  border: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+  transform: translateX(12px);
+  animation: rv-slide-in .3s ease forwards;
+  pointer-events: auto; /* toast nhận click */
+}
+
+@keyframes rv-slide-in{
+  from{ opacity: 0; transform: translateX(12px) translateY(-6px) }
+  to{ opacity: 1; transform: translateX(0) translateY(0) }
+}
+
+.rv-toast-body{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 10px 12px;
+}
+
+.rv-toast-icon{
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,0.04);
+  color: var(--rv-info);
+}
+.rv-toast-success .rv-toast-icon{ color: var(--rv-success); background: rgba(22,163,74,.1) }
+.rv-toast-info .rv-toast-icon{ color: var(--rv-info); background: rgba(37,99,235,.1) }
+.rv-toast-warning .rv-toast-icon{ color: var(--rv-warning); background: rgba(217,119,6,.1) }
+.rv-toast-error .rv-toast-icon{ color: var(--rv-error); background: rgba(220,38,38,.1) }
+
+.rv-toast-message{
+  flex: 1; font-size: .95rem; line-height: 1.35; color: #1f2937;
+}
+
+.rv-toast-close{
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  opacity: .7; padding: 6px; border-radius: 8px; color: #374151;
+  transition: background .15s ease, opacity .15s ease;
+}
+.rv-toast-close:hover{ background: rgba(0,0,0,.05); opacity: 1 }
+
+.rv-toast-progress{
+  height: 3px;
+  background: var(--rv-info);
+  width: 100%;
+  transform-origin: left;
+  animation-name: rv-timeout;
+  animation-timing-function: linear;
+}
+.rv-toast-success .rv-toast-progress{ background: var(--rv-success) }
+.rv-toast-info .rv-toast-progress{ background: var(--rv-info) }
+.rv-toast-warning .rv-toast-progress{ background: var(--rv-warning) }
+.rv-toast-error .rv-toast-progress{ background: var(--rv-error) }
+
+@keyframes rv-timeout{
+  from{ width: 100% }
+  to{ width: 0% }
+}
+
+@media (max-width: 480px){
+  .rv-toast{ min-width: auto; max-width: calc(100vw - 24px); }
+  .rv-toast-container{ right: 12px; left: 12px; top: 12px; align-items: flex-end }
+}
