@@ -19,15 +19,16 @@ import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import VerifyEmailPage from "../pages/VerifyEmailPage";
 import SocialAuthCallback from "../pages/SocialAuthCallback";
+
 import DashboardPage from "../pages/User/DashboardPage";
 import GoalsPage from "../pages/User/Goals/Goals";
+import GoalsDetailPage from "../pages/User/Goals/GoalsDetail"; // Giả sử bạn đã tạo trang chi tiết mục tiêu
 import NotesPage from "../pages/User/Notes/Notes";
+import NotesDetailPage from "../pages/User/Notes/NotesDetail"; // Giả sử bạn đã tạo trang chi tiết ghi chú
 import Schedule from "../pages/User/Schedule";
 import Friends from "../pages/User/Friends";
 import Settings from "../pages/User/Settings";
-import AddGoalsPage from "../pages/Admin/Goals/AddGoals";
-import AddNotePage from "../pages/Admin/Notes/AddNotes";
-import EditNotePage from "../pages/Admin/Notes/EditNotes";
+import UnifiedTrashPage from "../pages/User/UnifiedTrashPage";
 import CheckoutPage from "../pages/User/Checkout";
 import PaymentCallback from "../pages/PaymentCallback";
 import PaymentSuccess from "../pages/PaymentSuccess";
@@ -79,13 +80,16 @@ const router = createBrowserRouter([
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
           { path: "goals", element: <GoalsPage /> },
-          { path: "goals/add", element: <AddGoalsPage /> },
+          { path: "goals/:goalId", element: <GoalsDetailPage /> },
           { path: "notes", element: <NotesPage /> },
-          { path: "notes/add", element: <AddNotePage /> },
-          { path: "notes/edit/:id", element: <EditNotePage /> },
+          { path: "notes/:id", element: <NotesDetailPage /> },
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
           { path: "settings", element: <Settings /> },
+          { path: "trash", element: <UnifiedTrashPage /> },
+
+          // *** MỚI: Route cho trang checkout, có `:planId` động ***
+          // Đã sửa lại đường dẫn để tường minh hơn, ví dụ: /checkout/2
           { path: "checkout/:planId", element: <CheckoutPage /> },
         ],
       },

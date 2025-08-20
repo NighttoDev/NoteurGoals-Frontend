@@ -20,6 +20,7 @@ import {
   faPaperclip,
   faNoteSticky,
 } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
 import { useToastHelpers } from "../../../hooks/toastContext";
 
@@ -45,7 +46,10 @@ interface GoalOption {
 const NOTES_CACHE_KEY = "user_notes_cache";
 
 const NotesPage: React.FC = () => {
+  
+  const navigate = useNavigate();
   const toast = useToastHelpers();
+  
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -351,7 +355,7 @@ const NotesPage: React.FC = () => {
                   className={`notes-card ${
                     note.color ? `notes-color-${note.color}` : ""
                   }`}
-                  onClick={() => openEditModal(note)}
+                  onClick={() => navigate(`/notes/${note.id}`)}
                 >
                   <div className="notes-card-header">
                     <h3 className="notes-card-title">{note.title}</h3>
@@ -361,7 +365,6 @@ const NotesPage: React.FC = () => {
                     />
                   </div>
                   <div className="notes-card-body">
-                    <div className="notes-card-content">{note.content}</div>
                     <div className="notes-card-footer">
                       <span className="notes-card-date">
                         Updated: {note.updatedDate}
@@ -373,17 +376,6 @@ const NotesPage: React.FC = () => {
                               icon={faBullseye}
                               className="notes-meta-icon"
                             />
-                            <div className="notes-tags-wrapper">
-                              {note.linkedGoals.map((goal) => (
-                                <span
-                                  key={goal.id}
-                                  className="notes-linked-goal-tag"
-                                  title={goal.title}
-                                >
-                                  {goal.title}
-                                </span>
-                              ))}
-                            </div>
                           </div>
                         )}
                         {note.attachments && (
@@ -439,7 +431,6 @@ const NotesPage: React.FC = () => {
                     }
                   ></textarea>
                 </div>
-                {renderGoalsCheckboxes()}
                 <div className="notes-modal-footer">
                   <button
                     type="button"
@@ -450,73 +441,6 @@ const NotesPage: React.FC = () => {
                   </button>
                   <button type="submit" className="notes-btn notes-btn-primary">
                     Save Note
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isEditModalOpen && editingNote && (
-        <div className="notes-modal-overlay" onClick={closeEditModal}>
-          <div
-            className="notes-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="notes-modal-header">
-              <h2>Edit Note</h2>
-              <button
-                className="notes-modal-close-btn"
-                onClick={closeEditModal}
-              >
-                ×
-              </button>
-            </div>
-            <div className="notes-modal-body">
-              <form className="notes-modal-form" onSubmit={handleEditSubmit}>
-                <div className="notes-modal-group">
-                  <label htmlFor="notes-modal-title-input-edit">Title</label>
-                  <input
-                    type="text"
-                    id="notes-modal-title-input-edit"
-                    required
-                    value={editForm.title}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, title: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="notes-modal-group">
-                  <label htmlFor="notes-modal-content-input-edit">
-                    Content
-                  </label>
-                  <textarea
-                    id="notes-modal-content-input-edit"
-                    value={editForm.content}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, content: e.target.value }))
-                    }
-                  ></textarea>
-                </div>
-                {renderGoalsCheckboxes()}
-                <div className="notes-modal-footer">
-                  <button
-                    type="button"
-                    className="notes-btn notes-btn-danger"
-                    onClick={handleDelete}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    type="button"
-                    className="notes-btn notes-btn-secondary"
-                    onClick={closeEditModal}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="notes-btn notes-btn-primary">
-                    Save Changes
                   </button>
                 </div>
               </form>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+
 import { useToastHelpers } from "../../hooks/toastContext";
 import { useConfirm } from "../../hooks/confirmContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -37,6 +38,7 @@ interface User {
   registration_type: "email" | "google" | "facebook";
   role?: "user" | "admin";
 }
+
 interface SubscriptionPlan {
   plan_id: number;
   name: string;
@@ -61,6 +63,7 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
+
   const toast = useToastHelpers();
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -96,6 +99,7 @@ const SettingsPage = () => {
     message?: string;
     errors?: any;
   }>({});
+
   const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
   const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
@@ -219,6 +223,7 @@ if (!okCancel) return;
         headers: { "Content-Type": "multipart/form-data" },
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
+
       toast.success("Cập nhật thông tin thành công!");
       window.location.reload();
     } catch (err) {
@@ -301,11 +306,15 @@ if (!okCancel) return;
       }
     }
   };
+      
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
   const handleGoToCheckout = (planId: number) => {
     navigate(`/checkout/${planId}`);
+  };
+  const handleNotificationToggle = (key: keyof typeof notifications) => {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const formatPrice = (p: number) =>
@@ -313,6 +322,7 @@ if (!okCancel) return;
       style: "currency",
       currency: "VND",
     }).format(p);
+
 
   if (!user) {
     return (
@@ -708,6 +718,14 @@ if (!okCancel) return;
                     </button>
                   )}
                 </div>
+                <label className="settings-toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={notifications.autoRenewal}
+                    onChange={() => handleNotificationToggle("autoRenewal")}
+                  />
+                  <span className="settings-slider"></span>
+                </label>
               </div>
 
               <div className="settings-notification-item" style={{ marginTop: '1rem' }}>
@@ -758,6 +776,7 @@ if (!okCancel) return;
                   </div>
                 );
               })()}
+
             </div>
           </section>
 

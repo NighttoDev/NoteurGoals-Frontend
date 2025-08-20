@@ -189,7 +189,9 @@ const DashboardPage = () => {
             .map((e: any) => ({
               id: e.id,
               title: e.title,
-              time: new Date(e.event_time),
+              time: new Date(
+                new Date(e.event_time).getTime() - 7 * 60 * 60 * 1000
+              ),
             }))
         );
 
@@ -459,7 +461,9 @@ const DashboardPage = () => {
                     </div>
                     <div className="dsd-schedule-content">
                       <p>{event.title}</p>
-                      <span>{formatDateTime(event.time)}</span>
+                      <span className="dsd-schedule-time">
+                        {formatDateTime(event.time)}
+                      </span>
                     </div>
                   </div>
                 ))}

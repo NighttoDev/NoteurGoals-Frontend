@@ -66,6 +66,9 @@ const Schedule: React.FC = () => {
       const response = await getEvents();
       console.log("API response nhận được:", response);
 
+  useEffect(() => {
+    fetchEvents();
+  }, []);
       // Bước 1: Kiểm tra xem response hoặc response.data có tồn tại không
       if (!response || !response.data) {
         console.error(
@@ -378,16 +381,24 @@ const Schedule: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!editingEvent) return;
-    setIsDeleting(true);
-    try {
-      await deleteEvent(editingEvent.event_id);
-      closeEditModal();
-      await fetchEvents();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
-    } finally {
-      setIsDeleting(false);
+    // Thêm hộp thoại xác nhận ở đây
+    if (
+      editingEvent &&
+      window.confirm("Are you sure you want to move this event to the trash?")
+    ) {
+      setIsDeleting(true);
+      try {
+        // Logic xóa mềm không thay đổi
+        await deleteEvent(editingEvent.event_id);
+        alert("Event moved to trash successfully."); // Thông báo thành công
+        closeEditModal();
+        await fetchEvents();
+      } catch (err: any) {
+        alert(err?.response?.data?.message || "Failed to delete the event!");
+      } finally {
+        // Dùng finally để đảm bảo isDeleting luôn được reset
+        setIsDeleting(false);
+      }
     }
   };
 
