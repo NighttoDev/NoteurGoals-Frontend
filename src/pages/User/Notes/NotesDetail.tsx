@@ -92,7 +92,7 @@ const NoteDetailPage: React.FC = () => {
 
       setNote(mappedNote);
       setForm({ title: mappedNote.title, content: mappedNote.content });
-      setSelectedGoalIds(mappedNote.linkedGoals?.map((g) => g.id) || []);
+      setSelectedGoalIds(mappedNote.linkedGoals?.map((g: any) => g.id) || []);
     } catch (err) {
       console.error("Failed to fetch note:", err);
       setNote(null); // Set là null nếu không tìm thấy hoặc có lỗi

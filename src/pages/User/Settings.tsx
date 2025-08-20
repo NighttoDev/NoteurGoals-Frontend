@@ -315,9 +315,6 @@ if (!okCancel) return;
   const handleGoToCheckout = (planId: number) => {
     navigate(`/checkout/${planId}`);
   };
-  const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const formatPrice = (p: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -720,14 +717,6 @@ if (!okCancel) return;
                     </button>
                   )}
                 </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.autoRenewal}
-                    onChange={() => handleNotificationToggle("autoRenewal")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
               </div>
 
               <div className="settings-notification-item" style={{ marginTop: '1rem' }}>
