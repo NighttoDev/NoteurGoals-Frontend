@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useToastHelpers } from "../hooks/toastContext";
 
 const LoginPage: React.FC = () => {
+  const toast = useToastHelpers();
   // --- STATE MANAGEMENT ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -111,8 +113,7 @@ const LoginPage: React.FC = () => {
   const handleGoogleLogin = () => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!googleClientId) {
-      alert("Configuration error: Google Client ID is not set.");
-
+      toast.error("Configuration error: Google Client ID is not set.");
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/google/callback-direct`;
@@ -132,8 +133,7 @@ const LoginPage: React.FC = () => {
   const handleFacebookLogin = () => {
     const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
     if (!facebookAppId) {
-      alert("Configuration error: Facebook App ID is not set.");
-
+      toast.error("Configuration error: Facebook App ID is not set.");
       return;
     }
     const laravelCallbackUrl = `${API_BASE_URL}/auth/facebook/callback-direct`;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "../../assets/css/User/schedule.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,7 +18,9 @@ import {
   linkGoalToEvent,
   unlinkGoalFromEvent,
 } from "../../services/eventService";
-import { useSearch } from "../../hooks/searchContext"; // Thêm dòng này
+import { useSearch } from "../../hooks/searchContext";
+import { useNotifications } from "../../hooks/notificationContext";
+import { useToastHelpers } from "../../hooks/toastContext";
 
 interface Event {
   event_id: string;
@@ -26,10 +28,12 @@ interface Event {
   title: string;
   description: string;
   event_time: string; // ISO string
-  linkedGoal?: string; // goal_id nếu có
+  linkedGoal?: string;
 }
 
 const Schedule: React.FC = () => {
+  const toast = useToastHelpers();
+  const { addNotification, removeNotification } = useNotifications();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -37,7 +41,6 @@ const Schedule: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
   const [addForm, setAddForm] = useState({
     title: "",
     description: "",
@@ -52,38 +55,168 @@ const Schedule: React.FC = () => {
     time: "",
     linkedGoal: "",
   });
-
   const [addErrors, setAddErrors] = useState<{ [key: string]: string }>({});
   const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({});
   const [events, setEvents] = useState<Event[]>([]);
+  const { searchTerm } = useSearch();
 
-  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+  const fetchEvents = useCallback(async () => {
+    try {
+      console.log("Bắt đầu tải danh sách sự kiện...");
+      const response = await getEvents();
+      console.log("API response nhận được:", response);
+
+      // Bước 1: Kiểm tra xem response hoặc response.data có tồn tại không
+      if (!response || !response.data) {
+        console.error(
+          "Response từ API không hợp lệ hoặc không có thuộc tính 'data'.",
+          response
+        );
+        throw new Error("Dữ liệu nhận được từ API không hợp lệ.");
+      }
+
+      // Bước 2: Xác định vị trí của mảng sự kiện một cách an toàn
+      let eventsArray: any[] = [];
+      if (Array.isArray(response.data)) {
+        eventsArray = response.data;
+        console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data'");
+      } else if (response.data && Array.isArray(response.data.data)) {
+        eventsArray = response.data.data;
+        console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data.data'");
+      } else {
+        console.warn(
+          "Không tìm thấy mảng sự kiện trong response. Vui lòng kiểm tra cấu trúc dữ liệu trả về từ API.",
+          response.data
+        );
+        setEvents([]);
+        return;
+      }
+
+      console.log("Dữ liệu thô sẽ được xử lý:", eventsArray);
+
+      // Bước 3: Ánh xạ dữ liệu một cách an toàn
+      const formattedEvents = eventsArray
+        .map((item: any) => {
+          if (!item || typeof item.event_id === "undefined") {
+            console.warn(
+              "Bỏ qua một item không hợp lệ trong mảng sự kiện:",
+              item
+            );
+            return null;
+          }
+          return {
+            event_id: String(item.event_id),
+            user_id: item.user_id,
+            title: item.title,
+            description: item.description,
+            event_time: item.event_time,
+            linkedGoal: item.goal_id || item.linked_goal || "",
+          };
+        })
+        .filter(Boolean); // Lọc ra tất cả các giá trị null
+
+      console.log("Sự kiện đã được định dạng thành công:", formattedEvents);
+      setEvents(formattedEvents as Event[]);
+    } catch (error: any) {
+      toast.error(
+        "Không thể tải danh sách sự kiện! Vui lòng kiểm tra Console (F12) để biết chi tiết."
+      );
+
+      if (error.response) {
+        console.error("LỖI API KHI TẢI SỰ KIỆN:", {
+          message: "Server đã phản hồi với một mã lỗi.",
+          status: error.response.status,
+          data: error.response.data,
+        });
+      } else if (error.request) {
+        console.error("LỖI MẠNG KHI TẢI SỰ KIỆN:", {
+          message:
+            "Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng, URL API và cấu hình CORS.",
+          request: error.request,
+        });
+      } else {
+        console.error("LỖI JAVASCRIPT KHI TẢI SỰ KIỆN:", error.message, error);
+      }
+      setEvents([]);
+    }
+  }, []);
 
   useEffect(() => {
     fetchEvents();
-    // eslint-disable-next-line
-  }, []);
+  }, [fetchEvents]);
 
-  const fetchEvents = async () => {
-    try {
-      const res = await getEvents();
-      const rawEvents = Array.isArray(res.data) ? res.data : res.data.data;
-      setEvents(
-        rawEvents.map((item: any) => ({
-          event_id: item.event_id?.toString(),
-          user_id: item.user_id,
-          title: item.title,
-          description: item.description,
-          event_time: item.event_time,
-          linkedGoal: item.goal_id || item.linked_goal || "",
-        }))
-      );
-    } catch {
-      alert("Không thể tải danh sách sự kiện!");
-    }
-  };
+  // =========================================================================
+  // --- BỘ NÃO XỬ LÝ THÔNG BÁO SỰ KIỆN (ĐÃ CẬP NHẬT) ---
+  // =========================================================================
+  useEffect(() => {
+    const checkEventsAndCreateNotifications = () => {
+      if (!events || events.length === 0) {
+        return;
+      }
 
-  // Validate form
+      const now = new Date();
+      // Giả sử một sự kiện kéo dài 1 giờ.
+      // oneHourFromNow: Thời điểm trong 1 giờ tới.
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+      // oneHourAgo: Thời điểm 1 giờ trước. Sự kiện bắt đầu trước thời điểm này được coi là đã kết thúc.
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+      events.forEach((event) => {
+        const eventTime = new Date(event.event_time);
+        const upcomingId = `event-upcoming-${event.event_id}`;
+        const ongoingId = `event-ongoing-${event.event_id}`;
+        const finishedId = `event-finished-${event.event_id}`; // ID cho thông báo đã kết thúc
+
+        // 1. KIỂM TRA SỰ KIỆN ĐÃ KẾT THÚC
+        // Nếu thời gian sự kiện đã qua hơn 1 giờ trước
+        if (eventTime < oneHourAgo) {
+          addNotification({
+            id: finishedId,
+            type: "event_finished",
+            message: `Sự kiện "${event.title}" đã kết thúc.`,
+            link: "/schedule",
+          });
+          // Dọn dẹp thông báo "đang diễn ra" nếu có
+          removeNotification(ongoingId);
+        }
+        // 2. KIỂM TRA SỰ KIỆN ĐANG DIỄN RA
+        // Nếu sự kiện bắt đầu trong vòng 1 giờ vừa qua và chưa trôi qua
+        else if (eventTime <= now && eventTime >= oneHourAgo) {
+          addNotification({
+            id: ongoingId,
+            type: "event_ongoing",
+            message: `Sự kiện "${event.title}" đang diễn ra.`,
+            link: "/schedule",
+          });
+          // Dọn dẹp thông báo "sắp diễn ra" nếu có
+          removeNotification(upcomingId);
+        }
+        // 3. KIỂM TRA SỰ KIỆN SẮP DIỄN RA
+        // Nếu sự kiện diễn ra trong vòng 1 giờ tới
+        else if (eventTime > now && eventTime <= oneHourFromNow) {
+          addNotification({
+            id: upcomingId,
+            type: "event_upcoming",
+            message: `Sự kiện "${event.title}" sắp bắt đầu trong ít phút.`,
+            link: "/schedule",
+          });
+        }
+      });
+    };
+
+    // Chạy ngay sau khi component mount và sau đó mỗi phút
+    const initialCheckTimeout = setTimeout(
+      checkEventsAndCreateNotifications,
+      1000
+    );
+    const intervalId = setInterval(checkEventsAndCreateNotifications, 60000);
+
+    return () => {
+      clearTimeout(initialCheckTimeout);
+      clearInterval(intervalId);
+    };
+  }, [events, addNotification, removeNotification]);
+
   const validateForm = (form: typeof addForm) => {
     const errors: { [key: string]: string } = {};
     if (!form.title.trim()) errors.title = "Title is required";
@@ -97,7 +230,6 @@ const Schedule: React.FC = () => {
     return errors;
   };
 
-  // Generate calendar days for the current month
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -123,6 +255,13 @@ const Schedule: React.FC = () => {
     year: "numeric",
   });
 
+  const filteredEvents = events.filter(
+    (event) =>
+      !searchTerm ||
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const getEventsForDay = (day: number | null) => {
     if (!day) return [];
     const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1)
@@ -133,7 +272,6 @@ const Schedule: React.FC = () => {
     );
   };
 
-  // Modal logic
   const openAddModal = (day?: number) => {
     let dateStr = "";
     if (day) {
@@ -176,7 +314,6 @@ const Schedule: React.FC = () => {
     setSelectedDay(null);
   };
 
-  // Add Event (API)
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateForm(addForm);
@@ -184,10 +321,7 @@ const Schedule: React.FC = () => {
     if (Object.keys(errors).length > 0) return;
     setIsSubmitting(true);
     try {
-      const event_time =
-        addForm.date && addForm.time
-          ? `${addForm.date}T${addForm.time}:00`
-          : "";
+      const event_time = `${addForm.date}T${addForm.time}:00`;
       const payload: any = {
         title: addForm.title,
         description: addForm.description,
@@ -198,28 +332,23 @@ const Schedule: React.FC = () => {
       if (addForm.linkedGoal) {
         await linkGoalToEvent(item.event_id, { goal_id: addForm.linkedGoal });
       }
-      setIsSubmitting(false);
       closeAddModal();
       await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Edit Event (API)
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateForm(editForm);
     setEditErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-    if (!editingEvent) return;
+    if (Object.keys(errors).length > 0 || !editingEvent) return;
     setIsSubmitting(true);
     try {
-      const event_time =
-        editForm.date && editForm.time
-          ? `${editForm.date}T${editForm.time}:00`
-          : "";
+      const event_time = `${editForm.date}T${editForm.time}:00`;
       const payload: any = {
         title: editForm.title,
         description: editForm.description,
@@ -239,50 +368,36 @@ const Schedule: React.FC = () => {
           editingEvent.linkedGoal
         );
       }
-      setIsSubmitting(false);
       closeEditModal();
       await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Delete Event (API)
   const handleDelete = async () => {
+    if (!editingEvent) return;
     setIsDeleting(true);
     try {
-      if (editingEvent) {
-        await deleteEvent(editingEvent.event_id);
-        closeEditModal();
-        await fetchEvents();
-      }
-      setIsDeleting(false);
+      await deleteEvent(editingEvent.event_id);
+      closeEditModal();
+      await fetchEvents();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
+      toast.error(err?.response?.data?.message || "Có lỗi khi xóa sự kiện!");
+    } finally {
       setIsDeleting(false);
     }
   };
 
   const navigateMonth = (direction: "prev" | "next" | "today") => {
     const newDate = new Date(currentDate);
-    if (direction === "prev") {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else if (direction === "next") {
-      newDate.setMonth(newDate.getMonth() + 1);
-    } else {
-      newDate.setTime(Date.now());
-    }
+    if (direction === "prev") newDate.setMonth(newDate.getMonth() - 1);
+    else if (direction === "next") newDate.setMonth(newDate.getMonth() + 1);
+    else newDate.setTime(Date.now());
     setCurrentDate(newDate);
   };
-
-  // Lọc sự kiện theo searchTerm
-  const filteredEvents = events.filter(
-    (event) =>
-      !searchTerm ||
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <main className="schedule-main-content">
@@ -299,7 +414,6 @@ const Schedule: React.FC = () => {
               >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
-
               <button
                 id="schedule-today-btn"
                 onClick={() => navigateMonth("today")}
@@ -327,7 +441,6 @@ const Schedule: React.FC = () => {
             {calendarDays.map((day, index) => {
               const dayEvents = getEventsForDay(day);
               const isOtherMonth = day === null;
-
               return (
                 <div
                   key={index}
@@ -372,7 +485,6 @@ const Schedule: React.FC = () => {
               <FontAwesomeIcon icon={faPlus} /> New
             </button>
           </div>
-
           <div className="schedule-agenda-list">
             {filteredEvents.map((event) => (
               <div
@@ -387,7 +499,7 @@ const Schedule: React.FC = () => {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
-                  })}{" "}
+                  })}
                   - {event.event_time.slice(11, 16)}
                 </p>
                 <p className="schedule-agenda-item-desc">{event.description}</p>

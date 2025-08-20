@@ -293,7 +293,7 @@ export default function SettingsPage() {
   };
 
   const handleGoToCheckout = (planId: number) =>
-    navigate(`/dashboard/checkout/${planId}`);
+    navigate(`/checkout/${planId}`);
   const handleCancelSubscription = async () => {
     if (!mySubscription) return;
     if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không?"))

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useToastHelpers } from "../../hooks/toastContext";
+import { useConfirm } from "../../hooks/confirmContext";
 import { Link, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import "../../assets/css/User/settings.css";
@@ -59,6 +61,8 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
   const navigate = useNavigate();
 
   // --- STATES ---
@@ -168,16 +172,23 @@ const SettingsPage = () => {
   }, []);
   const handleCancelSubscription = async () => {
     if (!mySubscription) return;
-    if (!window.confirm("Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.")) return;
+    const okCancel = await confirm({
+  title: "Huỷ gói đăng ký",
+  message: "Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.",
+  confirmText: "Huỷ gói",
+  cancelText: "Giữ lại",
+  variant: "danger",
+});
+if (!okCancel) return;
 
     setActionLoading(prev => ({ ...prev, cancel: true }));
     try {
       await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
       // Sau khi hủy trên backend, fetch lại dữ liệu để đảm bảo UI đồng bộ với DB
       await fetchSubscriptionData();
-      alert('Hủy gói đăng ký thành công.');
+      toast.success('Hủy gói đăng ký thành công.');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setActionLoading(prev => ({ ...prev, cancel: false }));
     }
@@ -208,7 +219,7 @@ const SettingsPage = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
-      alert("Cập nhật thông tin thành công!");
+      toast.success("Cập nhật thông tin thành công!");
       window.location.reload();
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
@@ -239,7 +250,7 @@ const SettingsPage = () => {
     setLoading((prev) => ({ ...prev, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
-      alert("Đổi mật khẩu thành công!");
+      toast.success("Đổi mật khẩu thành công!");
       setPasswordData({
         current_password: "",
         new_password: "",
@@ -265,20 +276,23 @@ const SettingsPage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác."
-      )
-    ) {
+    const ok = await confirm({
+      title: "Xóa tài khoản",
+      message: "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.",
+      confirmText: "Xóa tài khoản",
+      cancelText: "Huỷ",
+      variant: "danger",
+    });
+    if (ok) {
       setLoading((prev) => ({ ...prev, delete: true }));
       try {
         await api.post("/user/account/delete");
-        alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+        toast.success("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_info");
         window.location.href = "/login";
       } catch (err: any) {
-        alert(
+        toast.error(
           err.response?.data?.message ||
             "Không thể xóa tài khoản. Vui lòng thử lại."
         );
