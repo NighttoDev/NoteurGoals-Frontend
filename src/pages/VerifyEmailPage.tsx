@@ -79,12 +79,12 @@ const VerifyEmailPage: React.FC = () => {
 
     return (
         <div className="form-content">
-            <h2>Xác thực tài khoản</h2>
-            <p className="subtitle">Một mã xác thực gồm 6 chữ số đã được gửi đến<br /><strong>{email}</strong></p>
+            <h2>Verify account</h2>
+            <p className="subtitle">A 6-digit verification code was sent to<br /><strong>{email}</strong></p>
 
             <form onSubmit={handleVerify}>
                 <div className="form-group">
-                    <label htmlFor="otp">Mã xác thực</label>
+                    <label htmlFor="otp">Verification code</label>
                     <input
                         type="text"
                         id="otp"

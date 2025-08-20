@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import axios, { AxiosError } from "axios";
+import { useToastHelpers } from "../../hooks/toastContext";
 import "../../assets/css/User/settings.css";
 import {
   FaUserCircle,
@@ -62,6 +63,7 @@ interface ApiError {
 
 // --- COMPONENT ---
 export default function SettingsPage() {
+  const toast = useToastHelpers();
   const navigate = useNavigate();
 
   // --- STATES ---
@@ -200,8 +202,10 @@ export default function SettingsPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       localStorage.setItem("user_info", JSON.stringify(res.data.data));
-      alert("Cập nhật thông tin thành công!");
-      window.location.reload();
+      toast.success("Cập nhật thông tin thành công!");
+      // Cập nhật UI để không cần reload trang và vẫn hiện toast
+      setUser(res.data.data);
+      setAvatarPreview(res.data.data.avatar_url || "/default-avatar.png");
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
         const apiErr = err.response.data as ApiError;
@@ -245,7 +249,7 @@ export default function SettingsPage() {
     setLoading((p) => ({ ...p, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
-      alert("Đổi mật khẩu thành công!");
+      toast.success("Đổi mật khẩu thành công!");
       setPasswordData({
         current_password: "",
         new_password: "",
@@ -280,7 +284,7 @@ export default function SettingsPage() {
     setLoading((p) => ({ ...p, delete: true }));
     try {
       await api.post("/user/account/delete");
-      alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+      toast.success("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
       handleLogout(true);
     } catch (err: any) {
       alert(
@@ -304,7 +308,7 @@ export default function SettingsPage() {
         `/subscriptions/cancel/${mySubscription.subscription_id}`
       );
       setMySubscription(res.data.subscription);
-      alert("Hủy gói đăng ký thành công.");
+      toast.success("Hủy gói đăng ký thành công.");
     } catch (err: any) {
       alert(err.response?.data?.message || "Có lỗi xảy ra.");
     } finally {
