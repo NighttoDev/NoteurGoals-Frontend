@@ -47,12 +47,8 @@
 
 /* --- 1. MAIN CONTENT & HEADER --- */
 .friends-main-content {
-  background-color: var(--background-main);
-  background-image: radial-gradient(
-    circle at 10% 20%,
-    rgba(167, 139, 250, 0.05) 0%,
-    transparent 20%
-  );
+  background-color: var(--surface-main); /* Changed from --background-main */
+  /* background-image was removed for a clean white look */
   min-height: 100vh;
   height: 100%;
   width: 100%;

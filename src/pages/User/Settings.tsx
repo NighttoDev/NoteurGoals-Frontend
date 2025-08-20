@@ -147,11 +147,11 @@ const SettingsPage = () => {
     // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
     const paymentStatus = sessionStorage.getItem('payment_status');
     if (paymentStatus === 'success') {
-        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+        toast.success('Payment successful! Your package has been updated.');
+        sessionStorage.removeItem('payment_status');
     } else if (paymentStatus === 'failed') {
-        alert('Thanh toán không thành công. Vui lòng thử lại.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+        toast.error('Payment failed. Please try again.');
+        sessionStorage.removeItem('payment_status');
     }
 
     // Luôn fetch dữ liệu mới nhất khi component tải
@@ -173,10 +173,10 @@ const SettingsPage = () => {
   const handleCancelSubscription = async () => {
     if (!mySubscription) return;
     const okCancel = await confirm({
-  title: "Huỷ gói đăng ký",
-  message: "Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.",
-  confirmText: "Huỷ gói",
-  cancelText: "Giữ lại",
+  title: "Cancel Subscription",
+  message: "Are you sure you want to cancel this subscription? You will still be able to use the features until the expiration date.",
+  confirmText: "Cancel Subscription",
+  cancelText: "Keep Subscription",
   variant: "danger",
 });
 if (!okCancel) return;
@@ -186,9 +186,9 @@ if (!okCancel) return;
       await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
       // Sau khi hủy trên backend, fetch lại dữ liệu để đảm bảo UI đồng bộ với DB
       await fetchSubscriptionData();
-      toast.success('Hủy gói đăng ký thành công.');
+      toast.success('Cancel subscription successfully.');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      toast.error(err.response?.data?.message || 'An error occurred, please try again.');
     } finally {
       setActionLoading(prev => ({ ...prev, cancel: false }));
     }
@@ -220,19 +220,21 @@ if (!okCancel) return;
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
       toast.success("Cập nhật thông tin thành công!");
-      window.location.reload();
+      // Cập nhật UI mà không cần reload trang để giữ nguyên thông báo
+      setUser(response.data.data);
+      setAvatarPreview(response.data.data.avatar_url || "/default-avatar.png");
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
         const apiError = err.response.data as ApiError;
         setError({
           type: "profile",
-          message: apiError.message || "Cập nhật thất bại.",
+          message: apiError.message || "Update failed.",
           errors: apiError.errors,
         });
       } else {
         setError({
           type: "profile",
-          message: "Đã có lỗi không xác định xảy ra.",
+          message: "An unknown error occurred.",
         });
       }
     } finally {
@@ -244,13 +246,13 @@ if (!okCancel) return;
     e.preventDefault();
     setError({});
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setError({ type: "password", message: "Mật khẩu xác nhận không khớp." });
+      setError({ type: "password", message: "Password confirmation does not match." });
       return;
     }
     setLoading((prev) => ({ ...prev, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
-      toast.success("Đổi mật khẩu thành công!");
+      toast.success("Password changed successfully!");
       setPasswordData({
         current_password: "",
         new_password: "",
@@ -261,13 +263,13 @@ if (!okCancel) return;
         const apiError = err.response.data as ApiError;
         setError({
           type: "password",
-          message: apiError.message || "Đổi mật khẩu thất bại.",
+          message: apiError.message || "Update failed.",
           errors: apiError.errors,
         });
       } else {
         setError({
           type: "password",
-          message: "Đã có lỗi không xác định xảy ra.",
+          message: "An unknown error occurred.",
         });
       }
     } finally {
@@ -277,24 +279,24 @@ if (!okCancel) return;
 
   const handleDeleteAccount = async () => {
     const ok = await confirm({
-      title: "Xóa tài khoản",
-      message: "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.",
-      confirmText: "Xóa tài khoản",
-      cancelText: "Huỷ",
+      title: "Delete Account",
+      message: "Are you sure you want to delete your account? This action cannot be undone.",
+      confirmText: "Delete Account",
+      cancelText: "Cancel",
       variant: "danger",
     });
     if (ok) {
       setLoading((prev) => ({ ...prev, delete: true }));
       try {
         await api.post("/user/account/delete");
-        toast.success("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+        toast.success("Account deleted successfully. You will be logged out.");
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_info");
         window.location.href = "/login";
       } catch (err: any) {
         toast.error(
           err.response?.data?.message ||
-            "Không thể xóa tài khoản. Vui lòng thử lại."
+            "Unable to delete account. Please try again."
         );
       } finally {
         setLoading((prev) => ({ ...prev, delete: false }));
@@ -440,7 +442,7 @@ if (!okCancel) return;
                       <label
                         htmlFor="avatar-file-input"
                         className="settings-avatar-upload-btn"
-                        title="Đổi ảnh đại diện"
+                        title="Change avatar"
                       >
                         <FaCamera />
                       </label>
@@ -738,7 +740,7 @@ if (!okCancel) return;
                       return (
                         <div key={plan.plan_id} className={`settings-plan-card ${isCurrent ? 'settings-current' : ''}`}>
                           <h3>{plan.name}</h3>
-                          <p className="settings-price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                          <p className="settings-price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'Year' : 'Month'}</span></p>
                           <ul>
                             <li><FaCheckCircle /> Unlimited Goals</li>
                             <li><FaCheckCircle /> AI Suggestions</li>

@@ -221,6 +221,7 @@ const FriendsPage: React.FC = () => {
     setCardLoading((prev) => ({ ...prev, [userId]: true }));
     try {
       await sendFriendRequestById(userId);
+      toast.success("Friend request sent successfully.");
       const updateUserState = (users: UserCardData[]) =>
         users.map((u) =>
           u.id === userId ? { ...u, friend_status: "request_sent" as const } : u
@@ -242,6 +243,10 @@ const FriendsPage: React.FC = () => {
     setLoadingUserId(friendshipId);
     try {
       await respondFriendRequest(friendshipId, status);
+      // Toast success feedback
+      toast.success(
+        status === "accepted" ? "Friend request accepted." : "Friend request rejected."
+      );
 
       // --- START: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
       if (status === "accepted") {
@@ -281,6 +286,7 @@ const FriendsPage: React.FC = () => {
       setLoadingUserId(friendshipId);
       try {
         await deleteFriend(friendshipId);
+        toast.success("Cancelled successfully.");
         fetchInitialData();
       } catch (err) {
         toast.error("Failed to remove friend/request.");
