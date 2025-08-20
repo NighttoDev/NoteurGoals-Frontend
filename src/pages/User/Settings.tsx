@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+
+import { useToastHelpers } from "../../hooks/toastContext";
+import { useConfirm } from "../../hooks/confirmContext";
+import { Link, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import "../../assets/css/User/settings.css";
 import {
@@ -35,6 +38,24 @@ interface User {
   registration_type: "email" | "google" | "facebook";
   role?: "user" | "admin";
 }
+
+interface SubscriptionPlan {
+  plan_id: number;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+}
+
+interface UserSubscription {
+  subscription_id: number;
+  user_id: number;
+  plan_id: number;
+  start_date: string;
+  end_date: string;
+  payment_status: 'active' | 'cancelled' | 'expired';
+  plan: SubscriptionPlan;
+}
 interface ApiError {
   message?: string;
   errors?: { [key: string]: string[] };
@@ -42,6 +63,11 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
+
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
+  const navigate = useNavigate();
+
   // --- STATES ---
   const [activeTab, setActiveTab] = useState("profile");
   const [user, setUser] = useState<User | null>(null);
@@ -55,6 +81,7 @@ const SettingsPage = () => {
     new_password: "",
     new_password_confirmation: "",
   });
+  
   const [notifications, setNotifications] = useState({
     eventReminders: true,
     goalProgress: true,
@@ -73,39 +100,103 @@ const SettingsPage = () => {
     errors?: any;
   }>({});
 
+  const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
+  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
   // --- HANDLERS & EFFECTS ---
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/user/profile");
-        const fetchedUser: User = response.data.data;
-        setUser(fetchedUser);
-        setProfileData({ displayName: fetchedUser.display_name });
-        setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-        if (err instanceof AxiosError && err.response?.status === 401) {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_info");
-          window.location.href = "/login";
-        }
-      }
-    };
-    fetchUser();
+  const handleLogout = useCallback(async (isForced = false) => {
+    setLoading(prev => ({ ...prev, logout: true }));
+    if (!isForced) {
+        try { await api.post('/logout'); } catch(err) { console.error("Logout API failed, but logging out locally anyway."); }
+    }
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_info");
+    window.location.href = "/login";
   }, []);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await api.get('/user/profile');
+      const fetchedUser: User = response.data.data;
+      setUser(fetchedUser);
+      setProfileData({ displayName: fetchedUser.display_name });
+      setAvatarPreview(fetchedUser.avatar_url || "/default-avatar.png");
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+      if (err instanceof AxiosError && err.response?.status === 401) {
+        handleLogout(true);
+      }
+    }
+  }, [handleLogout]);
+
+  const fetchSubscriptionData = useCallback(async () => {
+    setSubscriptionLoading(true);
+    try {
+      const [plansResponse, mySubResponse] = await Promise.all([
+        api.get('/subscriptions/plans'),
+        api.get('/subscriptions/my-current')
+      ]);
+      setAllPlans(plansResponse.data);
+      setMySubscription(mySubResponse.data);
+    } catch (err) {
+      console.error("Failed to fetch subscription data:", err);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
+    const paymentStatus = sessionStorage.getItem('payment_status');
+    if (paymentStatus === 'success') {
+        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    } else if (paymentStatus === 'failed') {
+        alert('Thanh toán không thành công. Vui lòng thử lại.');
+        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    }
+
+    // Luôn fetch dữ liệu mới nhất khi component tải
+    fetchUserData();
+    fetchSubscriptionData();
+  }, [fetchUserData, fetchSubscriptionData]);
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
     if (
       hash &&
-      ["profile", "account", "subscription", "notifications", "admin"].includes(
+      ["profile", "account", "subscription", "notifications"].includes(
         hash
       )
     ) {
       setActiveTab(hash);
     }
   }, []);
+  const handleCancelSubscription = async () => {
+    if (!mySubscription) return;
+    const okCancel = await confirm({
+  title: "Huỷ gói đăng ký",
+  message: "Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.",
+  confirmText: "Huỷ gói",
+  cancelText: "Giữ lại",
+  variant: "danger",
+});
+if (!okCancel) return;
 
+    setActionLoading(prev => ({ ...prev, cancel: true }));
+    try {
+      await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
+      // Sau khi hủy trên backend, fetch lại dữ liệu để đảm bảo UI đồng bộ với DB
+      await fetchSubscriptionData();
+      toast.success('Hủy gói đăng ký thành công.');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, cancel: false }));
+    }
+  };
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     window.history.pushState(null, "", `#${tab}`);
@@ -132,7 +223,8 @@ const SettingsPage = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
-      alert("Cập nhật thông tin thành công!");
+
+      toast.success("Cập nhật thông tin thành công!");
       window.location.reload();
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
@@ -163,7 +255,7 @@ const SettingsPage = () => {
     setLoading((prev) => ({ ...prev, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
-      alert("Đổi mật khẩu thành công!");
+      toast.success("Đổi mật khẩu thành công!");
       setPasswordData({
         current_password: "",
         new_password: "",
@@ -189,20 +281,23 @@ const SettingsPage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác."
-      )
-    ) {
+    const ok = await confirm({
+      title: "Xóa tài khoản",
+      message: "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.",
+      confirmText: "Xóa tài khoản",
+      cancelText: "Huỷ",
+      variant: "danger",
+    });
+    if (ok) {
       setLoading((prev) => ({ ...prev, delete: true }));
       try {
         await api.post("/user/account/delete");
-        alert("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+        toast.success("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_info");
         window.location.href = "/login";
       } catch (err: any) {
-        alert(
+        toast.error(
           err.response?.data?.message ||
             "Không thể xóa tài khoản. Vui lòng thử lại."
         );
@@ -211,20 +306,23 @@ const SettingsPage = () => {
       }
     }
   };
-  const handleLogout = async () => {
-    try {
-      await api.post("/logout");
-    } catch (err) {
-      console.error("Logout API failed");
-    } finally {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_info");
-      window.location.href = "/login";
-    }
+      
+  const handleNotificationToggle = (key: keyof typeof notifications) => {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+  const handleGoToCheckout = (planId: number) => {
+    navigate(`/checkout/${planId}`);
   };
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const formatPrice = (p: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(p);
+
 
   if (!user) {
     return (
@@ -310,20 +408,11 @@ const SettingsPage = () => {
                 <FaBell /> Notifications
               </a>
             </li>
-            {user.role === "admin" && (
-              <li>
-                <Link
-                  to="/admin"
-                  className={`settings-nav-link settings-admin-link`}
-                >
-                  <FaUserShield /> Admin Panel
-                </Link>
-              </li>
-            )}
+            
             <li>
               <button
                 className="settings-nav-link settings-logout-link"
-                onClick={handleLogout}
+                onClick={() => handleLogout(false)}
               >
                 <FaSignOutAlt /> Logout
               </button>
@@ -595,25 +684,39 @@ const SettingsPage = () => {
               <p>Manage your billing and subscription plan.</p>
             </div>
             <div className="settings-section-body">
-              <div>
-                <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
-                <p style={{ color: "var(--text-light)" }}>
-                  You are currently on the{" "}
-                  <strong style={{ color: "var(--primary-main)" }}>
-                    Premium Monthly
-                  </strong>{" "}
-                  plan.
-                </p>
-                <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
-                  Your subscription will renew on July 22, 2025.
-                </p>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Auto-Renewal</h3>
-                  <p>
-                    Your plan will automatically renew. You can cancel anytime.
-                  </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
+                  {mySubscription ? (
+                    <>
+                      <p style={{ color: 'var(--text-light)' }}>
+                        You are currently on the{' '}
+                        <strong style={{ color: 'var(--primary-main)' }}>
+                          {mySubscription.plan?.name || '—'}
+                        </strong>{' '}plan.
+                      </p>
+                      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                        Status: <strong style={{ textTransform: 'capitalize' }}>{mySubscription.payment_status}</strong>
+                        {mySubscription.end_date && mySubscription.payment_status === 'active' && (
+                          <> • Renews on <strong>{new Date(mySubscription.end_date).toLocaleDateString('vi-VN')}</strong></>
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p style={{ color: 'var(--text-light)' }}>You have no active subscription.</p>
+                  )}
+                </div>
+                <div>
+                  {mySubscription && mySubscription.payment_status === 'active' && (
+                    <button
+                      type="button"
+                      className="settings-btn settings-btn-danger"
+                      onClick={handleCancelSubscription}
+                      disabled={actionLoading.cancel}
+                    >
+                      {actionLoading.cancel ? 'Cancelling...' : 'Cancel Subscription'}
+                    </button>
+                  )}
                 </div>
                 <label className="settings-toggle-switch">
                   <input
@@ -624,54 +727,56 @@ const SettingsPage = () => {
                   <span className="settings-slider"></span>
                 </label>
               </div>
-              <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
-                Available Plans
-              </h3>
-              <div className="settings-plans-grid">
-                <div className="settings-plan-card settings-current">
-                  <h3>Premium Monthly</h3>
-                  <p className="settings-price">
-                    99.000đ <span>/ month</span>
-                  </p>
-                  <ul>
-                    <li>
-                      <FaCheckCircle /> Unlimited Goals
-                    </li>
-                    <li>
-                      <FaCheckCircle /> AI Suggestions
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Advanced Collaboration
-                    </li>
-                  </ul>
-                  <button
-                    className="settings-btn settings-btn-secondary"
-                    disabled
-                  >
-                    Current Plan
-                  </button>
+
+              <div className="settings-notification-item" style={{ marginTop: '1rem' }}>
+                <div className="settings-notification-text">
+                  <h3>Auto-Renewal</h3>
+                  <p>Your plan will automatically renew. You can cancel anytime.</p>
                 </div>
-                <div className="settings-plan-card">
-                  <h3>Premium Yearly</h3>
-                  <p className="settings-price">
-                    950.000đ <span>/ year</span>
-                  </p>
-                  <ul>
-                    <li>
-                      <FaCheckCircle /> All Premium Features
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Save 20%
-                    </li>
-                    <li>
-                      <FaCheckCircle /> Priority Support
-                    </li>
-                  </ul>
-                  <button className="settings-btn settings-btn-primary">
-                    Upgrade to Yearly
-                  </button>
-                </div>
+                <label className="settings-toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={notifications.autoRenewal}
+                    onChange={() => handleNotificationToggle('autoRenewal')}
+                  />
+                  <span className="settings-slider"></span>
+                </label>
               </div>
+
+              <h3 style={{ fontWeight: 500, marginTop: '2rem' }}>Available Plans</h3>
+              {(() => {
+                const monthlyPlan = allPlans.find(p => p.duration === 1);
+                const yearlyPlan = allPlans.find(p => p.duration > 1);
+                const plansToShow = [monthlyPlan, yearlyPlan].filter(Boolean) as SubscriptionPlan[];
+                const fallbackPlans = plansToShow.length === 0 ? allPlans.slice(0, 2) : plansToShow;
+                return (
+                  <div className="settings-plans-grid">
+                    {fallbackPlans.map(plan => {
+                      const isCurrent = mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active';
+                      return (
+                        <div key={plan.plan_id} className={`settings-plan-card ${isCurrent ? 'settings-current' : ''}`}>
+                          <h3>{plan.name}</h3>
+                          <p className="settings-price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                          <ul>
+                            <li><FaCheckCircle /> Unlimited Goals</li>
+                            <li><FaCheckCircle /> AI Suggestions</li>
+                            <li><FaCheckCircle /> Advanced Collaboration</li>
+                            {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                          </ul>
+                          <button
+                            className={`settings-btn ${isCurrent ? 'settings-btn-secondary' : 'settings-btn-primary'}`}
+                            disabled={isCurrent}
+                            onClick={() => handleGoToCheckout(plan.plan_id)}
+                          >
+                            {isCurrent ? 'Current Plan' : (mySubscription ? 'Upgrade Plan' : 'Subscribe Now')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
             </div>
           </section>
 

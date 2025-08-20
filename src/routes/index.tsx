@@ -11,7 +11,7 @@ import {
 import HomeLayout from "../layouts/Home";
 import AuthLayout from "../layouts/AuthLayout";
 import DashboardLayout from "../layouts/User/DashboardLayout";
-
+import { NotificationProvider } from "../hooks/notificationContext"; // *** ĐÃ THÊM ***
 // --- Pages ---
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -30,9 +30,7 @@ import Friends from "../pages/User/Friends";
 import Settings from "../pages/User/Settings";
 import UnifiedTrashPage from "../pages/User/UnifiedTrashPage";
 import CheckoutPage from "../pages/User/Checkout";
-
-// *** MỚI: Nhập các component trang cho luồng thanh toán ***
-import PaymentCallback from "../pages/PaymentCallback"; // Giả sử bạn đặt file ở đây
+import PaymentCallback from "../pages/PaymentCallback";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 
@@ -72,7 +70,13 @@ const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-        element: <DashboardLayout />,
+
+        // *** ĐÃ CẬP NHẬT: BỌC DASHBOARDLAYOUT BẰNG NOTIFICATIONPROVIDER ***
+        element: (
+          <NotificationProvider>
+            <DashboardLayout />
+          </NotificationProvider>
+        ),
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
           { path: "goals", element: <GoalsPage /> },
@@ -96,13 +100,9 @@ const router = createBrowserRouter([
   // --- 3. PAYMENT ROUTES (Yêu cầu đăng nhập nhưng không cần layout) ---
   // =======================================================
   {
-    element: <RequireAuth />, // Vẫn cần đăng nhập để biết ai đang thanh toán
+    element: <RequireAuth />,
     children: [
-      // *** MỚI: Route để xử lý khi VNPay redirect về ***
-      // URL này phải khớp với VNPAY_RETURN_URL trong file .env của backend
       { path: "/payment/callback", element: <PaymentCallback /> },
-
-      // *** MỚI: Route cho trang thông báo thành công/thất bại ***
       { path: "/payment-success", element: <PaymentSuccess /> },
       { path: "/payment-failure", element: <PaymentFailure /> },
     ],

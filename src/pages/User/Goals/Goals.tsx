@@ -16,8 +16,12 @@ import {
   updateGoal,
   deleteGoal,
 } from "../../../services/goalsService";
+
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext";
+import { useToastHelpers } from "../../../hooks/toastContext";
+import { useConfirm } from "../../../hooks/confirmContext";
+
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -173,6 +177,8 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
 
 // --- GOALS PAGE COMPONENT ---
 const GoalsPage: React.FC = () => {
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -26,34 +26,33 @@ const PaymentCallback = () => {
     const verifyPayment = async () => {
       // Lấy tất cả các query params từ URL mà VNPay trả về
       const params = Object.fromEntries(searchParams.entries());
+      
+            // Kiểm tra xem có dữ liệu trả về không
+            if (Object.keys(params).length === 0 || !params.vnp_TxnRef) {
+                setError('Invalid data returned or transaction has been cancelled.');
+                // Sau 3 giây, chuyển về trang settings
+                setTimeout(() => navigate('/settings#subscription'), 3000);
+                return;
+            }
 
-      // Kiểm tra xem có dữ liệu trả về không
-      if (Object.keys(params).length === 0 || !params.vnp_TxnRef) {
-        setError("Invalid data returned or transaction has been cancelled.");
-        // Sau 3 giây, chuyển về trang settings
-        setTimeout(() => navigate("/settings#subscription"), 3000);
-        return;
-      }
+            try {
+                // Gọi API mới để backend xác thực chữ ký và cập nhật DB
+                await api.post('/payment/vnpay/verify-return', params);
+                
+                // Nếu API trả về 200 OK, nghĩa là backend đã xử lý thành công
+                setMessage('Verification successful! Your package has been activated.');
+                sessionStorage.setItem('payment_status', 'success');
+                // Chờ 3 giây để người dùng đọc thông báo rồi chuyển hướng
+                setTimeout(() => navigate('/settings#subscription'), 3000);
 
-      try {
-        // Gọi API mới để backend xác thực chữ ký và cập nhật DB
-        await api.post("/payment/vnpay/verify-return", params);
-
-        // Nếu API trả về 200 OK, nghĩa là backend đã xử lý thành công
-        setMessage("Verification successful! Your package has been activated.");
-        sessionStorage.setItem("payment_status", "success");
-        // Chờ 3 giây để người dùng đọc thông báo rồi chuyển hướng
-        setTimeout(() => navigate("/settings#subscription"), 3000);
-      } catch (err: any) {
-        // Nếu API trả về lỗi (4xx, 5xx)
-        const errorMessage =
-          err.response?.data?.message ||
-          "Transaction failed. Please try again.";
-        setError(errorMessage);
-        sessionStorage.setItem("payment_status", "failed");
-        setTimeout(() => navigate("/settings#subscription"), 3000);
-      }
-    };
+            } catch (err: any) {
+                // Nếu API trả về lỗi (4xx, 5xx)
+                const errorMessage = err.response?.data?.message || 'Transaction failed. Please try again.';
+                setError(errorMessage);
+                sessionStorage.setItem('payment_status', 'failed');
+                setTimeout(() => navigate('/settings#subscription'), 3000);
+            }
+        };
 
     verifyPayment();
   }, [searchParams, navigate]);

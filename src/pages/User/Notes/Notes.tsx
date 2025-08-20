@@ -22,6 +22,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
+import { useToastHelpers } from "../../../hooks/toastContext";
 
 interface NotesCard {
   id: string;
@@ -45,7 +46,10 @@ interface GoalOption {
 const NOTES_CACHE_KEY = "user_notes_cache";
 
 const NotesPage: React.FC = () => {
+  
   const navigate = useNavigate();
+  const toast = useToastHelpers();
+  
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -94,7 +98,7 @@ const NotesPage: React.FC = () => {
       }
     } catch (err: any) {
       if (err.response?.status === 401) {
-        alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+        toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
       }
       setNotes([]);
     }
@@ -180,8 +184,9 @@ const NotesPage: React.FC = () => {
         return updated;
       });
       closeAddModal();
+      toast.success("Note created successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to create note");
+      toast.error(err.message || "Failed to create note");
     } finally {
       setLoading(false);
     }
@@ -220,7 +225,7 @@ const NotesPage: React.FC = () => {
       });
       closeEditModal();
     } catch (err: any) {
-      alert(err.message || "Failed to update note");
+      toast.error(err.message || "Failed to update note");
     } finally {
       setLoading(false);
     }
@@ -239,6 +244,7 @@ const NotesPage: React.FC = () => {
           });
         }
         closeEditModal();
+       toast.success("Note updated successfully!");
       } catch (err: any) {
         alert(err.message || "Failed to delete note");
       } finally {

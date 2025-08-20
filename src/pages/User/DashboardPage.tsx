@@ -18,13 +18,10 @@ import {
   FiUsers,
   FiStar,
 } from "react-icons/fi";
-
-// Import các service
 import { getGoals } from "../../services/goalsService";
 import { getEvents } from "../../services/eventService";
 import { getFriendsData } from "../../services/friendsService";
-
-// --- Định nghĩa kiểu dữ liệu ---
+// --- Type Definitions ---
 interface ICurrentUser {
   id: number;
   displayName: string;
@@ -103,15 +100,16 @@ const DashboardPage = () => {
 
         const friendsRes = await getFriendsData();
         const { requests } = friendsRes.data;
-        // 4. Lấy user info từ localStorage (hoặc API riêng nếu có)
+
+
+        // 4. Get user info from localStorage (or a separate API if available)
         const userInfo = JSON.parse(localStorage.getItem("user_info") || "{}");
         setCurrentUser({
           id: userInfo.user_id,
           displayName: userInfo.display_name,
           is_premium: userInfo.is_premium || false,
         });
-
-        // 5. Tính toán thống kê
+        // 5. Calculate statistics
         const now = new Date();
         const todayStr = now.toISOString().slice(0, 10);
 
@@ -128,8 +126,7 @@ const DashboardPage = () => {
             (now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24);
           return diff <= 7;
         }).length;
-
-        // 6. Công việc hôm nay (event trong ngày)
+        // 6. Today's tasks (events for the day)
         const dueTodayTasks = events.filter((e: any) => {
           const eventDate = new Date(e.event_time).toISOString().slice(0, 10);
           return eventDate === todayStr;
@@ -141,8 +138,7 @@ const DashboardPage = () => {
           completedThisWeek,
           dueTodayTasks,
         });
-
-        // 7. Upcoming tasks (event sắp tới)
+        // 7. Upcoming tasks (upcoming events)
         setUpcomingTasks(
           events
             .filter((e: any) => new Date(e.event_time) >= now)
@@ -151,13 +147,13 @@ const DashboardPage = () => {
               id: e.id,
               title: e.title,
               project: e.goal?.title || "No project",
-              dueDate: new Date(e.event_time).toLocaleDateString("vi-VN"),
+              dueDate: new Date(e.event_time).toLocaleDateString("en-US"),
               priority: e.priority || "medium",
               progress: e.progress || 0,
             }))
         );
 
-        // 8. Collaborative goals (goals có nhiều collaborator)
+        // 8. Collaborative goals (goals with multiple collaborators)
         setCollaborativeGoals(
           goals
             .filter(
@@ -185,7 +181,7 @@ const DashboardPage = () => {
           }))
         );
 
-        // 10. Schedule events (event sắp tới)
+        // 10. Schedule events (upcoming events)
         setScheduleEvents(
           events
             .filter((e: any) => new Date(e.event_time) >= now)
@@ -199,21 +195,21 @@ const DashboardPage = () => {
             }))
         );
 
-        // 11. Recent activities (tùy backend, ở đây demo lấy từ goals)
+        // 11. Recent activities (backend-dependent, here demoed from goals)
         setRecentActivities(
           goals
             .filter((g: any) => g.status === "completed")
             .slice(-5)
             .map((g: any, idx: number) => ({
               id: g.id,
-              user: g.owner?.display_name || "Bạn",
-              action: `đã hoàn thành mục tiêu "${g.title}"`,
-              time: "Gần đây",
+              user: g.owner?.display_name || "You",
+              action: `completed the goal "${g.title}"`,
+              time: "Recently",
               type: "completed",
             }))
         );
       } catch (err) {
-        // Xử lý lỗi
+        // Error handling
         setStats(null);
         setUpcomingTasks([]);
         setCollaborativeGoals([]);
@@ -228,34 +224,31 @@ const DashboardPage = () => {
     fetchDashboardData();
   }, []);
 
-  // Helper function để định dạng ngày giờ
+  // Helper function to format date and time
   const formatDateTime = (date: Date) => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return `Hôm nay, ${date.toLocaleTimeString([], {
+
+      return `Today, ${date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
     }
     if (date.toDateString() === tomorrow.toDateString()) {
-      return `Ngày mai, ${date.toLocaleTimeString([], {
+      return `Tomorrow, ${date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })}`;
     }
-    return date.toLocaleDateString("vi-VN", {
+    return date.toLocaleDateString("en-US", {
       weekday: "long",
       day: "numeric",
       month: "numeric",
     });
   };
-
-  if (loading) {
-    return <div className="dsd-loading-screen">Đang tải dữ liệu...</div>;
-  }
 
   return (
     <main className="dsd-main-content">
@@ -267,7 +260,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.inProgressGoals}</span>
-            <p>Đang tiến hành</p>
+            <p>In Progress</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -276,7 +269,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.overdueGoals}</span>
-            <p>Bị quá hạn</p>
+            <p>Overdue</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -285,7 +278,7 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.completedThisWeek}</span>
-            <p>Hoàn thành tuần này</p>
+            <p>Completed This Week</p>
           </div>
         </div>
         <div className="dsd-stat-card">
@@ -294,7 +287,8 @@ const DashboardPage = () => {
           </div>
           <div className="dsd-stat-info">
             <span className="dsd-stat-number">{stats?.dueTodayTasks}</span>
-            <p>Việc hôm nay</p>
+
+            <p>Due Today</p>
           </div>
         </div>
       </div>
@@ -306,18 +300,19 @@ const DashboardPage = () => {
           <div className="dsd-section-header">
             <div className="dsd-header-title">
               <BsHourglassSplit className="dsd-icon" />
-              <h2>Sắp đến hạn</h2>
+
+              <h2>Upcoming Tasks</h2>
             </div>
             <button className="dsd-add-task">
-              <FiPlus /> Thêm mới
+              <FiPlus /> Add New
             </button>
           </div>
           <div className="dsd-task-list">
             {upcomingTasks.map((task) => (
               <div className="dsd-task-item" key={task.id}>
                 <div className="dsd-task-time">
-                  <div className="dsd-date">{task.dueDate.split("/")[0]}</div>
-                  <div className="dsd-month">{task.dueDate.split("/")[1]}</div>
+                  <div className="dsd-date">{task.dueDate.split("/")[1]}</div>
+                  <div className="dsd-month">{task.dueDate.split("/")[0]}</div>
                 </div>
                 <div className="dsd-task-details">
                   <h3>{task.title}</h3>
@@ -326,9 +321,10 @@ const DashboardPage = () => {
                       <FiTarget /> {task.project}
                     </span>
                     <span className={`dsd-priority dsd-${task.priority}`}>
-                      {task.priority === "high" && "Ưu tiên cao"}
-                      {task.priority === "medium" && "Ưu tiên trung bình"}
-                      {task.priority === "low" && "Ưu tiên thấp"}
+
+                      {task.priority === "high" && "High Priority"}
+                      {task.priority === "medium" && "Medium Priority"}
+                      {task.priority === "low" && "Low Priority"}
                     </span>
                   </div>
                   <div className="dsd-task-progress">
@@ -351,7 +347,8 @@ const DashboardPage = () => {
           <div className="dsd-section-header">
             <div className="dsd-header-title">
               <FiUsers className="dsd-icon" />
-              <h2>Mục tiêu cộng tác</h2>
+
+              <h2>Collaborative Goals</h2>
             </div>
           </div>
           <div className="dsd-task-list">
@@ -373,7 +370,7 @@ const DashboardPage = () => {
                       <img key={index} src={member.avatar} alt="Member" />
                     ))}
                   </div>
-                  <span className="dsd-owner">Chủ sở hữu: {goal.owner}</span>
+                  <span className="dsd-owner">Owner: {goal.owner}</span>
                 </div>
               </div>
             ))}
@@ -388,13 +385,11 @@ const DashboardPage = () => {
                 <FiStar />
               </div>
               <div className="dsd-premium-text">
-                <h3>Nâng cấp Premium</h3>
-                <p>Mở khóa toàn bộ tính năng mạnh mẽ.</p>
+
+                <h3>Upgrade to Premium</h3>
+                <p>Unlock all powerful features.</p>
               </div>
-              <button>
-                {" "}
-                <a href="/checkout">Nâng cấp ngay</a>
-              </button>
+              <a href="/settings#subscription" className="dsd-upgrade-btn">Upgrade Now</a>
             </div>
           )}
 
@@ -403,7 +398,7 @@ const DashboardPage = () => {
               <div className="dsd-section-header">
                 <div className="dsd-header-title">
                   <BsPersonPlus className="dsd-icon" />
-                  <h2>Lời mời kết bạn</h2>
+                  <h2>Friend Requests</h2>
                 </div>
               </div>
               {friendRequests.map((req) => (
@@ -411,8 +406,8 @@ const DashboardPage = () => {
                   <img src={req.avatar} alt={req.displayName} />
                   <span>{req.displayName}</span>
                   <div className="dsd-friend-actions">
-                    <button className="dsd-accept">Đồng ý</button>
-                    <button className="dsd-decline">Từ chối</button>
+                    <button className="dsd-accept">Accept</button>
+                    <button className="dsd-decline">Decline</button>
                   </div>
                 </div>
               ))}
@@ -425,13 +420,13 @@ const DashboardPage = () => {
                 onClick={() => setActiveTab("activity")}
                 className={activeTab === "activity" ? "dsd-active" : ""}
               >
-                Hoạt động
+                Activity
               </button>
               <button
                 onClick={() => setActiveTab("schedule")}
                 className={activeTab === "schedule" ? "dsd-active" : ""}
               >
-                Lịch trình
+                Schedule
               </button>
             </div>
 

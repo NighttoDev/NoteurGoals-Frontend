@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../assets/css/User/checkout.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useToastHelpers } from "../../hooks/toastContext";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
 
 // --- API CONFIG ---
@@ -28,6 +29,7 @@ interface SubscriptionPlan {
 }
 
 const CheckoutPage: React.FC = () => {
+  const toast = useToastHelpers();
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
   

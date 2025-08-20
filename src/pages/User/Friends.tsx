@@ -3,22 +3,24 @@ import "../../assets/css/User/friends.css";
 import {
   getFriendsData,
   getUserSuggestions,
-  getCommunityFeed,
-  sendFriendRequestByEmail,
   sendFriendRequestById,
   respondFriendRequest,
   deleteFriend,
   reportUser,
   searchUsers,
+  getCollaborators,
 } from "../../services/friendsService";
-import { useSearch } from "../../hooks/searchContext"; // Thêm dòng này
-
-// --- INTERFACES ---
+import { useSearch } from "../../hooks/searchContext";
+import { useNotifications } from "../../hooks/notificationContext";
+import { useToastHelpers } from "../../hooks/toastContext";
+import { useConfirm } from "../../hooks/confirmContext";
+import ChatWindow from "../User/Chat/ChatWindow";
+import ErrorBoundary from "../../components/Common/ErrorBoundary";
 
 interface UserCardData {
   friendship_id?: string;
-  id: string; // user_id
-  display_name: string; // Sẽ là display_name
+  id: string;
+  name: string;
   email: string;
   avatar?: string;
   total_goals?: number;
@@ -32,23 +34,7 @@ interface UserCardData {
     | "not_friends";
 }
 
-interface Request extends UserCardData {
-  status: "received" | "sent";
-}
-
-interface SharedGoal {
-  goal_id: string;
-  title: string;
-  description: string;
-  status: string;
-  owner: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-}
-
-type ActiveTab = "friends" | "requests" | "community-feed" | "find-people";
+type ActiveTab = "friends" | "requests" | "collaborators" | "find-people";
 
 interface Friend {
   friendship_id: string;
@@ -57,58 +43,76 @@ interface Friend {
   email: string;
   avatar?: string;
 }
-
 interface Request extends Friend {
   status: "received" | "sent";
 }
 
-interface Collaborator {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
-
 const FriendsPage: React.FC = () => {
-  // --- States and Hooks ---
+  const { addNotification } = useNotifications();
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
+
+  const [activeChat, setActiveChat] = useState<UserCardData | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user_info");
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      const idCandidate =
+        parsed?.user_id ??
+        parsed?.id ??
+        parsed?.user?.id ??
+        parsed?.user?.user_id;
+      if (idCandidate != null) setCurrentUserId(String(idCandidate));
+    } catch (e) {
+      console.warn("Could not parse user_info from localStorage", e);
+    }
+  }, []);
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("friends");
   const [loadedTabs, setLoadedTabs] = useState<Set<ActiveTab>>(
     new Set(["friends"])
   );
-
   const [friends, setFriends] = useState<UserCardData[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
-  const [communityGoals, setCommunityGoals] = useState<SharedGoal[]>([]);
   const [suggestions, setSuggestions] = useState<UserCardData[]>([]);
+  const [collaborators, setCollaborators] = useState<UserCardData[]>([]);
 
-  // Sử dụng searchTerm từ context thay cho searchQuery nội bộ
   const { searchTerm } = useSearch();
-  const [searchResults, setSearchResults] = useState<UserCardData[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mainSearchResults, setMainSearchResults] = useState<UserCardData[]>(
+    []
+  );
+  const [isMainSearching, setIsMainSearching] = useState(false);
+  const mainSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>({});
 
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [userToReport, setUserToReport] = useState<UserCardData | null>(null);
   const [reportReason, setReportReason] = useState("");
 
-  const [friendEmail, setFriendEmail] = useState("");
-  const [sendLoading, setSendLoading] = useState(false);
-  const [addErrors, setAddErrors] = useState<{ [key: string]: string }>({});
+  const [modalSearchQuery, setModalSearchQuery] = useState("");
+  const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>([]);
+  const [isModalSearching, setIsModalSearching] = useState(false);
+  const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+  const modalSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- Data Fetching and Handlers ---
-  const validateAddFriend = () => {
-    const errors: { [key: string]: string } = {};
-    if (!friendEmail.trim()) errors.friendEmail = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(friendEmail))
-      errors.friendEmail = "Email address is invalid";
-    return errors;
-  };
+  useEffect(() => {
+    const receivedRequests = requests.filter(
+      (req) => req.status === "received"
+    );
+    receivedRequests.forEach((req) => {
+      addNotification({
+        id: `request-${req.friendship_id}`,
+        type: "friend_request",
+        message: `You have a new friend request from ${req.name}.`,
+        link: "/friends",
+      });
+    });
+  }, [requests, addNotification]);
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
@@ -127,40 +131,65 @@ const FriendsPage: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // Tìm kiếm bạn bè, cộng đồng, suggestions theo searchTerm toàn cục
   useEffect(() => {
     if (!searchTerm || !searchTerm.trim()) {
-      setIsSearching(false);
-      setSearchResults([]);
+      setIsMainSearching(false);
+      setMainSearchResults([]);
       return;
     }
-
-    setIsSearching(true);
+    setIsMainSearching(true);
     setLoading(true);
-
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-
-    searchTimeout.current = setTimeout(async () => {
+    if (mainSearchTimeout.current) clearTimeout(mainSearchTimeout.current);
+    mainSearchTimeout.current = setTimeout(async () => {
       try {
         const response = await searchUsers(searchTerm);
-        setSearchResults(response.data.users || []);
+        const mappedResults = (response.data.users || []).map((user: any) => ({
+          ...user,
+          id: user.user_id || user.id,
+        }));
+        setMainSearchResults(mappedResults);
       } catch (err) {
-        setSearchResults([]);
+        setMainSearchResults([]);
       } finally {
         setLoading(false);
       }
     }, 400);
   }, [searchTerm]);
 
+  useEffect(() => {
+    if (!modalSearchQuery.trim() || modalSearchQuery.length < 2) {
+      setModalSearchResults([]);
+      return;
+    }
+    setIsModalSearching(true);
+    if (modalSearchTimeout.current) clearTimeout(modalSearchTimeout.current);
+    modalSearchTimeout.current = setTimeout(async () => {
+      try {
+        const response = await searchUsers(modalSearchQuery);
+        const mappedResults = (response.data.users || []).map((user: any) => ({
+          ...user,
+          id: user.user_id || user.id,
+        }));
+        setModalSearchResults(mappedResults);
+      } catch (err) {
+        setModalSearchResults([]);
+      } finally {
+        setIsModalSearching(false);
+      }
+    }, 500);
+    return () => {
+      if (modalSearchTimeout.current) clearTimeout(modalSearchTimeout.current);
+    };
+  }, [modalSearchQuery]);
+
   const handleTabClick = async (tab: ActiveTab) => {
     setActiveTab(tab);
     if (loadedTabs.has(tab)) return;
-
     setLoading(true);
     try {
-      if (tab === "community-feed") {
-        const response = await getCommunityFeed();
-        setCommunityGoals(response.data.goals || []);
+      if (tab === "collaborators") {
+        const response = await getCollaborators();
+        setCollaborators(response.data.data || []);
       } else if (tab === "find-people") {
         const response = await getUserSuggestions();
         setSuggestions(response.data.users || []);
@@ -173,26 +202,18 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  const handleSendFriendRequestByEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errors = validateAddFriend();
-    if (Object.keys(errors).length > 0) {
-      setAddErrors(errors);
-      return;
-    }
-    setAddErrors({});
-    setSendLoading(true);
+  const handleSendRequestFromSearch = async (userId: string) => {
+    setLoadingUserId(userId);
     try {
-      await sendFriendRequestByEmail(friendEmail);
-      setShowAddFriendModal(false);
-      setFriendEmail("");
-      alert("Friend request sent successfully!");
-
-      fetchInitialData();
+      await sendFriendRequestById(userId);
+      toast.success("Friend request sent successfully!");
+      setModalSearchResults((prev) =>
+        prev.filter((user) => user.id !== userId)
+      );
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to send friend request!");
+      toast.error(err?.response?.data?.message || "Failed to send friend request!");
     } finally {
-      setSendLoading(false);
+      setLoadingUserId(null);
     }
   };
 
@@ -205,9 +226,10 @@ const FriendsPage: React.FC = () => {
           u.id === userId ? { ...u, friend_status: "request_sent" as const } : u
         );
       setSuggestions(updateUserState);
-      setSearchResults(updateUserState);
+      setMainSearchResults(updateUserState);
+      setCollaborators(updateUserState);
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to send request.");
+      toast.error(err?.response?.data?.message || "Failed to send request.");
     } finally {
       setCardLoading((prev) => ({ ...prev, [userId]: false }));
     }
@@ -217,25 +239,53 @@ const FriendsPage: React.FC = () => {
     friendshipId: string,
     status: "accepted" | "rejected"
   ) => {
+    setLoadingUserId(friendshipId);
     try {
       await respondFriendRequest(friendshipId, status);
+
+      // --- START: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
+      if (status === "accepted") {
+        const acceptedRequest = requests.find(
+          (req) => req.friendship_id === friendshipId
+        );
+        if (acceptedRequest) {
+          addNotification({
+            id: `accepted-${friendshipId}`,
+            type: "friend_request_accepted", // Sử dụng type mới
+            message: `You are now friends with ${acceptedRequest.name}.`,
+            link: "/friends",
+          });
+        }
+      }
+      // --- END: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
+      
       fetchInitialData();
     } catch (err) {
-      alert(
+      toast.error(
         `Failed to ${status === "accepted" ? "accept" : "reject"} request.`
       );
+    } finally {
+      setLoadingUserId(null);
     }
   };
 
   const handleDeleteFriendship = async (friendshipId: string) => {
-    if (
-      window.confirm("Are you sure you want to remove this friend/request?")
-    ) {
+    const ok = await confirm({
+      title: "Remove friend",
+      message: "Are you sure you want to remove this friend/request?",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (ok) {
+      setLoadingUserId(friendshipId);
       try {
         await deleteFriend(friendshipId);
         fetchInitialData();
       } catch (err) {
-        alert("Failed to remove friend/request.");
+        toast.error("Failed to remove friend/request.");
+      } finally {
+        setLoadingUserId(null);
       }
     }
   };
@@ -243,29 +293,28 @@ const FriendsPage: React.FC = () => {
   const handleReportUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userToReport || !reportReason.trim()) {
-      alert("Please provide a reason for reporting.");
+      toast.error("Please provide a reason for reporting.");
       return;
     }
-    setSendLoading(true);
+    setLoadingUserId(userToReport.id);
     try {
       await reportUser(userToReport.id, reportReason);
-      alert(`User ${userToReport.display_name} has been reported.`);
+      toast.success(`User ${userToReport.name} has been reported.`);
       setShowReportModal(false);
       setUserToReport(null);
       setReportReason("");
     } catch (err) {
-      alert("Failed to submit report.");
+      toast.error("Failed to submit report.");
     } finally {
-      setSendLoading(false);
+      setLoadingUserId(null);
     }
   };
 
-  // --- Render Functions ---
+  // ... (phần còn lại của file giữ nguyên) ...
   const renderUserCard = (
     user: UserCardData,
     type: "friend" | "suggestion" | "searchResult"
   ) => {
-    // Giao diện LIST MỚI chỉ dành cho tab "friends"
     if (type === "friend") {
       return (
         <div className="friends-list-item" key={`friend-${user.id}`}>
@@ -277,7 +326,7 @@ const FriendsPage: React.FC = () => {
             />
             <div className="friends-list-item__details">
               <h3 className="friends-list-item__name">
-                {user.display_name}
+                {user.name}
                 {user.is_premium && (
                   <i className="fas fa-crown" title="Premium User"></i>
                 )}
@@ -295,14 +344,17 @@ const FriendsPage: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div className="friends-list-item__actions">
-            <button className="friends-action-btn friends-action-btn-message">
+            <button
+              className="friends-action-btn friends-action-btn-message"
+              onClick={() => setActiveChat(user)}
+            >
               <i className="fas fa-comment"></i> Message
             </button>
             <button
               className="friends-action-btn friends-action-btn-reject"
               onClick={() => handleDeleteFriendship(user.friendship_id!)}
+              disabled={loadingUserId === user.friendship_id}
             >
               <i className="fas fa-user-minus"></i> Remove
             </button>
@@ -310,10 +362,7 @@ const FriendsPage: React.FC = () => {
         </div>
       );
     }
-
-    const displayName = user.display_name;
     const isLoading = cardLoading[user.id];
-
     const renderActionButton = () => {
       switch (user.friend_status) {
         case "friends":
@@ -354,7 +403,6 @@ const FriendsPage: React.FC = () => {
           );
       }
     };
-
     return (
       <div className="friends-card" key={`${type}-${user.id}`}>
         <img
@@ -363,18 +411,18 @@ const FriendsPage: React.FC = () => {
           className="friends-avatar"
         />
         <h3 className="friends-name">
-          {user.display_name}
+          {user.name}
           {user.is_premium && (
             <i className="fas fa-crown" title="Premium User"></i>
           )}
         </h3>
         <p className="friends-email">{user.email}</p>
-        {user.mutual_friends_count && user.mutual_friends_count > 0 && (
+        {user.mutual_friends_count && user.mutual_friends_count > 0 ? (
           <p className="friends-mutual">
             <i className="fas fa-users"></i> {user.mutual_friends_count} mutual
             friend{user.mutual_friends_count > 1 ? "s" : ""}
           </p>
-        )}
+        ) : null}
         <div className="friends-stats">
           <span>
             <i className="fas fa-bullseye"></i> {user.total_goals || 0} Goals
@@ -402,12 +450,10 @@ const FriendsPage: React.FC = () => {
 
   const renderContent = () => {
     if (loading) return <div className="friends-loading">Loading...</div>;
-
-    // Nếu có searchTerm thì ưu tiên hiển thị kết quả tìm kiếm
-    if (isSearching && searchTerm) {
+    if (isMainSearching && searchTerm) {
       return (
         <div className="friends-grid">
-          {searchResults.length === 0 ? (
+          {mainSearchResults.length === 0 ? (
             <div className="friends-empty-state">
               <h3 className="friends-empty-title">
                 No users found for "{searchTerm}"
@@ -417,12 +463,13 @@ const FriendsPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            searchResults.map((user) => renderUserCard(user, "searchResult"))
+            mainSearchResults.map((user) =>
+              renderUserCard(user, "searchResult")
+            )
           )}
         </div>
       );
     }
-
     switch (activeTab) {
       case "friends":
         return (
@@ -436,7 +483,7 @@ const FriendsPage: React.FC = () => {
                 />
                 <h3 className="friends-empty-title">No Friends Yet</h3>
                 <p className="friends-empty-message">
-                  Start by finding people or adding friends by email!
+                  Start by finding people or adding friends!
                 </p>
               </div>
             ) : (
@@ -476,6 +523,7 @@ const FriendsPage: React.FC = () => {
                       <>
                         <button
                           className="friends-action-btn friends-action-btn-accept"
+                          disabled={loadingUserId === req.friendship_id}
                           onClick={() =>
                             handleRequestResponse(
                               req.friendship_id!,
@@ -487,6 +535,7 @@ const FriendsPage: React.FC = () => {
                         </button>
                         <button
                           className="friends-action-btn friends-action-btn-reject"
+                          disabled={loadingUserId === req.friendship_id}
                           onClick={() =>
                             handleRequestResponse(
                               req.friendship_id!,
@@ -500,6 +549,7 @@ const FriendsPage: React.FC = () => {
                     ) : (
                       <button
                         className="friends-action-btn friends-action-btn-reject"
+                        disabled={loadingUserId === req.friendship_id}
                         onClick={() =>
                           handleDeleteFriendship(req.friendship_id!)
                         }
@@ -513,63 +563,23 @@ const FriendsPage: React.FC = () => {
             )}
           </div>
         );
-      case "community-feed":
+      case "collaborators":
         return (
           <div className="friends-grid">
-            {communityGoals.length === 0 ? (
+            {collaborators.length === 0 ? (
               <div className="friends-empty-state">
-                <img
+                 <img
                   src="/images/no-collaborators.svg"
-                  alt="No shared goals"
+                  alt="No collaborators"
                   className="friends-empty-image"
                 />
-                <h3 className="friends-empty-title">Community Feed is Quiet</h3>
+                <h3 className="friends-empty-title">No Collaborators Found</h3>
                 <p className="friends-empty-message">
-                  No one has shared a public goal yet. Be the first!
+                  When you add collaborators to your goals, they will appear here.
                 </p>
               </div>
             ) : (
-              communityGoals.map((goal) => (
-                <div className="friends-card" key={goal.goal_id}>
-                  <h3 className="friends-name" style={{ marginBottom: "1rem" }}>
-                    {goal.title}
-                  </h3>
-                  <p
-                    className="friends-email"
-                    style={{ height: "60px", overflow: "hidden" }}
-                  >
-                    {goal.description}
-                  </p>
-                  <div className="friends-goal-owner">
-                    <img
-                      src={
-                        goal.owner.avatar ||
-                        `https://i.pravatar.cc/40?u=${goal.owner.id}`
-                      }
-                      alt="Owner"
-                    />
-                    <div>
-                      <p>{goal.owner.name}</p>
-                      <span
-                        className={`friends-status friends-status-accepted`}
-                      >
-                        {goal.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    className="friends-action-btn friends-action-btn-message"
-                    style={{
-                      width: "100%",
-                      marginTop: "1rem",
-                      justifyContent: "center",
-                    }}
-                  >
-                    View Goal
-                  </button>
-                </div>
-              ))
+              collaborators.map((user) => renderUserCard(user, "suggestion"))
             )}
           </div>
         );
@@ -593,6 +603,14 @@ const FriendsPage: React.FC = () => {
     }
   };
 
+  const resetModalState = () => {
+    setShowAddFriendModal(false);
+    setModalSearchQuery("");
+    setModalSearchResults([]);
+    setIsModalSearching(false);
+    setLoadingUserId(null);
+  };
+
   return (
     <main className="friends-main-content">
       <section className="friends-container-section">
@@ -602,7 +620,7 @@ const FriendsPage: React.FC = () => {
             {[
               { key: "friends", label: "Friends" },
               { key: "requests", label: "Requests" },
-              { key: "community-feed", label: "Community" },
+              { key: "collaborators", label: "Collaborators" },
               { key: "find-people", label: "Suggestions" },
             ].map((tab) => (
               <div
@@ -617,74 +635,94 @@ const FriendsPage: React.FC = () => {
             ))}
           </div>
           <div style={{ flex: 1 }}></div>
-
           <div className="friends-action-buttons">
             <button
               className="friends-btn friends-btn-primary"
-              onClick={() => {
-                setShowAddFriendModal(true);
-                setAddErrors({});
-              }}
+              onClick={() => setShowAddFriendModal(true)}
             >
-              <i className="fas fa-user-plus"></i> Add by Email
+              <i className="fas fa-user-plus"></i> Add Friend
             </button>
           </div>
         </div>
         <div className="friends-content-area">{renderContent()}</div>
       </section>
 
-      {/* --- Modals --- */}
       {showAddFriendModal && (
         <div className="friends-modal-overlay">
           <div className="friends-modal-content">
             <div className="friends-modal-header">
-              <h2>Add New Friend</h2>
+              <h2>Find and Add Friend</h2>
               <button
                 className="friends-modal-close-btn"
-                onClick={() => setShowAddFriendModal(false)}
+                onClick={resetModalState}
               >
                 ×
               </button>
             </div>
             <div className="friends-modal-body">
-              <form
-                className="friends-modal-form"
-                onSubmit={handleSendFriendRequestByEmail}
-                noValidate
-              >
-                <div className="friends-modal-group">
-                  <label htmlFor="friend-email">Friend's Email</label>
-                  <input
-                    type="email"
-                    id="friend-email"
-                    placeholder="Enter friend's email address"
-                    value={friendEmail}
-                    onChange={(e) => setFriendEmail(e.target.value)}
-                    required
-                  />
-                  {addErrors.friendEmail && (
-                    <div className="friends-form-error">
-                      {addErrors.friendEmail}
+              <div className="friends-modal-group">
+                <label htmlFor="friend-search">Find by Name or Email</label>
+                <input
+                  type="text"
+                  id="friend-search"
+                  placeholder="Start typing to search for users..."
+                  value={modalSearchQuery}
+                  onChange={(e) => setModalSearchQuery(e.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <div className="friends-search-results">
+                {isModalSearching && (
+                  <div className="search-loading">Searching...</div>
+                )}
+                {!isModalSearching && modalSearchResults.length > 0 && (
+                  <ul className="search-results-list">
+                    {modalSearchResults.map((user) => (
+                      <li key={user.id} className="search-result-item">
+                        <img
+                          src={
+                            user.avatar ||
+                            `https://i.pravatar.cc/40?u=${user.id}`
+                          }
+                          alt="avatar"
+                        />
+                        <div className="search-result-info">
+                          <span className="search-result-name">
+                            {user.name}
+                          </span>
+                          <span className="search-result-email">
+                            {user.email}
+                          </span>
+                        </div>
+                        <button
+                          className="friends-btn friends-btn-sm friends-btn-primary"
+                          onClick={() => handleSendRequestFromSearch(user.id)}
+                          disabled={loadingUserId === user.id}
+                        >
+                          {loadingUserId === user.id ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin"></i>{" "}
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-user-plus"></i> Add
+                            </>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {!isModalSearching &&
+                  modalSearchQuery.length >= 2 &&
+                  modalSearchResults.length === 0 && (
+                    <div className="search-no-results">
+                      No users found for "{modalSearchQuery}".
                     </div>
                   )}
-                </div>
-                <div className="friends-modal-footer">
-                  <button
-                    className="friends-btn friends-btn-secondary"
-                    onClick={() => setShowAddFriendModal(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="friends-btn friends-btn-primary"
-                    type="submit"
-                    disabled={sendLoading}
-                  >
-                    {sendLoading ? "Sending..." : "Send Request"}
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
         </div>
@@ -694,7 +732,7 @@ const FriendsPage: React.FC = () => {
         <div className="friends-modal-overlay">
           <div className="friends-modal-content">
             <div className="friends-modal-header">
-              <h2>Report {userToReport.display_name}</h2>
+              <h2>Report {userToReport.name}</h2>
               <button
                 className="friends-modal-close-btn"
                 onClick={() => setShowReportModal(false)}
@@ -712,7 +750,7 @@ const FriendsPage: React.FC = () => {
                   <label htmlFor="report-reason">Reason for reporting</label>
                   <textarea
                     id="report-reason"
-                    placeholder={`Please provide a reason for reporting ${userToReport.display_name}...`}
+                    placeholder={`Please provide a reason for reporting ${userToReport.name}...`}
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
                     required
@@ -729,15 +767,29 @@ const FriendsPage: React.FC = () => {
                   <button
                     className="friends-btn friends-btn-primary"
                     type="submit"
-                    disabled={sendLoading}
+                    disabled={loadingUserId === userToReport.id}
                   >
-                    {sendLoading ? "Submitting..." : "Submit Report"}
+                    {loadingUserId === userToReport.id
+                      ? "Submitting..."
+                      : "Submit Report"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
+      )}
+      {activeChat && currentUserId && (
+        <ErrorBoundary
+          fallback={<div style={{padding:12}}>Chat failed to render.</div>}
+          onError={(e) => console.error('Chat error:', e)}
+        >
+          <ChatWindow
+            friend={activeChat}
+            currentUserId={currentUserId}
+            onClose={() => setActiveChat(null)}
+          />
+        </ErrorBoundary>
       )}
     </main>
   );

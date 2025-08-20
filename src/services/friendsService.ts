@@ -27,18 +27,16 @@ axiosAuth.interceptors.request.use(
 
 /**
  * Lấy dữ liệu bạn bè và lời mời.
- * API trả về: { friends: [...], requests: [...] }
  */
 export const getFriendsData = () => {
   return axiosAuth.get("/friends");
 };
 
 /**
-
- * Lấy các mục tiêu được chia sẻ trong cộng đồng (Community Feed).
+ * Lấy danh sách những người đã cộng tác trên các mục tiêu.
  */
-export const getCommunityFeed = () => {
-  return axiosAuth.get("/community/feed");
+export const getCollaborators = () => {
+  return axiosAuth.get("/collaborators");
 };
 
 /**
@@ -52,27 +50,17 @@ export const getUserSuggestions = () => {
  * Tìm kiếm người dùng theo query (tên hoặc email).
  */
 export const searchUsers = (query: string) => {
-  // Mã hóa query để đảm bảo các ký tự đặc biệt được gửi đi an toàn
-  return axiosAuth.get(`/users/search?q=${encodeURIComponent(query)}`);
+  return axiosAuth.get(`/users/search?query=${encodeURIComponent(query)}`);
 };
 
 /**
- * Gửi lời mời kết bạn bằng email.
- */
-export const sendFriendRequestByEmail = (email: string) => {
-  return axiosAuth.post("/friends/request", { email });
-};
-
-/**
-
  * Gửi lời mời kết bạn bằng User ID.
  */
 export const sendFriendRequestById = (userId: string) => {
-  return axiosAuth.post("/friends/request", { user_id: userId });
+  return axiosAuth.post("/friends/request/id", { user_id: userId });
 };
 
 /**
-
  * Phản hồi một lời mời kết bạn.
  */
 export const respondFriendRequest = (
@@ -94,4 +82,18 @@ export const deleteFriend = (friendshipId: string) => {
  */
 export const reportUser = (userId: string, reason: string) => {
   return axiosAuth.post(`/user/${userId}/report`, { reason });
+};
+
+/**
+ * Lấy lịch sử tin nhắn với một người bạn.
+ */
+export const getMessageHistory = (friendId: string) => {
+  return axiosAuth.get(`/messages/${friendId}`);
+};
+
+/**
+ * Gửi một tin nhắn mới.
+ */
+export const sendMessage = (receiverId: string, content: string) => {
+  return axiosAuth.post('/messages', { receiver_id: receiverId, content });
 };
