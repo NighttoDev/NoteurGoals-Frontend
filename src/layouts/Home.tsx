@@ -36,7 +36,7 @@ const HomeLayout = () => {
             </div>
             <div className="hero-image">
               <img
-                src="https://i.imgur.com/GieB5fX.png"
+                src="../../../public/image.png"
                 alt="NoteurGoals Dashboard"
               />
             </div>
