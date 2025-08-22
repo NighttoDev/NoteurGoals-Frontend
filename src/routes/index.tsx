@@ -33,6 +33,7 @@ import CheckoutPage from "../pages/User/Checkout";
 import PaymentCallback from "../pages/PaymentCallback";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
+import Footer from "../components/User/Footer";
 
 // --- AUTHENTICATION HELPERS ---
 const isAuthenticated = (): boolean => !!localStorage.getItem("auth_token");
@@ -70,7 +71,6 @@ const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-
         // *** ĐÃ CẬP NHẬT: BỌC DASHBOARDLAYOUT BẰNG NOTIFICATIONPROVIDER ***
         element: (
           <NotificationProvider>

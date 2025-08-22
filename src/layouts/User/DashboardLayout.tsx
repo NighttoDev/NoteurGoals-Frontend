@@ -1,8 +1,9 @@
 // src/layouts/DashboardLayout.tsx
 
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../../components/User/Sidebar';
+import React, { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../../components/User/Sidebar";
+import Footer from "../../components/User/Footer";
 
 // Định nghĩa kiểu dữ liệu cho thông tin người dùng mà chúng ta cần
 // Điều này giúp code an toàn và dễ đọc hơn.
@@ -20,8 +21,8 @@ const DashboardLayout: React.FC = () => {
   //    Nó chỉ chạy một lần duy nhất sau khi component được render lần đầu.
   useEffect(() => {
     // Lấy chuỗi JSON từ localStorage
-    const storedUserInfo = localStorage.getItem('user_info');
-    
+    const storedUserInfo = localStorage.getItem("user_info");
+
     // Kiểm tra xem dữ liệu có tồn tại không
     if (storedUserInfo) {
       try {
@@ -31,7 +32,10 @@ const DashboardLayout: React.FC = () => {
         setUserInfo(parsedUserInfo);
       } catch (error) {
         // Xử lý nếu dữ liệu trong localStorage bị lỗi hoặc không phải là JSON hợp lệ
-        console.error("Lỗi khi đọc thông tin người dùng từ localStorage:", error);
+        console.error(
+          "Lỗi khi đọc thông tin người dùng từ localStorage:",
+          error
+        );
       }
     }
   }, []); // Mảng phụ thuộc rỗng `[]` đảm bảo effect này chỉ chạy một lần, tránh lỗi lặp vô tận
@@ -43,11 +47,12 @@ const DashboardLayout: React.FC = () => {
            Nếu `userInfo` là null (chưa kịp tải), Sidebar sẽ nhận giá trị null.
       */}
       <Sidebar user={userInfo} />
-      
+
       <div className="dashboard-container">
         {/* Outlet vẫn giữ nguyên để render các trang con (Dashboard, Goals, Notes...) */}
         <Outlet />
       </div>
+      <Footer />
     </div>
   );
 };

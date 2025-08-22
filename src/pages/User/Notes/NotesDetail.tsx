@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  getNote, // THAY ĐỔI 1: Chỉ cần `getNote` thay vì `getNotes`
+  getNote,
   updateNote,
-  softDeleteNote, // THAY ĐỔI 2: Import `softDeleteNote`
+  deleteNote,
   syncGoalsForNote,
 } from "../../../services/notesService";
 import { getGoals } from "../../../services/goalsService";
@@ -11,7 +11,6 @@ import "../../../assets/css/User/noteDetail.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
-  faBullseye,
   faPaperclip,
   faTrash,
   faSave,
@@ -28,12 +27,14 @@ interface NotesCard {
   content: string;
   updatedDate: string;
   color?: "purple" | "green" | "blue" | "yellow" | "red";
-  linkedGoals?: {
-    id: string;
-    type: "goal";
-    title: string;
-  }[];
+  linkedGoals?: LinkedGoal[];
   attachments?: number;
+}
+
+interface LinkedGoal {
+  id: string;
+  type: "goal";
+  title: string;
 }
 
 interface GoalOption {
@@ -41,8 +42,25 @@ interface GoalOption {
   title: string;
 }
 
+interface GoalData {
+  goal_id?: string;
+  id?: string;
+  title: string;
+}
+
+interface NoteData {
+  note_id?: string;
+  id?: string;
+  title: string;
+  content: string;
+  updated_at?: string;
+  color?: "purple" | "green" | "blue" | "yellow" | "red";
+  goals?: GoalData[];
+  attachments_count?: number;
+}
+
 const NoteDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // Thêm kiểu cho useParams
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [note, setNote] = useState<NotesCard | null>(null);
@@ -50,6 +68,11 @@ const NoteDetailPage: React.FC = () => {
   const [goals, setGoals] = useState<GoalOption[]>([]);
   const [form, setForm] = useState({ title: "", content: "" });
   const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
+
+  // Debug logging cho selectedGoalIds
+  useEffect(() => {
+    console.log("selectedGoalIds changed:", selectedGoalIds);
+  }, [selectedGoalIds]);
 
   useEffect(() => {
     // Chỉ fetch khi có ID
@@ -61,15 +84,28 @@ const NoteDetailPage: React.FC = () => {
     }
   }, [id]);
 
+  // Thêm useEffect để set selectedGoalIds sau khi cả note và goals đã được load
+  useEffect(() => {
+    if (note && goals.length > 0) {
+      const linkedGoalIds =
+        note.linkedGoals?.map((g: LinkedGoal) => g.id) || [];
+      console.log("Note linked goals:", note.linkedGoals);
+      console.log("Available goals:", goals);
+      console.log("Setting selected goal IDs:", linkedGoalIds);
+      setSelectedGoalIds(linkedGoalIds);
+    }
+  }, [note, goals]);
+
   /**
    * THAY ĐỔI 3: Tối ưu hóa hàm fetch, chỉ lấy 1 note
    */
   const fetchNoteDetails = async (noteId: string) => {
     try {
       const res = await getNote(noteId); // Gọi API lấy chi tiết
-      const item = res.data;
+      const item: NoteData = res.data;
+      console.log("Raw note data from API:", item);
 
-      const mappedNote = {
+      const mappedNote: NotesCard = {
         id: item.note_id?.toString() ?? item.id?.toString() ?? "",
         title: item.title,
         content: item.content,
@@ -82,17 +118,20 @@ const NoteDetailPage: React.FC = () => {
           : "",
         color: item.color,
         linkedGoals:
-          item.goals?.map((g: any) => ({
-            id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
-            type: "goal",
-            title: g.title,
-          })) || [],
+          item.goals?.map((g: GoalData) => {
+            const goalId = g.goal_id?.toString() ?? g.id?.toString() ?? "";
+            console.log("Mapping goal:", g, "to ID:", goalId);
+            return {
+              id: goalId,
+              type: "goal" as const,
+              title: g.title,
+            };
+          }) || [],
         attachments: item.attachments_count,
       };
 
       setNote(mappedNote);
       setForm({ title: mappedNote.title, content: mappedNote.content });
-      setSelectedGoalIds(mappedNote.linkedGoals?.map((g) => g.id) || []);
     } catch (err) {
       console.error("Failed to fetch note:", err);
       setNote(null); // Set là null nếu không tìm thấy hoặc có lỗi
@@ -105,12 +144,17 @@ const NoteDetailPage: React.FC = () => {
     try {
       const res = await getGoals();
       const rawGoals = Array.isArray(res.data) ? res.data : res.data.data;
-      setGoals(
-        rawGoals.map((g: any) => ({
-          id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
+      console.log("Raw goals data from API:", rawGoals);
+      const mappedGoals = rawGoals.map((g: GoalData) => {
+        const goalId = g.goal_id?.toString() ?? g.id?.toString() ?? "";
+        console.log("Mapping goal in list:", g, "to ID:", goalId);
+        return {
+          id: goalId,
           title: g.title,
-        }))
-      );
+        };
+      });
+      console.log("Final mapped goals:", mappedGoals);
+      setGoals(mappedGoals);
     } catch (err) {
       console.error("Failed to fetch goals", err);
     }
@@ -127,11 +171,15 @@ const NoteDetailPage: React.FC = () => {
   const handleSave = async () => {
     if (!note) return;
     try {
+      // Lưu thông tin cơ bản của note
       await updateNote(note.id, {
         title: form.title,
         content: form.content,
       });
+
+      // Đồng bộ hóa các goal được liên kết
       await syncGoalsForNote(note.id, selectedGoalIds);
+
       alert("Note saved successfully!");
       navigate("/notes");
     } catch (err) {
@@ -147,8 +195,8 @@ const NoteDetailPage: React.FC = () => {
     if (window.confirm("Chuyển ghi chú này vào thùng rác?")) {
       if (!note) return;
       try {
-        // Sử dụng hàm softDeleteNote mới
-        await softDeleteNote(note.id);
+        // Sử dụng hàm deleteNote mới
+        await deleteNote(note.id);
         alert("Ghi chú đã được chuyển vào thùng rác.");
         navigate("/notes"); // Điều hướng về trang danh sách chính
       } catch (err) {
@@ -208,16 +256,20 @@ const NoteDetailPage: React.FC = () => {
         <div className="note-detail-goals">
           <label>Linked Goals:</label>
           <div className="goal-checkbox-group">
-            {goals.map((g) => (
-              <label key={g.id} className="goal-checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={selectedGoalIds.includes(g.id)}
-                  onChange={() => handleGoalToggle(g.id)}
-                />
-                {g.title}
-              </label>
-            ))}
+            {goals.map((g) => {
+              const isChecked = selectedGoalIds.includes(g.id);
+              console.log(`Goal ${g.title} (${g.id}) checked:`, isChecked);
+              return (
+                <label key={g.id} className="goal-checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleGoalToggle(g.id)}
+                  />
+                  {g.title}
+                </label>
+              );
+            })}
           </div>
         </div>
 

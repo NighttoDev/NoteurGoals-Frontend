@@ -53,7 +53,7 @@ interface UserSubscription {
   plan_id: number;
   start_date: string;
   end_date: string;
-  payment_status: 'active' | 'cancelled' | 'expired';
+  payment_status: "active" | "cancelled" | "expired";
   plan: SubscriptionPlan;
 }
 interface ApiError {
@@ -63,7 +63,6 @@ interface ApiError {
 
 // --- COMPONENT ---
 const SettingsPage = () => {
-
   const toast = useToastHelpers();
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -81,7 +80,7 @@ const SettingsPage = () => {
     new_password: "",
     new_password_confirmation: "",
   });
-  
+
   const [notifications, setNotifications] = useState({
     eventReminders: true,
     goalProgress: true,
@@ -101,15 +100,23 @@ const SettingsPage = () => {
   }>({});
 
   const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
-  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(null);
+  const [mySubscription, setMySubscription] = useState<UserSubscription | null>(
+    null
+  );
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // --- HANDLERS & EFFECTS ---
   const handleLogout = useCallback(async (isForced = false) => {
-    setLoading(prev => ({ ...prev, logout: true }));
+    setLoading((prev) => ({ ...prev, logout: true }));
     if (!isForced) {
-        try { await api.post('/logout'); } catch(err) { console.error("Logout API failed, but logging out locally anyway."); }
+      try {
+        await api.post("/logout");
+      } catch (err) {
+        console.error("Logout API failed, but logging out locally anyway.");
+      }
     }
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_info");
@@ -118,7 +125,7 @@ const SettingsPage = () => {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const response = await api.get('/user/profile');
+      const response = await api.get("/user/profile");
       const fetchedUser: User = response.data.data;
       setUser(fetchedUser);
       setProfileData({ displayName: fetchedUser.display_name });
@@ -135,8 +142,8 @@ const SettingsPage = () => {
     setSubscriptionLoading(true);
     try {
       const [plansResponse, mySubResponse] = await Promise.all([
-        api.get('/subscriptions/plans'),
-        api.get('/subscriptions/my-current')
+        api.get("/subscriptions/plans"),
+        api.get("/subscriptions/my-current"),
       ]);
       setAllPlans(plansResponse.data);
       setMySubscription(mySubResponse.data);
@@ -149,13 +156,13 @@ const SettingsPage = () => {
 
   useEffect(() => {
     // *** CẢI TIẾN: Kiểm tra trạng thái thanh toán từ sessionStorage ***
-    const paymentStatus = sessionStorage.getItem('payment_status');
-    if (paymentStatus === 'success') {
-        alert('Thanh toán thành công! Gói của bạn đã được cập nhật.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
-    } else if (paymentStatus === 'failed') {
-        alert('Thanh toán không thành công. Vui lòng thử lại.');
-        sessionStorage.removeItem('payment_status'); // Xóa đi để không hiển thị lại
+    const paymentStatus = sessionStorage.getItem("payment_status");
+    if (paymentStatus === "success") {
+      toast.success("Payment successful! Your package has been updated.");
+      sessionStorage.removeItem("payment_status");
+    } else if (paymentStatus === "failed") {
+      toast.error("Payment failed. Please try again.");
+      sessionStorage.removeItem("payment_status");
     }
 
     // Luôn fetch dữ liệu mới nhất khi component tải
@@ -167,9 +174,7 @@ const SettingsPage = () => {
     const hash = window.location.hash.substring(1);
     if (
       hash &&
-      ["profile", "account", "subscription", "notifications"].includes(
-        hash
-      )
+      ["profile", "account", "subscription", "notifications"].includes(hash)
     ) {
       setActiveTab(hash);
     }
@@ -177,24 +182,27 @@ const SettingsPage = () => {
   const handleCancelSubscription = async () => {
     if (!mySubscription) return;
     const okCancel = await confirm({
-  title: "Huỷ gói đăng ký",
-  message: "Bạn có chắc chắn muốn hủy gói đăng ký này không? Bạn vẫn có thể sử dụng các tính năng cho đến ngày hết hạn.",
-  confirmText: "Huỷ gói",
-  cancelText: "Giữ lại",
-  variant: "danger",
-});
-if (!okCancel) return;
+      title: "Cancel Subscription",
+      message:
+        "Are you sure you want to cancel this subscription? You will still be able to use the features until the expiration date.",
+      confirmText: "Cancel Subscription",
+      cancelText: "Keep Subscription",
+      variant: "danger",
+    });
+    if (!okCancel) return;
 
-    setActionLoading(prev => ({ ...prev, cancel: true }));
+    setActionLoading((prev) => ({ ...prev, cancel: true }));
     try {
       await api.post(`/subscriptions/cancel/${mySubscription.subscription_id}`);
       // Sau khi hủy trên backend, fetch lại dữ liệu để đảm bảo UI đồng bộ với DB
       await fetchSubscriptionData();
-      toast.success('Hủy gói đăng ký thành công.');
+      toast.success("Cancel subscription successfully.");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      toast.error(
+        err.response?.data?.message || "An error occurred, please try again."
+      );
     } finally {
-      setActionLoading(prev => ({ ...prev, cancel: false }));
+      setActionLoading((prev) => ({ ...prev, cancel: false }));
     }
   };
   const handleTabChange = (tab: string) => {
@@ -224,20 +232,22 @@ if (!okCancel) return;
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
 
-      toast.success("Cập nhật thông tin thành công!");
-      window.location.reload();
+      toast.success("Information updated successfully!");
+      // Cập nhật UI mà không cần reload trang để giữ nguyên thông báo
+      setUser(response.data.data);
+      setAvatarPreview(response.data.data.avatar_url || "/default-avatar.png");
     } catch (err) {
       if (err instanceof AxiosError && err.response) {
         const apiError = err.response.data as ApiError;
         setError({
           type: "profile",
-          message: apiError.message || "Cập nhật thất bại.",
+          message: apiError.message || "Update failed.",
           errors: apiError.errors,
         });
       } else {
         setError({
           type: "profile",
-          message: "Đã có lỗi không xác định xảy ra.",
+          message: "An unknown error occurred.",
         });
       }
     } finally {
@@ -249,13 +259,16 @@ if (!okCancel) return;
     e.preventDefault();
     setError({});
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setError({ type: "password", message: "Mật khẩu xác nhận không khớp." });
+      setError({
+        type: "password",
+        message: "Password confirmation does not match.",
+      });
       return;
     }
     setLoading((prev) => ({ ...prev, password: true }));
     try {
       await api.post("/user/password/change", passwordData);
-      toast.success("Đổi mật khẩu thành công!");
+      toast.success("Password changed successfully!");
       setPasswordData({
         current_password: "",
         new_password: "",
@@ -266,13 +279,13 @@ if (!okCancel) return;
         const apiError = err.response.data as ApiError;
         setError({
           type: "password",
-          message: apiError.message || "Đổi mật khẩu thất bại.",
+          message: apiError.message || "Update failed.",
           errors: apiError.errors,
         });
       } else {
         setError({
           type: "password",
-          message: "Đã có lỗi không xác định xảy ra.",
+          message: "An unknown error occurred.",
         });
       }
     } finally {
@@ -282,39 +295,37 @@ if (!okCancel) return;
 
   const handleDeleteAccount = async () => {
     const ok = await confirm({
-      title: "Xóa tài khoản",
-      message: "Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.",
-      confirmText: "Xóa tài khoản",
-      cancelText: "Huỷ",
+      title: "Delete Account",
+      message:
+        "Are you sure you want to delete your account? This action cannot be undone.",
+      confirmText: "Delete Account",
+      cancelText: "Cancel",
       variant: "danger",
     });
     if (ok) {
       setLoading((prev) => ({ ...prev, delete: true }));
       try {
         await api.post("/user/account/delete");
-        toast.success("Tài khoản đã được xóa. Bạn sẽ được đăng xuất.");
+        toast.success("Account deleted successfully. You will be logged out.");
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_info");
         window.location.href = "/login";
       } catch (err: any) {
         toast.error(
           err.response?.data?.message ||
-            "Không thể xóa tài khoản. Vui lòng thử lại."
+            "Unable to delete account. Please try again."
         );
       } finally {
         setLoading((prev) => ({ ...prev, delete: false }));
       }
     }
   };
-      
+
   const handleNotificationToggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
   const handleGoToCheckout = (planId: number) => {
     navigate(`/checkout/${planId}`);
-  };
-  const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const formatPrice = (p: number) =>
@@ -322,7 +333,6 @@ if (!okCancel) return;
       style: "currency",
       currency: "VND",
     }).format(p);
-
 
   if (!user) {
     return (
@@ -408,7 +418,7 @@ if (!okCancel) return;
                 <FaBell /> Notifications
               </a>
             </li>
-            
+
             <li>
               <button
                 className="settings-nav-link settings-logout-link"
@@ -450,7 +460,7 @@ if (!okCancel) return;
                       <label
                         htmlFor="avatar-file-input"
                         className="settings-avatar-upload-btn"
-                        title="Đổi ảnh đại diện"
+                        title="Change avatar"
                       >
                         <FaCamera />
                       </label>
@@ -684,39 +694,81 @@ if (!okCancel) return;
               <p>Manage your billing and subscription plan.</p>
             </div>
             <div className="settings-section-body">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: "1rem",
+                }}
+              >
                 <div>
                   <h3 style={{ fontWeight: 500 }}>Current Plan</h3>
                   {mySubscription ? (
                     <>
-                      <p style={{ color: 'var(--text-light)' }}>
-                        You are currently on the{' '}
-                        <strong style={{ color: 'var(--primary-main)' }}>
-                          {mySubscription.plan?.name || '—'}
-                        </strong>{' '}plan.
+                      <p style={{ color: "var(--text-light)" }}>
+                        You are currently on the{" "}
+                        <strong style={{ color: "var(--primary-main)" }}>
+                          {mySubscription.plan?.name || "—"}
+                        </strong>{" "}
+                        plan.
                       </p>
-                      <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
-                        Status: <strong style={{ textTransform: 'capitalize' }}>{mySubscription.payment_status}</strong>
-                        {mySubscription.end_date && mySubscription.payment_status === 'active' && (
-                          <> • Renews on <strong>{new Date(mySubscription.end_date).toLocaleDateString('vi-VN')}</strong></>
-                        )}
+                      <p
+                        style={{
+                          color: "var(--text-light)",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Status:{" "}
+                        <strong style={{ textTransform: "capitalize" }}>
+                          {mySubscription.payment_status}
+                        </strong>
+                        {mySubscription.end_date &&
+                          mySubscription.payment_status === "active" && (
+                            <>
+                              {" "}
+                              • Renews on{" "}
+                              <strong>
+                                {new Date(
+                                  mySubscription.end_date
+                                ).toLocaleDateString("vi-VN")}
+                              </strong>
+                            </>
+                          )}
                       </p>
                     </>
                   ) : (
-                    <p style={{ color: 'var(--text-light)' }}>You have no active subscription.</p>
+                    <p style={{ color: "var(--text-light)" }}>
+                      You have no active subscription.
+                    </p>
                   )}
                 </div>
                 <div>
-                  {mySubscription && mySubscription.payment_status === 'active' && (
-                    <button
-                      type="button"
-                      className="settings-btn settings-btn-danger"
-                      onClick={handleCancelSubscription}
-                      disabled={actionLoading.cancel}
-                    >
-                      {actionLoading.cancel ? 'Cancelling...' : 'Cancel Subscription'}
-                    </button>
-                  )}
+                  {mySubscription &&
+                    mySubscription.payment_status === "active" && (
+                      <button
+                        type="button"
+                        className="settings-btn settings-btn-danger"
+                        onClick={handleCancelSubscription}
+                        disabled={actionLoading.cancel}
+                      >
+                        {actionLoading.cancel
+                          ? "Cancelling..."
+                          : "Cancel Subscription"}
+                      </button>
+                    )}
+                </div>
+              </div>
+
+              <div
+                className="settings-notification-item"
+                style={{ marginTop: "1rem" }}
+              >
+                <div className="settings-notification-text">
+                  <h3>Auto-Renewal</h3>
+                  <p>
+                    Your plan will automatically renew. You can cancel anytime.
+                  </p>
                 </div>
                 <label className="settings-toggle-switch">
                   <input
@@ -728,47 +780,67 @@ if (!okCancel) return;
                 </label>
               </div>
 
-              <div className="settings-notification-item" style={{ marginTop: '1rem' }}>
-                <div className="settings-notification-text">
-                  <h3>Auto-Renewal</h3>
-                  <p>Your plan will automatically renew. You can cancel anytime.</p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.autoRenewal}
-                    onChange={() => handleNotificationToggle('autoRenewal')}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-
-              <h3 style={{ fontWeight: 500, marginTop: '2rem' }}>Available Plans</h3>
+              <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
+                Available Plans
+              </h3>
               {(() => {
-                const monthlyPlan = allPlans.find(p => p.duration === 1);
-                const yearlyPlan = allPlans.find(p => p.duration > 1);
-                const plansToShow = [monthlyPlan, yearlyPlan].filter(Boolean) as SubscriptionPlan[];
-                const fallbackPlans = plansToShow.length === 0 ? allPlans.slice(0, 2) : plansToShow;
+                const monthlyPlan = allPlans.find((p) => p.duration === 1);
+                const yearlyPlan = allPlans.find((p) => p.duration > 1);
+                const plansToShow = [monthlyPlan, yearlyPlan].filter(
+                  Boolean
+                ) as SubscriptionPlan[];
+                const fallbackPlans =
+                  plansToShow.length === 0 ? allPlans.slice(0, 2) : plansToShow;
                 return (
                   <div className="settings-plans-grid">
-                    {fallbackPlans.map(plan => {
-                      const isCurrent = mySubscription?.plan_id === plan.plan_id && mySubscription?.payment_status === 'active';
+                    {fallbackPlans.map((plan) => {
+                      const isCurrent =
+                        mySubscription?.plan_id === plan.plan_id &&
+                        mySubscription?.payment_status === "active";
                       return (
-                        <div key={plan.plan_id} className={`settings-plan-card ${isCurrent ? 'settings-current' : ''}`}>
+                        <div
+                          key={plan.plan_id}
+                          className={`settings-plan-card ${
+                            isCurrent ? "settings-current" : ""
+                          }`}
+                        >
                           <h3>{plan.name}</h3>
-                          <p className="settings-price">{formatPrice(plan.price)} <span>/ {plan.duration > 1 ? 'năm' : 'tháng'}</span></p>
+                          <p className="settings-price">
+                            {formatPrice(plan.price)}{" "}
+                            <span>
+                              / {plan.duration > 1 ? "Year" : "Month"}
+                            </span>
+                          </p>
                           <ul>
-                            <li><FaCheckCircle /> Unlimited Goals</li>
-                            <li><FaCheckCircle /> AI Suggestions</li>
-                            <li><FaCheckCircle /> Advanced Collaboration</li>
-                            {plan.duration > 1 && <li><FaCheckCircle /> Priority Support</li>}
+                            <li>
+                              <FaCheckCircle /> Unlimited Goals
+                            </li>
+                            <li>
+                              <FaCheckCircle /> AI Suggestions
+                            </li>
+                            <li>
+                              <FaCheckCircle /> Advanced Collaboration
+                            </li>
+                            {plan.duration > 1 && (
+                              <li>
+                                <FaCheckCircle /> Priority Support
+                              </li>
+                            )}
                           </ul>
                           <button
-                            className={`settings-btn ${isCurrent ? 'settings-btn-secondary' : 'settings-btn-primary'}`}
+                            className={`settings-btn ${
+                              isCurrent
+                                ? "settings-btn-secondary"
+                                : "settings-btn-primary"
+                            }`}
                             disabled={isCurrent}
                             onClick={() => handleGoToCheckout(plan.plan_id)}
                           >
-                            {isCurrent ? 'Current Plan' : (mySubscription ? 'Upgrade Plan' : 'Subscribe Now')}
+                            {isCurrent
+                              ? "Current Plan"
+                              : mySubscription
+                              ? "Upgrade Plan"
+                              : "Subscribe Now"}
                           </button>
                         </div>
                       );
@@ -776,7 +848,6 @@ if (!okCancel) return;
                   </div>
                 );
               })()}
-
             </div>
           </section>
 
