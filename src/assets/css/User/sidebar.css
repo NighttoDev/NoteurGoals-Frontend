@@ -3,19 +3,53 @@
 
 /* --- Biến CSS và Cài đặt chung --- */
 :root {
-  --bg-color: #f8f7fa;
-  --primary-purple: #7c3aed;
-  --primary-purple-light: #f3e8ff;
-  --text-dark: #1f2937;
+  /* Sử dụng biến từ notes.css */
+  --primary-glow: rgba(167, 139, 250, 0.4);
+  --primary-deep: #4c1d95;
+  --primary-main: #7c3aed;
+  --primary-light: #a78bfa;
+
+  --background-main: #f5f3ff;
+  --surface-main: #ffffff;
+  --surface-alt: #fcfcff;
+  --border-main: #e7e5e4;
+
+  --text-main: #1f2937;
   --text-light: #6b7280;
-  --border-color: #e5e7eb;
-  --white: #ffffff;
-  --black: #000000;
-  --red: #ef4444;
-  --green: #10b981;
-  --blue: #3b82f6;
-  --grey: #4b5563;
-  --font-family: "Poppins", sans-serif;
+  --text-on-primary: #ffffff;
+
+  --accent-red: #ef4444;
+  --accent-red-glow: rgba(239, 68, 68, 0.3);
+  --accent-green: #22c55e;
+  --accent-blue: #3b82f6;
+  --accent-yellow: #f59e0b;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07),
+    0 4px 6px -4px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --transition-main: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+body {
+  -ms-overflow-style: none;
 }
 
 /* --- Main Header --- */
@@ -23,15 +57,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background-color: var(--white);
+  padding: 1rem 2.5rem;
+  background-color: var(--surface-main);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-main);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-family);
+  background-image: radial-gradient(
+    circle at 10% 20%,
+    rgba(167, 139, 250, 0.03) 0%,
+    transparent 20%
+  );
 }
 
 .header-left {
@@ -42,10 +82,18 @@
 
 .logo {
   font-weight: 700;
-  font-size: 1.5rem;
-  letter-spacing: -1px;
-  color: var(--primary-purple);
+  font-size: 1.8rem;
+  letter-spacing: -0.025em;
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-deep) 25%,
+    var(--primary-main) 75%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin: 0;
+  position: relative;
 }
 
 .main-nav {
@@ -60,37 +108,32 @@
   gap: 0.5rem;
   text-decoration: none;
   color: var(--text-light);
-  font-weight: 500;
-  padding: 0.5rem 0;
+  font-weight: 640;
+  padding: 0.70rem 8px;
   position: relative;
-  transition: color 0.3s ease;
-  font-size: 0.9rem;
+  transition: var(--transition-main);
+  font-size: 0.95rem;
+  letter-spacing: 0.025em;
 }
 
 .main-nav a::after {
   content: "";
   position: absolute;
-  bottom: -18px;
-  left: 50%;
+  bottom: -16px;
+  left: 51%;
   transform: translateX(-50%);
   width: 0;
-  height: 3px;
-  background-color: var(--primary-purple);
-  transition: width 0.3s ease;
+  height: 3.9px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 2px;
 }
 
-.main-nav a:hover {
-  color: var(--text-dark);
-}
+
 
 .main-nav a:hover::after,
 .main-nav a.active::after {
-  width: 100%;
-}
-
-.main-nav a.active {
-  color: var(--text-dark);
+  width: 80%;
 }
 
 /* --- Header Right --- */
@@ -117,32 +160,32 @@
 }
 
 .search-container input {
-  border: 1px solid var(--border-color);
-  background-color: #fcfcff; /* Surface alt từ notes.css */
-  border-radius: 12px; /* Border radius md từ notes.css */
+  border: 1px solid var(--border-main);
+  background-color: var(--surface-alt);
+  border-radius: var(--border-radius-md);
   padding: 0.8rem 2rem 0.8rem 2.5rem;
   width: 200px;
   font-family: var(--font-family);
   font-size: 1rem;
-  color: var(--text-dark);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  color: var(--text-main);
+  transition: var(--transition-main);
   height: 40px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02); /* Shadow từ notes.css */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .search-container input::placeholder {
-  color: #9ca3af;
+  color: var(--text-light);
 }
 
 .search-container input:hover {
-  border-color: #a78bfa; /* Primary light từ notes.css */
+  border-color: var(--primary-light);
 }
 
 .search-container input:focus {
   outline: none;
-  border-color: var(--primary-purple);
-  background-color: var(--white);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(167, 139, 250, 0.4); /* Primary glow từ notes.css */
+  border-color: var(--primary-main);
+  background-color: var(--surface-main);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px var(--primary-glow);
   width: 240px;
 }
 
@@ -156,6 +199,12 @@
   font-size: 1.1rem;
   padding: 0;
   z-index: 10;
+  transition: var(--transition-main);
+}
+
+.search-clear-btn:hover {
+  color: var(--primary-main);
+  transform: scale(1.1);
 }
 
 /* --- Notification Button --- */
@@ -166,9 +215,9 @@
 }
 
 .notification-button {
-  background-color: #f3f4f6; /* Màu xám nhạt như ban đầu */
+  background-color: var(--surface-alt);
   color: var(--text-light);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-main);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -177,24 +226,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  transition: var(--transition-main);
   position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Shadow nhẹ */
+  box-shadow: var(--shadow-sm);
 }
 
 .notification-button:hover {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); /* Gradient vàng khi hover */
-  color: var(--white);
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #f59e0b 100%);
+  color: var(--text-on-primary);
   border-color: #f59e0b;
-  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4); /* Shadow md từ notes.css */
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .notification-count {
   position: absolute;
   top: -4px;
   right: -4px;
-  background-color: var(--red);
-  color: var(--white);
+  background-color: var(--accent-red);
+  color: var(--text-on-primary);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -203,8 +253,9 @@
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 2px solid var(--white);
+  border: 2px solid var(--surface-main);
   pointer-events: none;
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- Trash Button --- */
@@ -214,9 +265,9 @@
 }
 
 .trash-button {
-  background-color: #f3f4f6; /* Màu xám nhạt như ban đầu */
+  background-color: var(--surface-alt);
   color: var(--text-light);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-main);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -225,22 +276,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  transition: var(--transition-main);
   text-decoration: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Shadow nhẹ */
+  box-shadow: var(--shadow-sm);
 }
 
 .trash-button:hover {
-  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%); /* Gradient đỏ khi hover */
-  color: var(--white);
-  border-color: #ef4444;
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4); /* Shadow md từ notes.css */
+  background: linear-gradient(135deg, #fca5a5 0%, var(--accent-red) 100%);
+  color: var(--text-on-primary);
+  border-color: var(--accent-red);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .trash-button.active {
-  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%);
-  color: var(--white);
-  border-color: #ef4444;
+  background: linear-gradient(135deg, #fca5a5 0%, var(--accent-red) 100%);
+  color: var(--text-on-primary);
+  border-color: var(--accent-red);
 }
 
 /* --- User Avatar --- */
@@ -256,18 +308,54 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Shadow từ notes.css */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
-  border: 2px solid var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-main);
+  border: 2px solid var(--surface-main);
 }
 
-/* Thêm lại CSS cho vương miện */
+.user-avatar img:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+/* Premium User Avatar */
+.user-avatar.premium img {
+  border: 3px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  animation: premium-rotate 4s linear infinite;
+}
+
+@keyframes premium-rotate {
+  0% {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(0deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  }
+  25% {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(90deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  }
+  50% {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(180deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  }
+  75% {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(270deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  }
+  100% {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(360deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  }
+}
+
+/* Crown cho Premium */
 .avatar-crown {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: var(--white);
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #f59e0b 100%);
+  color: var(--text-on-primary);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -275,48 +363,53 @@
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--white);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--surface-main);
   z-index: 15;
   animation: crown-glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes crown-glow {
   0% {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(251, 191, 36, 0.4);
+    box-shadow: var(--shadow-sm), 0 0 0 0 rgba(251, 191, 36, 0.4);
   }
   100% {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(251, 191, 36, 0.2);
+    box-shadow: var(--shadow-sm), 0 0 0 4px rgba(251, 191, 36, 0.2);
   }
 }
 
-.user-avatar::before {
-  content: "";
+/* Premium Badge */
+.premium-badge {
   position: absolute;
-  top: 50%;
+  bottom: -3px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
-  border: 2px solid var(--primary-purple);
-  border-radius: 50%;
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
-  z-index: -1;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #f59e0b 100%);
+  color: var(--text-on-primary);
+  font-size: 0.5rem;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  z-index: 20;
+  border: 1px solid var(--surface-main);
+  box-shadow: var(--shadow-sm);
+  animation: premium-pulse 2s ease-in-out infinite;
+  white-space: nowrap;
+  min-width: 32px;
+  text-align: center;
 }
 
-.user-avatar::after {
-  content: "";
-  position: absolute;
-  bottom: 1px;
-  right: 1px;
-  width: 10px;
-  height: 10px;
-  background-color: var(--green);
-  border-radius: 50%;
-  border: 2px solid var(--white);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+@keyframes premium-pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: var(--shadow-sm);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.02);
+    box-shadow: 0 2px 6px rgba(251, 191, 36, 0.2);
+  }
 }
 
 /* --- User Dropdown --- */
@@ -325,13 +418,18 @@
   top: 60px;
   right: 0;
   width: 260px;
-  background: var(--white);
-  border-radius: 16px; /* Border radius lg từ notes.css */
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* Shadow lg từ notes.css */
+  background: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
-  border: 1px solid var(--border-color);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border-main);
+  background-image: radial-gradient(
+    circle at 10% 10%,
+    rgba(167, 139, 250, 0.05),
+    transparent 50%
+  );
 }
 
 @keyframes fadeIn {
@@ -349,7 +447,14 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-main);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.02) 0%, transparent 100%);
+}
+
+.dropdown-avatar-container {
+  position: relative;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .dropdown-avatar {
@@ -357,22 +462,68 @@
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 12px;
+  border: 2px solid var(--border-main);
+}
+
+.user-avatar.premium .dropdown-avatar-container .dropdown-avatar {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, var(--accent-yellow), #f59e0b, var(--accent-yellow), #f59e0b) border-box;
+  border: 3px solid transparent;
+}
+
+.avatar-crown--dropdown {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #f59e0b 100%);
+  color: var(--text-on-primary);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--surface-main);
+  z-index: 15;
+}
+
+.dropdown-premium-badge {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, #f59e0b 100%);
+  color: var(--text-on-primary);
+  font-size: 0.4rem;
+  font-weight: 600;
+  padding: 1px 3px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  z-index: 20;
+  border: 1px solid var(--surface-main);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  min-width: 26px;
+  text-align: center;
 }
 
 .dropdown-user-info {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Cho phép text bị cắt ngắn */
+  min-width: 0;
 }
 
 .dropdown-username {
-  font-weight: 600;
-  color: var(--text-dark);
+  font-weight: 700;
+  color: var(--text-main);
   font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.015em;
 }
 
 .dropdown-email {
@@ -393,49 +544,50 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.75rem 0.75rem;
+  padding: 0.75rem;
   text-align: left;
   background: none;
   border: none;
-  color: var(--text-dark);
+  color: var(--text-main);
   font-family: var(--font-family);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-main);
   text-decoration: none;
   border-radius: 8px;
 }
 
 .dropdown-item:hover {
-  background-color: var(--primary-purple-light);
-  color: var(--primary-purple);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(167, 139, 250, 0.05) 100%);
+  color: var(--primary-main);
+  transform: translateX(4px);
 }
 
 .dropdown-item-icon {
   font-size: 1.2rem;
   color: var(--text-light);
-  transition: color 0.2s ease;
+  transition: var(--transition-main);
 }
 
 .dropdown-item:hover .dropdown-item-icon {
-  color: var(--primary-purple);
+  color: var(--primary-main);
 }
 
 .dropdown-divider {
   height: 1px;
   border: 0;
-  background-color: var(--border-color);
+  background-color: var(--border-main);
   margin: 0.5rem 0;
 }
 
 .logout-item:hover {
-  background-color: #fee2e2;
-  color: var(--red);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(252, 165, 165, 0.05) 100%);
+  color: var(--accent-red);
 }
 
 .logout-item:hover .dropdown-item-icon {
-  color: var(--red);
+  color: var(--accent-red);
 }
 
 /* --- Notification Dropdown --- */
@@ -445,30 +597,41 @@
   right: 0;
   width: 350px;
   max-height: 400px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
   z-index: 1001;
-  color: #333;
+  color: var(--text-main);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--border-main);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-header {
   padding: 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-main);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.02) 0%, transparent 100%);
 }
 
 .notification-header h3 {
   margin: 0;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.015em;
 }
 
 .notification-list {
   overflow-y: auto;
   flex-grow: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.notification-list::-webkit-scrollbar {
+  display: none;
 }
 
 .notification-item {
@@ -476,38 +639,38 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid rgba(231, 229, 228, 0.5);
   cursor: pointer;
-  transition: background-color 0.2s ease, padding-left 0.2s ease;
+  transition: var(--transition-main);
   gap: 1rem;
 }
 
 .notification-item:hover {
-  background-color: #f9f9f9;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(167, 139, 250, 0.02) 100%);
 }
 
-/* Style cho thông báo chưa đọc */
 .notification-item.notification-item--unread {
-  background-color: var(--primary-purple-light);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(167, 139, 250, 0.05) 100%);
   font-weight: 500;
-  padding-left: 2rem; /* Thêm padding để tạo không gian cho dấu chấm */
+  padding-left: 2rem;
+  border-left: 3px solid var(--primary-main);
 }
 
 .notification-item.notification-item--unread:hover {
-  background-color: #e9d5ff; /* Màu sáng hơn một chút khi hover */
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(167, 139, 250, 0.08) 100%);
 }
 
-/* Dấu chấm xanh cho thông báo chưa đọc */
 .notification-item.notification-item--unread::before {
   content: "";
   position: absolute;
-  left: 0.75rem; /* Đặt dấu chấm vào trong vùng padding mới */
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
-  background-color: var(--blue);
+  background-color: var(--accent-blue);
   border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .notification-item:last-child {
@@ -516,7 +679,7 @@
 
 .notification-item-icon {
   font-size: 1.2rem;
-  color: #555;
+  color: var(--text-light);
   flex-shrink: 0;
 }
 
@@ -525,31 +688,93 @@
   font-size: 0.9rem;
   line-height: 1.4;
   flex-grow: 1;
-  min-width: 0; /* Giúp text wrap đúng cách trong flex container */
+  min-width: 0;
+  color: var(--text-main);
 }
 
 .notification-dismiss {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #aaa;
+  color: var(--text-light);
   cursor: pointer;
   padding: 0 5px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: var(--transition-main);
   flex-shrink: 0;
+  border-radius: 4px;
 }
 
 .notification-item:hover .notification-dismiss {
   opacity: 1;
 }
+
 .notification-dismiss:hover {
-  color: #333;
+  color: var(--accent-red);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .notification-empty {
   text-align: center;
   padding: 2rem;
-  color: #888;
+  color: var(--text-light);
   font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .main-header {
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .header-left {
+    gap: 1.5rem;
+  }
+  
+  .main-nav {
+    gap: 1rem;
+  }
+  
+  .main-nav a {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .search-container input {
+    width: 180px;
+  }
+  
+  .search-container input:focus {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-left,
+  .header-right {
+    justify-content: center;
+  }
+  
+  .main-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .user-dropdown,
+  .notification-dropdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 300px;
+  }
 }

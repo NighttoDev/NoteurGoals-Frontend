@@ -445,6 +445,27 @@ const Schedule: React.FC = () => {
     }
   };
 
+  const handleQuickDelete = async (event: Event, e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn không cho mở modal edit
+    
+    if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
+      try {
+        await deleteEvent(event.event_id);
+        toast.success("Event deleted successfully!");
+        await fetchEvents();
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          toast.error(
+            (err.response?.data as { message?: string } | undefined)?.message ||
+              "Failed to delete the event!"
+          );
+        } else {
+          toast.error("Failed to delete the event!");
+        }
+      }
+    }
+  };
+
   const navigateMonth = (direction: "prev" | "next" | "today") => {
     const newDate = new Date(currentDate);
     if (direction === "prev") newDate.setMonth(newDate.getMonth() - 1);
@@ -515,8 +536,17 @@ const Schedule: React.FC = () => {
                             openEditModal(event);
                           }}
                         >
-                          <FontAwesomeIcon icon={faBullseye} />
-                          {event.title}
+                          <div className="schedule-event-content">
+                            <FontAwesomeIcon icon={faBullseye} />
+                            <span className="schedule-event-title">{event.title}</span>
+                          </div>
+                          <button
+                            className="schedule-event-delete-btn"
+                            onClick={(e) => handleQuickDelete(event, e)}
+                            title="Delete event"
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -546,17 +576,26 @@ const Schedule: React.FC = () => {
                 className="schedule-agenda-item"
                 onClick={() => openEditModal(event)}
               >
-                <h4 className="schedule-agenda-item-title">{event.title}</h4>
-                <p className="schedule-agenda-item-time">
-                  {new Date(event.event_time).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                  - {event.event_time.slice(11, 16)}
-                </p>
-                <p className="schedule-agenda-item-desc">{event.description}</p>
+                <div className="schedule-agenda-item-content">
+                  <h4 className="schedule-agenda-item-title">{event.title}</h4>
+                  <p className="schedule-agenda-item-time">
+                    {new Date(event.event_time).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                    - {event.event_time.slice(11, 16)}
+                  </p>
+                  <p className="schedule-agenda-item-desc">{event.description}</p>
+                </div>
+                <button
+                  className="schedule-agenda-delete-btn"
+                  onClick={(e) => handleQuickDelete(event, e)}
+                  title="Delete event"
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
               </div>
             ))}
           </div>

@@ -810,6 +810,66 @@ body {
   padding: 1rem;
 }
 
+/* Card Footer - thêm phần này */
+.goals-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-main);
+}
+
+.goals-card-collaborators {
+  display: flex;
+  align-items: center;
+}
+
+.goals-user-avatars {
+  display: flex;
+  gap: -8px;
+  align-items: center;
+}
+
+.goals-collaborator-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-main);
+  margin-left: -8px;
+  transition: var(--transition-fast);
+  object-fit: cover;
+}
+
+.goals-collaborator-avatar:first-child {
+  margin-left: 0;
+}
+
+.goals-collaborator-avatar:hover {
+  transform: scale(1.1);
+  z-index: 2;
+  position: relative;
+}
+
+.goals-card-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.goals-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.goals-card-stats span i {
+  color: var(--primary-main);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .goals-section {

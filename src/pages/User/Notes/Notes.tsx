@@ -19,6 +19,7 @@ import {
   faBullseye,
   faPaperclip,
   faNoteSticky,
+  faSpinner, // Thêm dòng này
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
@@ -205,30 +206,31 @@ const NotesPage: React.FC = () => {
         .filter((g) => selectedGoalIds.includes(g.id))
         .map((g) => ({ id: g.id, type: "goal" as const, title: g.title }));
 
-      setNotes((prev) => {
-        const updated = prev.map((note) =>
-          note.id === editingNote.id
-            ? {
-                ...note,
-                ...payload,
-                updatedDate: new Date().toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                }),
-                linkedGoals: updatedLinkedGoals,
-              }
-            : note
-        );
-        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
-        return updated;
-      });
-      closeEditModal();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update note");
-    } finally {
-      setLoading(false);
-    }
+    setNotes((prev) => {
+      const updated = prev.map((note) =>
+        note.id === editingNote.id
+          ? {
+              ...note,
+              ...payload,
+              updatedDate: new Date().toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              }),
+              linkedGoals: updatedLinkedGoals,
+            }
+          : note
+      );
+      localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    closeEditModal();
+    toast.success("Note updated successfully!");
+  } catch (err: any) {
+    toast.error(err.message || "Failed to update note");
+  } finally {
+    setLoading(false);
+  }
   };
 
   const handleDelete = async () => {
@@ -433,16 +435,98 @@ const NotesPage: React.FC = () => {
                     }
                   ></textarea>
                 </div>
+                {renderGoalsCheckboxes()}
                 <div className="notes-modal-footer">
                   <button
                     type="button"
                     className="notes-btn notes-btn-secondary"
                     onClick={closeAddModal}
+                    disabled={loading}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="notes-btn notes-btn-primary">
-                    Save Note
+                  <button 
+                    type="submit" 
+                    className="notes-btn notes-btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      "Save Note"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && editingNote && (
+        <div className="notes-modal-overlay" onClick={closeEditModal}>
+          <div
+            className="notes-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="notes-modal-header">
+              <h2>Edit Note</h2>
+              <button className="notes-modal-close-btn" onClick={closeEditModal}>
+                ×
+              </button>
+            </div>
+            <div className="notes-modal-body">
+              <form className="notes-modal-form" onSubmit={handleEditSubmit}>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-title-input-edit">Title</label>
+                  <input
+                    type="text"
+                    id="notes-modal-title-input-edit"
+                    required
+                    value={editForm.title}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, title: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="notes-modal-group">
+                  <label htmlFor="notes-modal-content-input-edit">Content</label>
+                  <textarea
+                    id="notes-modal-content-input-edit"
+                    value={editForm.content}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, content: e.target.value }))
+                    }
+                  ></textarea>
+                </div>
+                {renderGoalsCheckboxes()}
+                <div className="notes-modal-footer">
+                  <button
+                    type="button"
+                    className="notes-btn notes-btn-danger"
+                    onClick={handleDelete}
+                    disabled={loading}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    className="notes-btn notes-btn-secondary"
+                    onClick={closeEditModal}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="notes-btn notes-btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      "Update Note"
+                    )}
                   </button>
                 </div>
               </form>

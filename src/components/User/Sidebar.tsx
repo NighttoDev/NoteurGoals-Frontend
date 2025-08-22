@@ -288,7 +288,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </div>
 
         <div
-          className="user-avatar"
+          className={`user-avatar ${isPro ? 'premium' : ''}`}
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           ref={userDropdownRef}
         >
@@ -301,24 +301,31 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             }}
           />
           {isPro && (
-            <span className="avatar-crown" title="Pro user">
-              <FaCrown />
-            </span>
+            <>
+              <span className="avatar-crown" title="Premium user">
+                <FaCrown />
+              </span>
+              <span className="premium-badge">Premium</span>
+            </>
           )}
           {showUserDropdown && (
             <div className="user-dropdown">
               <div className="dropdown-header">
-                <div style={{ position: 'relative' }}>
+                <div className="dropdown-avatar-container">
                   <img src={avatarUrl} alt="User" className="dropdown-avatar" />
                   {isPro && (
-                    <span className="avatar-crown avatar-crown--dropdown" title="Pro user">
-                      <FaCrown />
-                    </span>
+                    <>
+                      <span className="avatar-crown avatar-crown--dropdown" title="Premium user">
+                        <FaCrown />
+                      </span>
+                      <span className="dropdown-premium-badge">Premium</span>
+                    </>
                   )}
                 </div>
                 <div className="dropdown-user-info">
                   <div className="dropdown-username">
                     {user?.display_name || "User"}
+                    {isPro && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>✨</span>}
                   </div>
                   <div className="dropdown-email">
                     {user?.email || "user@example.com"}

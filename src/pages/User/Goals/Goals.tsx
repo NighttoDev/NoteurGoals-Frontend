@@ -10,7 +10,9 @@ import {
   faEllipsisV,
   faTimes,
   faChevronDown,
-  faBullseye, // Add this import for the goals icon
+  faBullseye,
+  faStickyNote,  // Thêm import này
+  faPaperclip,   // Thêm import này
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getGoals,
@@ -94,9 +96,20 @@ const statusTags: { [key: string]: string } = {
   cancelled: "Cancelled",
 };
 
-// --- GOAL CARD COMPONENT (Đã sửa: loại bỏ prop không dùng) ---
+// --- GOAL CARD COMPONENT (Cập nhật để hiển thị collaborators) ---
 const GoalCard = memo(({ goal }: { goal: Goal }) => {
   const navigate = useNavigate();
+  
+  // Lấy share type một cách an toàn
+  const getShareType = (goal: Goal): Sharing => {
+    // Kiểm tra nhiều cách có thể có trong API response
+    if (goal.share?.share_type) return goal.share.share_type;
+    if (goal.shares && goal.shares.length > 0) return goal.shares[0].share_type;
+    return "private";
+  };
+  
+  const shareType = getShareType(goal);
+  
   return (
     <div
       className={`goals-card${
@@ -109,19 +122,9 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
         <div className="goals-title-container">
           <span
             className="goals-sharing-status"
-            title={
-              goal.share?.share_type
-                ? sharingTitles[goal.share.share_type]
-                : "Private"
-            }
+            title={sharingTitles[shareType]}
           >
-            <FontAwesomeIcon
-              icon={
-                goal.share?.share_type
-                  ? sharingIcons[goal.share.share_type]
-                  : sharingIcons.private
-              }
-            />
+            <FontAwesomeIcon icon={sharingIcons[shareType]} />
           </span>
           <h3 className="goals-card-title">{goal.title}</h3>
         </div>
@@ -171,6 +174,37 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
         <div className="goals-progress-text">
           <span>Progress</span>
           <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
+        </div>
+      </div>
+
+      {/* Thêm phần hiển thị collaborators như code cũ */}
+      <div className="goals-card-footer">
+        <div className="goals-card-collaborators">
+          {goal.collaborators && goal.collaborators.length > 0 && (
+            <div className="goals-user-avatars">
+              {goal.collaborators.map((collaborator) => (
+                <img
+                  key={collaborator.collab_id}
+                  src={collaborator.avatar || '/default-avatar.png'}
+                  alt={collaborator.name || 'Collaborator'}
+                  title={collaborator.name || 'Collaborator'}
+                  className="goals-collaborator-avatar"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="goals-card-stats">
+          {goal.notesCount ? (
+            <span>
+              <FontAwesomeIcon icon={faStickyNote} /> {goal.notesCount}
+            </span>
+          ) : null}
+          {goal.attachmentsCount ? (
+            <span>
+              <FontAwesomeIcon icon={faPaperclip} /> {goal.attachmentsCount}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>

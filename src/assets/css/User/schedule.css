@@ -274,6 +274,10 @@ body {
   white-space: nowrap;
   transition: var(--transition-main);
   border: 1px solid var(--border-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
 }
 
 .schedule-event-item:hover {
@@ -283,9 +287,46 @@ body {
   border-color: var(--primary-light);
 }
 
-.schedule-event-item i {
-  margin-right: 4px;
-  opacity: 0.8;
+.schedule-event-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.schedule-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-event-delete-btn {
+  background: none;
+  border: none;
+  color: var(--accent-red);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition-fast);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.schedule-event-item:hover .schedule-event-delete-btn {
+  opacity: 1;
+}
+
+.schedule-event-delete-btn:hover {
+  background-color: var(--accent-red);
+  color: white;
+  transform: scale(1.1);
 }
 
 /* --- Agenda Container --- */
@@ -359,8 +400,8 @@ body {
   box-shadow: var(--shadow-sm);
   padding: 1rem 1.2rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  gap: 1rem;
   position: relative;
   transition: var(--transition-main);
   cursor: pointer;
@@ -372,6 +413,13 @@ body {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
   border-color: var(--primary-light);
+}
+
+.schedule-agenda-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .schedule-agenda-item-title {
@@ -395,6 +443,35 @@ body {
   font-size: 0.93rem;
   line-height: 1.5;
   margin-bottom: 0;
+}
+
+.schedule-agenda-delete-btn {
+  background: none;
+  border: none;
+  color: var(--accent-red);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition-fast);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+.schedule-agenda-item:hover .schedule-agenda-delete-btn {
+  opacity: 1;
+}
+
+.schedule-agenda-delete-btn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--accent-red);
+  transform: scale(1.1);
 }
 
 .schedule-agenda-item::after {
