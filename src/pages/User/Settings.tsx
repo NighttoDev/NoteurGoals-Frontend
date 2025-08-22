@@ -224,7 +224,7 @@ if (!okCancel) return;
       });
       localStorage.setItem("user_info", JSON.stringify(response.data.data));
 
-      toast.success("Cập nhật thông tin thành công!");
+      toast.success("Information updated successfully!");
       // Cập nhật UI mà không cần reload trang để giữ nguyên thông báo
       setUser(response.data.data);
       setAvatarPreview(response.data.data.avatar_url || "/default-avatar.png");

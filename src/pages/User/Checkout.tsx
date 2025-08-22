@@ -89,11 +89,41 @@ const CheckoutPage: React.FC = () => {
   const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(price);
 
   if (loading) {
-    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>Loading payment details...</p></main>;
+    return (
+      <main className="checkout-page-container">
+        <div className="checkout-loading-container">
+          <div className="checkout-loading-box">
+            <div className="checkout-orbit" aria-label="Loading">
+              <span className="dot d1"></span>
+              <span className="dot d2"></span>
+              <span className="dot d3"></span>
+              <span className="dot d4"></span>
+              <span className="dot d5"></span>
+              <span className="dot d6"></span>
+              <span className="dot d7"></span>
+              <span className="dot d8"></span>
+            </div>
+            <div className="checkout-loading-text">Loading payment details...</div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (error || !plan) {
-    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>{error || "Invalid plan."} <button onClick={() => navigate('/settings#subscription')}>Back</button></p></main>;
+    return (
+      <main className="checkout-page-container">
+        <div className="checkout-loading-container">
+          <div className="checkout-loading-card checkout-error">
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>We couldn’t load your plan</div>
+            <div style={{ marginBottom: 12 }}>{error || "Invalid plan."}</div>
+            <button onClick={() => navigate('/settings#subscription')} className="checkout-btn-submit" style={{ maxWidth: 220, margin: '0 auto' }}>
+              Back to Plans
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -131,7 +161,14 @@ const CheckoutPage: React.FC = () => {
                     <span>Secure and encrypted transaction</span>
                   </div>
                   <button onClick={handlePayment} className="checkout-btn-submit" disabled={paymentLoading}>
-                    {paymentLoading ? "Processing..." : "Pay with VNPay"}
+                    {paymentLoading ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <span className="checkout-spinner"></span>
+                        Processing...
+                      </span>
+                    ) : (
+                      "Pay with VNPay"
+                    )}
                   </button>
                 </div>
               </div>
