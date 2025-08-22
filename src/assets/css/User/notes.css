@@ -42,6 +42,24 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE and Edge Legacy */
+body {
+  -ms-overflow-style: none;
 }
 
 /* --- 1. MAIN CONTENT & HEADER --- */
@@ -52,17 +70,35 @@
     rgba(167, 139, 250, 0.05) 0%,
     transparent 20%
   );
-  padding: 2rem 2.5rem;
-  min-height: 100vh;
+  width: 100%;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
+  /* Hide scrollbar but allow scrolling */
+  overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
+/* Hide scrollbar for webkit browsers on main content */
 .notes-main-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+}
+
+.notes-container-section {
+  padding: 2rem 2.5rem;
+  /* Add minimum height for content */
+  min-height: calc(100vh - 4rem);
+}
+
+/* Thêm container cho header */
+.notes-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .notes-page-title {
@@ -70,7 +106,7 @@
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.025em;
-  margin-bottom: 1.5rem;
+  margin: 0; /* Xóa margin-bottom */
   position: relative;
   display: inline-block;
 }
@@ -86,13 +122,9 @@
   border-radius: 2px;
 }
 
+/* Xóa .notes-content-header vì chúng ta sẽ không dùng nữa */
 .notes-content-header {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  justify-content: flex-end;
-  margin-bottom: 2.5rem;
-  flex-wrap: wrap;
+  display: none;
 }
 
 .notes-action-buttons {
@@ -222,6 +254,10 @@
 /* --- 2. NOTE CARD STYLES --- */
 .notes-main-container {
   transition: opacity 0.3s ease, transform 0.3s ease;
+  /* Add proper bottom padding */
+  padding-bottom: 2rem;
+  /* Add proper bottom margin */
+  margin-bottom: 2rem;
 }
 
 .notes-main-container.grid-view {
@@ -502,6 +538,8 @@
   display: flex;
   flex-direction: column;
   animation: notes-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Hide scrollbar in modal */
+  overflow: hidden;
 }
 
 .notes-modal-header {
@@ -555,12 +593,16 @@
     rgba(167, 139, 250, 0.1),
     transparent 50%
   );
+  /* Hide scrollbar but allow scrolling */
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none; /* IE and Edge */
 }
+
+/* Hide scrollbar for webkit browsers in modal body */
 .notes-modal-body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
+
 .notes-modal-form .notes-modal-group {
   margin-bottom: 1.25rem;
 }
@@ -622,6 +664,14 @@
   border-radius: var(--border-radius-md);
   padding: 0.75rem;
   background-color: var(--surface-alt);
+  /* Hide scrollbar but allow scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers in checkbox group */
+.notes-checkbox-group::-webkit-scrollbar {
+  display: none;
 }
 
 .notes-checkbox-item {
@@ -717,6 +767,7 @@
   text-align: center;
   color: var(--text-light);
   grid-column: 1 / -1;
+  min-height: 400px;
 }
 
 .notes-empty-state-icon {
@@ -728,12 +779,14 @@
 
 /* --- 7. RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 768px) {
-  .notes-main-content {
+  .notes-container-section {
     padding: 1.5rem;
+    /* Ensure proper minimum height on mobile */
+    min-height: calc(100vh - 3rem);
   }
 
-  .notes-content-header {
-    flex-direction: column-reverse;
+  .notes-header-container {
+    flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
@@ -754,10 +807,20 @@
   }
 }
 
-.notes-header-row {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-  justify-content: flex-end;
+@media (max-width: 480px) {
+  .notes-modal-content {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .notes-container-section {
+    padding: 1rem;
+    /* Adjust minimum height for very small screens */
+    min-height: calc(100vh - 2rem);
+  }
+  
+  .notes-page-title {
+    font-size: 1.75rem;
+  }
 }

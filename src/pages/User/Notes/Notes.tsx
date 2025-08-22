@@ -314,32 +314,34 @@ const NotesPage: React.FC = () => {
       style={{ margin: "0", borderRadius: "0" }}
     >
       <section className="notes-container-section">
-        <h1 className="notes-page-title">My Notes</h1>
-
-        <div className="notes-content-header">
-          <div style={{ flex: 1 }}></div>
-          <button
-            className="notes-btn notes-btn-primary"
-            onClick={openAddModal}
-          >
-            <FontAwesomeIcon icon={faPlus} /> New Note
-          </button>
-          <div className="notes-toolbar-group">
+        {/* Thay đổi cấu trúc header */}
+        <div className="notes-header-container">
+          <h1 className="notes-page-title">My Notes</h1>
+          
+          <div className="notes-action-buttons">
+            <div className="notes-toolbar-group">
+              <button
+                className={`notes-btn-icon ${
+                  viewMode === "grid" ? "active" : ""
+                }`}
+                onClick={() => setViewMode("grid")}
+              >
+                <FontAwesomeIcon icon={faThLarge} />
+              </button>
+              <button
+                className={`notes-btn-icon ${
+                  viewMode === "list" ? "active" : ""
+                }`}
+                onClick={() => setViewMode("list")}
+              >
+                <FontAwesomeIcon icon={faBars} />
+              </button>
+            </div>
             <button
-              className={`notes-btn-icon ${
-                viewMode === "grid" ? "active" : ""
-              }`}
-              onClick={() => setViewMode("grid")}
+              className="notes-btn notes-btn-primary"
+              onClick={openAddModal}
             >
-              <FontAwesomeIcon icon={faThLarge} />
-            </button>
-            <button
-              className={`notes-btn-icon ${
-                viewMode === "list" ? "active" : ""
-              }`}
-              onClick={() => setViewMode("list")}
-            >
-              <FontAwesomeIcon icon={faBars} />
+              <FontAwesomeIcon icon={faPlus} /> New Note
             </button>
           </div>
         </div>

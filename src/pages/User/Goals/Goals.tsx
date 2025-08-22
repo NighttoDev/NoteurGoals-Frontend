@@ -9,6 +9,8 @@ import {
   faCalendarAlt,
   faEllipsisV,
   faTimes,
+  faChevronDown,
+  faBullseye, // Add this import for the goals icon
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getGoals,
@@ -181,6 +183,7 @@ const GoalsPage: React.FC = () => {
   const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Thêm state cho dropdown
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -199,6 +202,7 @@ const GoalsPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null); // Ref cho dropdown
 
   const { searchTerm } = useSearch();
 
@@ -229,7 +233,7 @@ const GoalsPage: React.FC = () => {
     };
   }, [fetchGoals]);
 
-  // Move highlight bar
+  // Move highlight bar 
   useEffect(() => {
     const activeBtn = filterTabsRef.current?.querySelector(
       ".goals-active"
@@ -276,6 +280,20 @@ const GoalsPage: React.FC = () => {
     setIsModalOpen(false);
     setErrors({});
     setEditingGoal(null);
+  }, []);
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Validate form
@@ -333,44 +351,79 @@ const GoalsPage: React.FC = () => {
     }
   };
 
+  const filterOptions = [
+    { value: "all" as Status, label: "All" },
+    { value: "in_progress" as Status, label: "In Progress" },
+    { value: "completed" as Status, label: "Completed" },
+    { value: "new" as Status, label: "New" }
+  ];
+
+  const currentFilterLabel = filterOptions.find(option => option.value === filter)?.label || "All";
+
+  const renderEmptyState = () => (
+    <div className="goals-empty-state">
+      <FontAwesomeIcon icon={faBullseye} className="goals-empty-state-icon" />
+      <h3>No goals yet</h3>
+      <p>Create your first goal by clicking the "New Goal" button</p>
+      <button
+        className="goals-btn goals-btn-primary"
+        onClick={() => openModal("add")}
+        style={{ marginTop: "1rem" }}
+      >
+        <FontAwesomeIcon icon={faPlus} /> Create First Goal
+      </button>
+    </div>
+  );
+
   return (
     <main
       className="goals-main-content"
       style={{ margin: "0", borderRadius: "0" }}
     >
       <section className="goals-section">
-        <h1 className="goals-page-title">My Goals</h1>
-        <div className="goals-header">
-          <div className="goals-actions">
-            <div className="goals-filter-tabs" ref={filterTabsRef}>
-              <span
-                className="goals-filter-highlight"
-                ref={highlightRef}
-              ></span>
-              {(["all", "in_progress", "completed", "new"] as Status[]).map(
-                (s) => (
-                  <button
-                    key={s}
-                    className={`goals-filter-btn${
-                      filter === s ? " goals-active" : ""
-                    }`}
-                    onClick={() => setFilter(s)}
-                    type="button"
-                  >
-                    {s === "all"
-                      ? "All"
-                      : s.charAt(0).toUpperCase() +
-                        s.slice(1).replace("_", " ")}
-                  </button>
-                )
-              )}
+        <div className="goals-page-header">
+          <h1 className="goals-page-title">My Goals</h1>
+          <div className="goals-header">
+            <div className="goals-actions">
+              <div className="goals-filter-dropdown" ref={dropdownRef}>
+                <button
+                  className="goals-filter-dropdown-button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  type="button"
+                >
+                  <span>{currentFilterLabel}</span>
+                  <FontAwesomeIcon 
+                    icon={faChevronDown} 
+                    className={`goals-dropdown-icon ${isDropdownOpen ? 'goals-dropdown-icon-open' : ''}`}
+                  />
+                </button>
+                {isDropdownOpen && (
+                  <div className="goals-filter-dropdown-menu">
+                    {filterOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        className={`goals-filter-dropdown-item ${
+                          filter === option.value ? "goals-filter-dropdown-item-active" : ""
+                        }`}
+                        onClick={() => {
+                          setFilter(option.value);
+                          setIsDropdownOpen(false);
+                        }}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                className="goals-btn goals-btn-primary"
+                onClick={() => openModal("add")}
+              >
+                <FontAwesomeIcon icon={faPlus} /> New Goal
+              </button>
             </div>
-            <button
-              className="goals-btn goals-btn-primary"
-              onClick={() => openModal("add")}
-            >
-              <FontAwesomeIcon icon={faPlus} /> New Goal
-            </button>
           </div>
         </div>
 
@@ -382,21 +435,14 @@ const GoalsPage: React.FC = () => {
             {errorMsg}
           </div>
         )}
+        
         <div className="goals-grid">
-          {loading ? (
-            <div className="goals-loading-container">
-              <div className="goals-loading-spinner"></div>
-              <p>Loading your goals...</p>
-            </div>
-          ) : goals.length > 0 ? (
+          {goals.length > 0 ? (
             goals.map((goal) => (
-              // --- SỬA LỖI: THÊM key PROP VÀO ĐÂY ---
               <GoalCard key={goal.goal_id} goal={goal} />
             ))
           ) : (
-            <div className="goals-no-goals-found">
-              No goals found. Try changing your filters or creating a new goal!
-            </div>
+            renderEmptyState()
           )}
         </div>
       </section>

@@ -6,6 +6,7 @@ import {
   AiOutlineSearch,
   AiOutlineBell,
   AiOutlineLogout,
+  AiOutlineDelete, // Thêm icon thùng rác
 } from "react-icons/ai";
 import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
@@ -166,6 +167,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         return <AiOutlineBell className="notification-item-icon" />;
     }
   };
+
+  // Thêm hàm xử lý logout
+  const handleLogout = () => {
+    // Xóa token khỏi localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Chuyển hướng về trang login
+    navigate('/login');
+    
+    // Đóng dropdown
+    setShowUserDropdown(false);
+  };
+
   return (
     <header className="main-header">
       <div className="header-left">
@@ -189,15 +204,12 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS
           </NavLink>
-          <NavLink to="/trash" className={getNavLinkClass}>
-            <AiOutlineSetting /> TRASH
-          </NavLink>
+          {/* Xóa mục TRASH khỏi navigation */}
         </nav>
       </div>
 
       <div className="header-right">
         <div className="search-container">
-
           <AiOutlineSearch className="search-icon" />
           <input
             type="text"
@@ -221,6 +233,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             </button>
           )}
         </div>
+
+        {/* Thêm icon thùng rác */}
+        <div className="trash-container">
+          <NavLink to="/trash" className="trash-button" title="Trash">
+            <AiOutlineDelete />
+          </NavLink>
+        </div>
+
         <div className="notification-container" ref={notificationRef}>
           <button className="notification-button" onClick={handleBellClick}>
             <AiOutlineBell />
@@ -323,7 +343,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   <span>Settings</span>
                 </NavLink>
                 <hr className="dropdown-divider" />
-                <button className="dropdown-item logout-item">
+                <button className="dropdown-item logout-item" onClick={handleLogout}>
                   <AiOutlineLogout className="dropdown-item-icon" />
                   <span>Logout</span>
                 </button>

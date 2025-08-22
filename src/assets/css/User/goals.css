@@ -1,4 +1,3 @@
-/* --- ROOT & GENERAL STYLES (Đồng nhất với Notes) --- */
 :root {
   --primary-glow: rgba(167, 139, 250, 0.4);
   --primary-deep: #4c1d95;
@@ -18,10 +17,8 @@
   --text-on-primary: #ffffff;
 
   --accent-red: #ef4444;
-
-  --accent-red-light: #fee2e2; /* Nền đỏ nhạt */
-  --accent-red-dark: #b91c1c; /* Chữ đỏ đậm */
-
+  --accent-red-light: #fee2e2;
+  --accent-red-dark: #b91c1c;
   --accent-red-glow: rgba(239, 68, 68, 0.3);
   --accent-green: #22c55e;
   --accent-blue: #3b82f6;
@@ -50,6 +47,22 @@
   padding: 0;
 }
 
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE and Edge Legacy */
+body {
+  -ms-overflow-style: none;
+}
+
 .goals-main-content {
   background-color: var(--background-main);
   background-image: radial-gradient(
@@ -57,17 +70,35 @@
     rgba(167, 139, 250, 0.05) 0%,
     transparent 20%
   );
-  padding: 2rem 2.5rem;
-  min-height: 100vh;
+  width: 100%;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* Hide scrollbar but allow scrolling */
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
+/* Hide scrollbar for webkit browsers on main content */
 .goals-main-content::-webkit-scrollbar {
   display: none;
+}
+
+.goals-section {
+  padding: 2rem 2.5rem;
+  /* Add minimum height for content */
+  min-height: calc(100vh - 4rem);
+}
+
+/* Cập nhật header giống Notes */
+.goals-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .goals-page-title {
@@ -75,7 +106,7 @@
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.025em;
-  margin-bottom: 1.5rem;
+  margin: 0;
   position: relative;
   display: inline-block;
 }
@@ -92,18 +123,17 @@
 }
 
 .goals-header {
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 .goals-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  width: 100%;
   gap: 1rem;
 }
 
-/* --- Button Styles (Đồng nhất với Notes) --- */
+/* Button Styles - đồng nhất với Notes */
 .goals-btn {
   padding: 0.8rem 1.5rem;
   border-radius: var(--border-radius-md);
@@ -188,170 +218,181 @@
   border-color: #fca5a5;
 }
 
-.goals-filter-tabs {
+/* Filter Dropdown - giữ nguyên vì đã đẹp */
+.goals-filter-dropdown {
   position: relative;
+  display: inline-block;
+}
+
+.goals-filter-dropdown-button {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 140px;
+  padding: 0.75rem 1rem;
   background-color: var(--surface-main);
-  padding: 6px;
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-main);
-}
-
-.goals-filter-highlight {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  height: calc(100% - 12px);
-  width: 0;
-  background-color: var(--surface-main);
-  border-radius: 6px;
-  box-shadow: var(--shadow-md);
-  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  z-index: 1;
-}
-
-.goals-filter-btn {
-  position: relative;
-  z-index: 2;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
+  color: var(--text-main);
   font-weight: 500;
-  background-color: transparent;
-  color: var(--text-light);
-  border: none;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: var(--transition-main);
-  font-size: 0.85rem;
-  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
-.goals-filter-btn.goals-active {
+.goals-filter-dropdown-button:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+.goals-filter-dropdown-button:focus {
+  outline: none;
+  border-color: var(--primary-main);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.goals-dropdown-icon {
+  transition: transform 0.3s ease;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+
+.goals-dropdown-icon-open {
+  transform: rotate(180deg);
+}
+
+.goals-filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: var(--surface-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  overflow: hidden;
+  animation: goals-dropdown-fade-in 0.2s ease-out;
+}
+
+@keyframes goals-dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.goals-filter-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border-bottom: 1px solid var(--border-main);
+}
+
+.goals-filter-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.goals-filter-dropdown-item:hover {
+  background-color: rgba(124, 58, 237, 0.05);
+  color: var(--primary-main);
+}
+
+.goals-filter-dropdown-item-active {
+  background-color: rgba(124, 58, 237, 0.1);
   color: var(--primary-main);
   font-weight: 600;
 }
 
-.goals-filter-btn:not(.goals-active):hover {
-  color: var(--text-dark);
+.goals-filter-dropdown-item-active:hover {
+  background-color: rgba(124, 58, 237, 0.15);
 }
 
+/* Grid layout - cập nhật để giống Notes */
 .goals-grid {
-  max-height: 78vh;
-  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
-  padding-right: 8px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: goals-fadeIn 0.4s ease forwards;
+  /* Add proper bottom padding */
+  padding-bottom: 2rem;
+  /* Add proper margin */
+  margin-bottom: 2rem;
 }
 
-/* --- Loading Spinner & Empty State (NEW - UPDATED) --- */
-@keyframes goals-spinner-rotate {
-  100% {
-    transform: rotate(360deg);
+@keyframes goals-fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes goals-spinner-dot-fade {
-  80%,
+/* Loading & Empty States - giống Notes */
+@keyframes goals-pulse {
+  0%,
   100% {
-    opacity: 0;
-  }
-  40% {
     opacity: 1;
   }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-.goals-loading-container,
-.goals-no-goals-found {
-  grid-column: 1 / -1;
+.goals-loading {
+  animation: goals-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.goals-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 5rem 2rem;
-  min-height: 40vh;
-  color: var(--text-light);
-  font-size: 1.1rem;
   text-align: center;
+  color: var(--text-light);
+  grid-column: 1 / -1;
+  min-height: 50vh;
 }
 
-.goals-loading-spinner {
-  position: relative;
-  width: 50px;
-  height: 50px;
-  animation: goals-spinner-rotate 2.5s infinite linear;
+.goals-empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--primary-light);
+  opacity: 0.7;
+}
+
+.goals-empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.goals-empty-state p {
+  font-size: 1rem;
+  color: var(--text-light);
   margin-bottom: 1.5rem;
+  max-width: 400px;
+  line-height: 1.5;
 }
 
-.goals-loading-spinner div {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-.goals-loading-spinner div::before {
-  content: "";
-  display: block;
-  width: 15%; /* Kích thước của chấm */
-  height: 15%; /* Kích thước của chấm */
-  background-color: var(--primary-light);
-  border-radius: 100%;
-  animation: goals-spinner-dot-fade 1.2s infinite ease-in-out both;
-}
-
-.goals-loading-spinner div:nth-child(1) {
-  transform: rotate(0deg);
-}
-.goals-loading-spinner div:nth-child(2) {
-  transform: rotate(45deg);
-}
-.goals-loading-spinner div:nth-child(3) {
-  transform: rotate(90deg);
-}
-.goals-loading-spinner div:nth-child(4) {
-  transform: rotate(135deg);
-}
-.goals-loading-spinner div:nth-child(5) {
-  transform: rotate(180deg);
-}
-.goals-loading-spinner div:nth-child(6) {
-  transform: rotate(225deg);
-}
-.goals-loading-spinner div:nth-child(7) {
-  transform: rotate(270deg);
-}
-.goals-loading-spinner div:nth-child(8) {
-  transform: rotate(315deg);
-}
-
-.goals-loading-spinner div:nth-child(1)::before {
-  animation-delay: -1.1s;
-}
-.goals-loading-spinner div:nth-child(2)::before {
-  animation-delay: -1s;
-}
-.goals-loading-spinner div:nth-child(3)::before {
-  animation-delay: -0.9s;
-}
-.goals-loading-spinner div:nth-child(4)::before {
-  animation-delay: -0.8s;
-}
-.goals-loading-spinner div:nth-child(5)::before {
-  animation-delay: -0.7s;
-}
-.goals-loading-spinner div:nth-child(6)::before {
-  animation-delay: -0.6s;
-}
-.goals-loading-spinner div:nth-child(7)::before {
-  animation-delay: -0.5s;
-}
-.goals-loading-spinner div:nth-child(8)::before {
-  animation-delay: -0.4s;
-}
-
+/* Card styles - cập nhật để giống Notes */
 .goals-card {
   background-color: var(--surface-main);
   border-radius: var(--border-radius-lg);
@@ -364,6 +405,7 @@
   position: relative;
   overflow: hidden;
   transform-origin: center bottom;
+  cursor: pointer;
 }
 
 .goals-card::before {
@@ -394,12 +436,14 @@
 
 .goals-card:hover {
   transform: perspective(1000px) translateY(-8px) rotateX(5deg) scale(1.02);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border-color: var(--primary-light);
 }
 
 .goals-card:hover::before {
   opacity: 0.25;
+  background: var(--primary-light);
 }
 
 .goals-card:hover::after {
@@ -461,15 +505,15 @@
 .goals-card-menu {
   color: var(--text-light);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-main);
   padding: 0.2rem;
   border-radius: 4px;
   font-size: 0.9rem;
+  z-index: 2;
 }
 
-.goals-card-menu:hover {
+.goals-card:hover .goals-card-menu {
   color: var(--primary-main);
-  background-color: rgba(124, 58, 237, 0.1);
   transform: rotate(90deg);
 }
 
@@ -503,7 +547,7 @@
   font-weight: 700;
 }
 
-/* --- Progress Bar (Cập nhật phong cách) --- */
+/* Progress Bar - cập nhật */
 .goals-card-progress {
   margin-bottom: 1rem;
 }
@@ -537,7 +581,7 @@
   font-weight: 500;
 }
 
-/* --- Status Tags (Cập nhật phong cách) --- */
+/* Status Tags - cập nhật */
 .goals-card-status {
   font-size: 0.75rem;
   padding: 0.25rem 0.75rem;
@@ -547,173 +591,27 @@
   align-self: flex-start;
 }
 
-/* MỚI (Xanh dương) */
-
 .goals-status-tag-new {
   background-color: rgba(124, 58, 237, 0.1);
   color: var(--primary-deep);
 }
 
-/* CHƯA HOÀN THÀNH (Đỏ) - ĐÃ CẬP NHẬT */
 .goals-status-tag-in-progress {
   background-color: var(--accent-red-light);
   color: var(--accent-red-dark);
 }
-
-/* HOÀN THÀNH (Xanh lá) */
 
 .goals-status-tag-completed {
   background-color: var(--accent-green-light);
   color: #047857;
 }
 
-/* ĐÃ HỦY (Xám) */
-
 .goals-status-tag-cancelled {
   background-color: var(--accent-grey-light);
   color: var(--text-light);
 }
 
-/* --- Milestones (Cập nhật phong cách) --- */
-.goals-card-milestones {
-  margin-top: auto;
-  border-top: 1px solid var(--border-main);
-  padding-top: 1rem;
-}
-
-.goals-card-milestones h4 {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.goals-card-milestones h4::before {
-  content: "";
-  display: block;
-  width: 10px;
-  height: 2px;
-  background-color: var(--primary-main);
-}
-
-.goals-milestone-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.2rem;
-  transition: var(--transition-fast);
-  border-radius: 4px;
-}
-
-.goals-milestone-item:not(:last-child) {
-  border-bottom: 1px solid var(--border-main);
-}
-
-.goals-milestone-checkbox {
-  margin-right: 0.5rem;
-  accent-color: var(--primary-main);
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.goals-milestone-text {
-  flex-grow: 1;
-  font-size: 0.85rem;
-  transition: var(--transition-fast);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer; /* Thêm để người dùng biết có thể click */
-}
-
-.goals-milestone-checkbox:checked + .goals-milestone-text {
-  text-decoration: line-through;
-  color: var(--text-light);
-}
-
-.goals-milestone-date {
-  font-size: 0.7rem;
-  color: var(--text-light);
-  background-color: var(--accent-grey-light);
-  padding: 2px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-  transition: var(--transition-fast);
-}
-
-.goals-milestone-item:hover {
-  background-color: rgba(124, 58, 237, 0.05);
-}
-
-.goals-milestone-item:hover .goals-milestone-date {
-  background-color: var(--primary-main);
-  color: var(--text-on-primary);
-}
-
-/* --- Footer (Cập nhật phong cách) --- */
-.goals-card-footer {
-  margin-top: 1rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid var(--border-main);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.goals-user-avatars {
-  display: flex;
-  align-items: center;
-  padding-left: 12px;
-}
-
-.goals-user-avatars img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--surface-main);
-  box-shadow: var(--shadow-sm);
-  margin-left: -12px;
-  transition: var(--transition-fast);
-  background-color: var(--accent-grey-light);
-  cursor: pointer;
-}
-
-.goals-user-avatars img:first-child {
-  margin-left: 0;
-}
-
-.goals-user-avatars img:hover {
-  transform: translateY(-4px) scale(1.05);
-  z-index: 10;
-}
-
-.goals-card-stats {
-  display: flex;
-  gap: 0.8rem;
-  color: var(--text-light);
-  font-size: 0.75rem;
-}
-
-.goals-card-stats span {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  transition: var(--transition-fast);
-}
-
-.goals-card-stats span:hover {
-  color: var(--primary-main);
-  transform: scale(1.1);
-}
-
-/* --- Modal Styles (Đồng nhất với Notes) --- */
+/* Modal Styles - đồng nhất với Notes */
 @keyframes goals-modalFadeIn {
   from {
     opacity: 0;
@@ -758,6 +656,8 @@
   display: flex;
   flex-direction: column;
   animation: goals-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Hide scrollbar in modal */
+  overflow: hidden;
 }
 
 .goals-modal-header {
@@ -814,10 +714,12 @@
     rgba(167, 139, 250, 0.1),
     transparent 50%
   );
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* Hide scrollbar but allow scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
+/* Hide scrollbar for webkit browsers in modal body */
 .goals-modal-body::-webkit-scrollbar {
   display: none;
 }
@@ -886,7 +788,7 @@
   margin-right: auto;
 }
 
-/* --- Form Group Inline (Cập nhật phong cách) --- */
+/* Form Group Inline */
 .goals-form-group-inline {
   display: flex;
   gap: 1rem;
@@ -896,122 +798,45 @@
   flex: 1;
 }
 
-/* --- Milestone Form Items (Cập nhật phong cách) --- */
-.goals-form-milestone {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.goals-form-milestone input[type="text"] {
-  flex: 2;
-}
-
-.goals-form-milestone input[type="date"] {
-  flex: 1;
-}
-
-.goals-form-remove-milestone {
-  background: none;
-  border: none;
+/* Error text styles */
+.error-text {
   color: var(--accent-red);
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: var(--transition-main);
+  font-size: 0.8rem;
 }
 
-.goals-form-remove-milestone:hover {
-  background-color: #fee2e2;
+.form-error {
+  color: var(--accent-red);
+  text-align: center;
+  padding: 1rem;
 }
 
-/* --- Collaborator Form Items (NEW) --- */
-.goals-form-collaborators-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.goals-form-collaborator-item {
-  position: relative;
-  transition: transform 0.2s ease;
-}
-
-.goals-form-collaborator-item:hover {
-  transform: scale(1.05);
-}
-
-.goals-form-collaborator-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--surface-main);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background-color: var(--accent-grey-light);
-}
-
-.goals-form-collaborator-remove {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: var(--accent-red);
-  color: white;
-  border: 1px solid var(--surface-main);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  line-height: 1;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.2s ease;
-  padding: 0;
-}
-
-.goals-form-collaborator-item:hover .goals-form-collaborator-remove {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.goals-form-collaborator-remove:hover {
-  background-color: #b91c1c;
-}
-
-.goals-form-add-collaborator {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.goals-form-add-collaborator input {
-  flex-grow: 1;
-}
-
-.goals-form-add-collaborator .goals-btn {
-  padding: 0.8rem;
-  flex-shrink: 0;
-}
-
-/* --- Responsive Adjustments (Đồng nhất với Notes) --- */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .goals-main-content {
+  .goals-section {
     padding: 1.5rem;
+    /* Ensure proper minimum height on mobile */
+    min-height: calc(100vh - 3rem);
+  }
+
+  .goals-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
   .goals-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
     gap: 1rem;
+    width: 100%;
+  }
+
+  .goals-filter-dropdown {
+    flex: 1;
+  }
+
+  .goals-filter-dropdown-button {
+    width: 100%;
   }
 
   .goals-grid {
@@ -1022,5 +847,23 @@
   .goals-form-group-inline {
     flex-direction: column;
     gap: 0;
+  }
+  
+  .goals-page-title {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .goals-section {
+    padding: 1rem;
+    /* Adjust minimum height for very small screens */
+    min-height: calc(100vh - 2rem);
+  }
+  
+  .goals-modal-content {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
   }
 }

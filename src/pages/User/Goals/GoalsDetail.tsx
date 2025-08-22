@@ -24,7 +24,7 @@ import {
 import MilestoneList from "../../../components/User/MilestoneList";
 import CollaboratorList from "../../../components/User/CollaboratorList";
 import ProgressChart from "../../../components/User/ProgressChart";
-import "../../../assets/css/User/GoalDetail.css";
+import "../../../assets/css/User/goalDetail.css"; // Sửa từ GoalDetail.css thành goalDetail.css
 
 // --- Interfaces ---
 type Status = "in_progress" | "completed" | "new" | "cancelled";
@@ -278,7 +278,11 @@ const GoalDetailPage: React.FC = () => {
   if (loading && !goal) {
     return (
       <div className="goal-detail-loading">
-        <div className="spinner"></div>
+        <div className="goal-detail-loading-dots">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
         <p>Loading goal details...</p>
       </div>
     );
@@ -384,7 +388,9 @@ const GoalDetailPage: React.FC = () => {
                 rows={5}
               />
             ) : (
-              <p>{goal.description || "No description provided."}</p>
+              <p className="goal-description-text">
+                {goal.description || "No description provided."}
+              </p>
             )}
           </section>
 
@@ -440,67 +446,8 @@ const GoalDetailPage: React.FC = () => {
           )}
 
           <section className="goal-section">
-            <h2>Sharing Settings</h2>
-            <div className="sharing-options">
-              {(["private", "friends", "public"] as Sharing[]).map((type) => (
-                <button
-                  key={type}
-                  className={`sharing-option ${
-                    shareType === type ? "active" : ""
-                  }`}
-                  onClick={() => handleUpdateSharing(type)}
-                  disabled={loading}
-                >
-                  <FontAwesomeIcon icon={sharingIcons[type]} />
-                  <span>{sharingTitles[type]}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Right Column */}
-        <div className="goal-detail-right">
-          <section className="goal-section">
             <h2>Progress</h2>
             <ProgressChart progress={goal.progress?.progress_value || 0} />
-          </section>
-
-          <section className="goal-section">
-            <div className="section-header">
-              <h2>Milestones</h2>
-            </div>
-            <MilestoneList
-              milestones={goal.milestones || []}
-              goalId={goal.goal_id}
-              onRefresh={fetchGoalDetails}
-              goalStartDate={goal.start_date}
-              goalEndDate={goal.end_date}
-            />
-          </section>
-
-          <section className="goal-section">
-            <div className="section-header">
-              <h2>Collaborators</h2>
-            </div>
-            <CollaboratorList
-              collaborators={goal.collaborations || []}
-              onRemove={handleRemoveCollaborator}
-            />
-            <div className="add-collaborator">
-              <input
-                type="email"
-                placeholder="Add collaborator by email"
-                value={newCollaboratorEmail}
-                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
-              />
-              <button
-                onClick={handleAddCollaborator}
-                disabled={!newCollaboratorEmail.trim() || loading}
-              >
-                <FontAwesomeIcon icon={faPlus} /> Add
-              </button>
-            </div>
           </section>
 
           {(goal.notesCount || goal.attachmentsCount) && (
@@ -522,6 +469,71 @@ const GoalDetailPage: React.FC = () => {
               </div>
             </section>
           )}
+        </div>
+
+        {/* Right Column */}
+        <div className="goal-detail-right">
+          <section className="goal-section">
+            <div className="section-header">
+              <h2>Milestones</h2>
+            </div>
+            <MilestoneList
+              milestones={goal.milestones || []}
+              goalId={goal.goal_id}
+              onRefresh={fetchGoalDetails}
+              goalStartDate={goal.start_date}
+              goalEndDate={goal.end_date}
+            />
+          </section>
+
+          <section className="goal-section">
+            <div className="section-header">
+              <h2>Collaborators</h2>
+            </div>
+            <CollaboratorList
+              collaborators={
+                (goal.collaborations || []).map((collab) => ({
+                  ...collab,
+                  name: collab.user?.display_name || "",
+                  avatar: collab.user?.avatar || "",
+                }))
+              }
+              onRemove={handleRemoveCollaborator}
+            />
+            <div className="add-collaborator">
+              <input
+                type="email"
+                placeholder="Add collaborator by email"
+                value={newCollaboratorEmail}
+                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
+              />
+              <button
+                onClick={handleAddCollaborator}
+                disabled={!newCollaboratorEmail.trim() || loading}
+              >
+                <FontAwesomeIcon icon={faPlus} /> Add
+              </button>
+            </div>
+          </section>
+
+          <section className="goal-section">
+            <h2>Sharing Settings</h2>
+            <div className="sharing-options">
+              {(["private", "friends", "public"] as Sharing[]).map((type) => (
+                <button
+                  key={type}
+                  className={`sharing-option ${
+                    shareType === type ? "active" : ""
+                  }`}
+                  onClick={() => handleUpdateSharing(type)}
+                  disabled={loading}
+                >
+                  <FontAwesomeIcon icon={sharingIcons[type]} />
+                  <span>{sharingTitles[type]}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
 

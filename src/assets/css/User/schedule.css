@@ -1,4 +1,3 @@
-/* --- ROOT & GENERAL STYLES (Đồng nhất với Notes và Goals) --- */
 :root {
   --primary-glow: rgba(167, 139, 250, 0.4);
   --primary-deep: #4c1d95;
@@ -40,7 +39,29 @@
   --transition-fast: all 0.2s ease;
 }
 
-/* --- Main Content Area (Đồng nhất với Notes và Goals) --- */
+/* Ẩn scrollbar cho tất cả các trình duyệt */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE and Edge Legacy */
+body {
+  -ms-overflow-style: none;
+}
+
 .schedule-main-content {
   background-color: var(--background-main);
   background-image: radial-gradient(
@@ -48,15 +69,20 @@
     rgba(167, 139, 250, 0.05) 0%,
     transparent 20%
   );
-  padding: 2rem 2.5rem;
-  min-height: 100vh;
+  width: 100%;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* Thêm khả năng cuộn giống Friends */
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  /* Thay đổi padding và min-height */
+  padding: 2rem 2.5rem;
+  min-height: calc(100vh - 4rem);
 }
 
+/* Hide scrollbar for webkit browsers on main content */
 .schedule-main-content::-webkit-scrollbar {
   display: none;
 }
@@ -66,6 +92,7 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr);
   gap: 2rem;
+  margin-bottom: 50px;
 }
 
 /* --- Calendar Container --- */
@@ -76,10 +103,6 @@
   box-shadow: var(--shadow-md);
   padding: 1.5rem;
   transition: var(--transition-main);
-}
-
-.schedule-calendar-container:hover {
-  box-shadow: var(--shadow-lg);
 }
 
 .schedule-calendar-header {
@@ -230,6 +253,13 @@
   gap: 5px;
   overflow-y: auto;
   flex-grow: 1;
+  /* Ẩn scrollbar trong events */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.schedule-events-in-day::-webkit-scrollbar {
+  display: none;
 }
 
 .schedule-event-item {
@@ -290,19 +320,29 @@
   border-radius: 2px;
 }
 
-/* --- Agenda List --- */
+/* --- Agenda List (Cập nhật để có thể cuộn) --- */
 .schedule-agenda-list {
   background-color: var(--surface-main);
   border: 1px solid var(--border-main);
   border-radius: var(--border-radius-lg);
   padding: 1rem;
   flex-grow: 1;
+  /* Thêm khả năng cuộn và ẩn scrollbar */
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
   display: flex;
   flex-direction: column;
   gap: 1rem;
   box-shadow: var(--shadow-md);
   transition: var(--transition-main);
+  /* Thêm bottom padding để có khoảng trống ở cuối */
+  padding-bottom: 2rem;
+}
+
+/* Hide scrollbar for webkit browsers on agenda list */
+.schedule-agenda-list::-webkit-scrollbar {
+  display: none;
 }
 
 .schedule-agenda-list:hover {
@@ -371,7 +411,7 @@
   pointer-events: none;
 }
 
-/* --- Modal Styles (Đồng nhất với Notes và Goals) --- */
+/* --- Modal Styles (Cập nhật để ẩn scrollbar) --- */
 @keyframes schedule-modalFadeIn {
   from {
     opacity: 0;
@@ -416,6 +456,8 @@
   display: flex;
   flex-direction: column;
   animation: schedule-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Ẩn scrollbar trong modal */
+  overflow: hidden;
 }
 
 .schedule-modal-header {
@@ -472,10 +514,12 @@
     rgba(167, 139, 250, 0.1),
     transparent 50%
   );
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* Ẩn scrollbar trong modal body */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
+/* Hide scrollbar for webkit browsers in modal body */
 .schedule-modal-body::-webkit-scrollbar {
   display: none;
 }
@@ -649,10 +693,24 @@
 
   .schedule-main-content {
     padding: 1.5rem;
+    min-height: calc(100vh - 3rem);
   }
 
   .schedule-modal-group-inline {
     grid-template-columns: 1fr;
     gap: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-modal-content {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .schedule-main-content {
+    padding: 1rem;
+    min-height: calc(100vh - 2rem);
   }
 }

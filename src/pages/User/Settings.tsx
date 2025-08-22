@@ -332,11 +332,6 @@ if (!okCancel) return;
             <div></div>
             <div></div>
             <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
           </div>
           <p>Loading user data...</p>
         </div>

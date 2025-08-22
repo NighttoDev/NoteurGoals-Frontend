@@ -113,30 +113,36 @@
   left: 12px;
   color: var(--text-light);
   font-size: 1.1rem;
+  z-index: 10;
 }
 
 .search-container input {
   border: 1px solid var(--border-color);
-  background-color: #f3f4f6;
-  border-radius: 8px;
-  padding: 0.6rem 2rem 0.6rem 2.5rem;
+  background-color: #fcfcff; /* Surface alt từ notes.css */
+  border-radius: 12px; /* Border radius md từ notes.css */
+  padding: 0.8rem 2rem 0.8rem 2.5rem;
   width: 200px;
   font-family: var(--font-family);
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-dark);
-  transition: all 0.3s ease;
-  height: 36px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  height: 40px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02); /* Shadow từ notes.css */
 }
 
 .search-container input::placeholder {
   color: #9ca3af;
 }
 
+.search-container input:hover {
+  border-color: #a78bfa; /* Primary light từ notes.css */
+}
+
 .search-container input:focus {
   outline: none;
   border-color: var(--primary-purple);
   background-color: var(--white);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(167, 139, 250, 0.4); /* Primary glow từ notes.css */
   width: 240px;
 }
 
@@ -149,6 +155,7 @@
   cursor: pointer;
   font-size: 1.1rem;
   padding: 0;
+  z-index: 10;
 }
 
 /* --- Notification Button --- */
@@ -159,7 +166,7 @@
 }
 
 .notification-button {
-  background-color: #f3f4f6;
+  background-color: #f3f4f6; /* Màu xám nhạt như ban đầu */
   color: var(--text-light);
   border: 1px solid var(--border-color);
   border-radius: 50%;
@@ -170,16 +177,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
   position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Shadow nhẹ */
 }
 
 .notification-button:hover {
-  background-color: var(--primary-purple);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); /* Gradient vàng khi hover */
   color: var(--white);
-  border-color: var(--primary-purple);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(124, 58, 237, 0.3);
+  border-color: #f59e0b;
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4); /* Shadow md từ notes.css */
 }
 
 .notification-count {
@@ -200,25 +207,43 @@
   pointer-events: none;
 }
 
-/* --- User Avatar --- */
-.avatar-crown {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  color: #f5c518; /* gold */
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
+/* --- Trash Button --- */
+.trash-container {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  z-index: 15;
 }
-.avatar-crown svg { width: 12px; height: 12px; }
-.avatar-crown--dropdown { top: -6px; right: -6px; }
 
+.trash-button {
+  background-color: #f3f4f6; /* Màu xám nhạt như ban đầu */
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Shadow nhẹ */
+}
+
+.trash-button:hover {
+  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%); /* Gradient đỏ khi hover */
+  color: var(--white);
+  border-color: #ef4444;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4); /* Shadow md từ notes.css */
+}
+
+.trash-button.active {
+  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%);
+  color: var(--white);
+  border-color: #ef4444;
+}
+
+/* --- User Avatar --- */
 .user-avatar {
   position: relative;
   cursor: pointer;
@@ -231,8 +256,38 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Shadow từ notes.css */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
+  border: 2px solid var(--white);
+}
+
+/* Thêm lại CSS cho vương miện */
+.avatar-crown {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: var(--white);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--white);
+  z-index: 15;
+  animation: crown-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes crown-glow {
+  0% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(251, 191, 36, 0.4);
+  }
+  100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(251, 191, 36, 0.2);
+  }
 }
 
 .user-avatar::before {
@@ -246,19 +301,8 @@
   border: 2px solid var(--primary-purple);
   border-radius: 50%;
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
   z-index: -1;
-}
-
-.user-avatar:hover::before {
-  opacity: 1;
-  width: calc(100% + 8px);
-  height: calc(100% + 8px);
-}
-
-.user-avatar:hover img {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
 }
 
 .user-avatar::after {
@@ -282,22 +326,22 @@
   right: 0;
   width: 260px;
   background: var(--white);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-radius: 16px; /* Border radius lg từ notes.css */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* Shadow lg từ notes.css */
   z-index: 1000;
   overflow: hidden;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transition từ notes.css */
   border: 1px solid var(--border-color);
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
