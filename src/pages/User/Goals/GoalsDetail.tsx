@@ -590,10 +590,32 @@ const GoalDetailPage: React.FC = () => {
             <div className="section-header">
               <h2>Collaborators</h2>
             </div>
-            <CollaboratorList
-              collaborators={getCollaborators()}
-              onRemove={handleRemoveCollaborator}
-            />
+            
+            <div className="collaborator-list">
+              {getCollaborators().map((collaborator) => (
+                <div 
+                  key={collaborator.collab_id || collaborator.user_id} 
+                  className="collaborator-item"
+                  data-role={collaborator.role || "Member"}
+                  title={`${collaborator.name} (${collaborator.role || "Member"})`}
+                >
+                  <div className="collaborator-info">
+                    <span className="collaborator-name">
+                      {collaborator.name || "Unknown"}
+                    </span>
+                  </div>
+                  <button
+                    className="collaborator-remove"
+                    onClick={() => handleRemoveCollaborator(collaborator.user_id)}
+                    disabled={actionLoading}
+                    title="Remove collaborator"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            
             <div className="add-collaborator">
               <input
                 type="email"

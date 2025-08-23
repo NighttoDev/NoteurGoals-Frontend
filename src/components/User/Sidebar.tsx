@@ -7,6 +7,7 @@ import {
   AiOutlineBell,
   AiOutlineLogout,
   AiOutlineDelete, // Thêm icon thùng rác
+  AiOutlineFolder, // Thêm icon folder cho Files
 } from "react-icons/ai";
 import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
@@ -194,6 +195,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           </NavLink>
           <NavLink to="/notes" className={getNavLinkClass}>
             <BiNote /> NOTES
+          </NavLink>
+          <NavLink to="/files" className={getNavLinkClass}>
+            <AiOutlineFolder /> FILES
           </NavLink>
           <NavLink to="/schedule" className={getNavLinkClass}>
             <BsCalendar3 /> SCHEDULE

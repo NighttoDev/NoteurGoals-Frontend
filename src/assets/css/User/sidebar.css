@@ -109,10 +109,10 @@ body {
   text-decoration: none;
   color: var(--text-light);
   font-weight: 640;
-  padding: 0.70rem 8px;
+  padding: 0.70rem 0rem;
   position: relative;
   transition: var(--transition-main);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   letter-spacing: 0.025em;
 }
 

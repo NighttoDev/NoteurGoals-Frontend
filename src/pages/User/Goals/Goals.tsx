@@ -11,8 +11,8 @@ import {
   faTimes,
   faChevronDown,
   faBullseye,
-  faStickyNote,  // Thêm import này
-  faPaperclip,   // Thêm import này
+  faStickyNote,
+  faPaperclip,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getGoals,
@@ -25,7 +25,6 @@ import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext";
 import { useToastHelpers } from "../../../hooks/toastContext";
 import { useConfirm } from "../../../hooks/confirmContext";
-
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -217,7 +216,7 @@ const GoalsPage: React.FC = () => {
   const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Thêm state cho dropdown
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -226,41 +225,48 @@ const GoalsPage: React.FC = () => {
     description: "",
     start_date: "",
     end_date: "",
-    share_type: "private" as Sharing, // Sửa tên để khớp API
+    share_type: "private" as Sharing,
   });
   const [milestones, setMilestones] = useState<
     Omit<Milestone, "goal_id" | "milestone_id">[]
   >([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null); // Ref cho dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { searchTerm } = useSearch();
 
-  // Fetch goals
+  // Fetch goals - BỎ isInitialLoad ra khỏi dependency array
   const fetchGoals = useCallback(async () => {
-    setLoading(true);
+    // Chỉ hiển thị loading spinner nhỏ khi không phải lần đầu load
+    if (!isInitialLoad) {
+      setLoading(true);
+    }
+    
     try {
       const res = await getGoals({ status: filter, search: searchTerm });
-      // API trả về object phân trang, dữ liệu nằm trong res.data.data
       const goalsData = res.data.data || res.data || [];
       setGoals(goalsData);
+      setErrorMsg(""); // Clear error khi load thành công
     } catch (err) {
       setErrorMsg("Failed to load goals.");
       console.error(err);
     } finally {
       setLoading(false);
+      // Set isInitialLoad = false sau lần load đầu tiên
+      setIsInitialLoad(false);
     }
-  }, [filter, searchTerm]);
+  }, [filter, searchTerm]); // BỎ isInitialLoad ra khỏi đây
 
   useEffect(() => {
     // Thêm debounce để tránh gọi API liên tục khi gõ search
     const handler = setTimeout(() => {
       fetchGoals();
-    }, 300); // Đợi 300ms sau khi người dùng ngừng gõ
+    }, 300);
 
     return () => {
       clearTimeout(handler);
@@ -409,6 +415,30 @@ const GoalsPage: React.FC = () => {
     </div>
   );
 
+  // Hiển thị loading screen chỉ khi đang load lần đầu
+  if (isInitialLoad) {
+    return (
+      <main
+        className="goals-main-content"
+        style={{ margin: "0", borderRadius: "0" }}
+      >
+        <section className="goals-section">
+          <div className="goals-page-header">
+            <h1 className="goals-page-title">My Goals</h1>
+          </div>
+          <div className="goals-loading-container">
+            <div className="goals-loading-spinner">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+            <p>Loading goals...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main
       className="goals-main-content"
@@ -462,11 +492,19 @@ const GoalsPage: React.FC = () => {
         </div>
 
         {errorMsg && (
-          <div
-            className="form-error"
-            style={{ color: "red", textAlign: "center", padding: "1rem" }}
-          >
+          <div className="form-error">
             {errorMsg}
+          </div>
+        )}
+        
+        {/* Chỉ hiển thị loading spinner nhỏ khi đang filter/search và không phải lần đầu load */}
+        {loading && !isInitialLoad && (
+          <div className="goals-filter-loading">
+            <div className="goals-loading-spinner">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
           </div>
         )}
         
@@ -475,12 +513,13 @@ const GoalsPage: React.FC = () => {
             goals.map((goal) => (
               <GoalCard key={goal.goal_id} goal={goal} />
             ))
-          ) : (
+          ) : !loading ? (
             renderEmptyState()
-          )}
+          ) : null}
         </div>
       </section>
 
+      {/* Modal code remains the same */}
       {isModalOpen && (
         <div className="goals-modal-overlay" onClick={closeModal}>
           <div

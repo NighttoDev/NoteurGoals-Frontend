@@ -19,10 +19,10 @@ import {
   faBullseye,
   faPaperclip,
   faNoteSticky,
-  faSpinner, // Thêm dòng này
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
-import { useSearch } from "../../../hooks/searchContext"; // Thêm dòng này
+import { useSearch } from "../../../hooks/searchContext";
 import { useToastHelpers } from "../../../hooks/toastContext";
 
 interface NotesCard {
@@ -56,13 +56,17 @@ const NotesPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NotesCard | null>(null);
   const [notes, setNotes] = useState<NotesCard[]>([]);
-  const [loading, setLoading] = useState(false);
+  
+  // Tách loading thành 2 state riêng biệt
+  const [fetchLoading, setFetchLoading] = useState(true); // Loading khi fetch notes
+  const [actionLoading, setActionLoading] = useState(false); // Loading khi thực hiện actions
+  
   const [goals, setGoals] = useState<GoalOption[]>([]);
   const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
   const [addForm, setAddForm] = useState({ title: "", content: "" });
   const [editForm, setEditForm] = useState({ title: "", content: "" });
 
-  const { searchTerm } = useSearch(); // Lấy searchTerm từ context
+  const { searchTerm } = useSearch();
 
   useEffect(() => {
     fetchNotes();
@@ -70,6 +74,7 @@ const NotesPage: React.FC = () => {
   }, []);
 
   const fetchNotes = async () => {
+    setFetchLoading(true); // Set loading khi bắt đầu fetch
     try {
       const res = await getNotes();
       const rawNotes = Array.isArray(res.data) ? res.data : res.data.data;
@@ -102,6 +107,8 @@ const NotesPage: React.FC = () => {
         toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
       }
       setNotes([]);
+    } finally {
+      setFetchLoading(false); // Tắt loading sau khi fetch xong
     }
   };
 
@@ -150,7 +157,7 @@ const NotesPage: React.FC = () => {
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setActionLoading(true); // Sử dụng actionLoading
     try {
       const payload = { title: addForm.title, content: addForm.content };
       const res = await createNote(payload);
@@ -189,14 +196,14 @@ const NotesPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err.message || "Failed to create note");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingNote) return;
-    setLoading(true);
+    setActionLoading(true); // Sử dụng actionLoading
     try {
       const payload = { title: editForm.title, content: editForm.content };
       await updateNote(editingNote.id, payload);
@@ -206,36 +213,36 @@ const NotesPage: React.FC = () => {
         .filter((g) => selectedGoalIds.includes(g.id))
         .map((g) => ({ id: g.id, type: "goal" as const, title: g.title }));
 
-    setNotes((prev) => {
-      const updated = prev.map((note) =>
-        note.id === editingNote.id
-          ? {
-              ...note,
-              ...payload,
-              updatedDate: new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              }),
-              linkedGoals: updatedLinkedGoals,
-            }
-          : note
-      );
-      localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-    closeEditModal();
-    toast.success("Note updated successfully!");
-  } catch (err: any) {
-    toast.error(err.message || "Failed to update note");
-  } finally {
-    setLoading(false);
-  }
+      setNotes((prev) => {
+        const updated = prev.map((note) =>
+          note.id === editingNote.id
+            ? {
+                ...note,
+                ...payload,
+                updatedDate: new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric",
+                }),
+                linkedGoals: updatedLinkedGoals,
+              }
+            : note
+        );
+        localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      closeEditModal();
+      toast.success("Note updated successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update note");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure?")) {
-      setLoading(true);
+      setActionLoading(true); // Sử dụng actionLoading
       try {
         if (editingNote) {
           await deleteNote(editingNote.id);
@@ -246,16 +253,18 @@ const NotesPage: React.FC = () => {
           });
         }
         closeEditModal();
-       toast.success("Note updated successfully!");
+        toast.success("Note deleted successfully!");
       } catch (err: any) {
         alert(err.message || "Failed to delete note");
       } finally {
-        setLoading(false);
+        setActionLoading(false);
       }
     }
   };
 
-  const showLoading = notes.length === 0 && loading;
+  // Cập nhật logic hiển thị loading
+  const showLoading = fetchLoading; // Hiển thị loading khi đang fetch notes
+  const showEmptyState = !fetchLoading && notes.length === 0; // Hiển thị empty state khi không có loading và không có notes
 
   // Lọc notes theo searchTerm
   const filteredNotes = notes.filter(
@@ -286,11 +295,12 @@ const NotesPage: React.FC = () => {
   );
 
   const renderLoading = () => (
-    <div className="notes-empty-state">
-      <FontAwesomeIcon
-        icon={faNoteSticky}
-        className="notes-empty-state-icon notes-loading"
-      />
+    <div className="notes-loading-container">
+      <div className="notes-loading-spinner">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
       <p>Loading your notes...</p>
     </div>
   );
@@ -316,7 +326,6 @@ const NotesPage: React.FC = () => {
       style={{ margin: "0", borderRadius: "0" }}
     >
       <section className="notes-container-section">
-        {/* Thay đổi cấu trúc header */}
         <div className="notes-header-container">
           <h1 className="notes-page-title">My Notes</h1>
           
@@ -351,7 +360,7 @@ const NotesPage: React.FC = () => {
         <div className={`notes-main-container ${viewMode}-view`}>
           {showLoading
             ? renderLoading()
-            : filteredNotes.length === 0
+            : showEmptyState
             ? renderEmptyState()
             : filteredNotes.map((note) => (
                 <div
@@ -399,6 +408,7 @@ const NotesPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Modal forms với actionLoading thay vì loading */}
       {isAddModalOpen && (
         <div className="notes-modal-overlay" onClick={closeAddModal}>
           <div
@@ -441,16 +451,16 @@ const NotesPage: React.FC = () => {
                     type="button"
                     className="notes-btn notes-btn-secondary"
                     onClick={closeAddModal}
-                    disabled={loading}
+                    disabled={actionLoading}
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
                     className="notes-btn notes-btn-primary"
-                    disabled={loading}
+                    disabled={actionLoading}
                   >
-                    {loading ? (
+                    {actionLoading ? (
                       <FontAwesomeIcon icon={faSpinner} spin />
                     ) : (
                       "Save Note"
@@ -505,7 +515,7 @@ const NotesPage: React.FC = () => {
                     type="button"
                     className="notes-btn notes-btn-danger"
                     onClick={handleDelete}
-                    disabled={loading}
+                    disabled={actionLoading}
                   >
                     Delete
                   </button>
@@ -513,16 +523,16 @@ const NotesPage: React.FC = () => {
                     type="button"
                     className="notes-btn notes-btn-secondary"
                     onClick={closeEditModal}
-                    disabled={loading}
+                    disabled={actionLoading}
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
                     className="notes-btn notes-btn-primary"
-                    disabled={loading}
+                    disabled={actionLoading}
                   >
-                    {loading ? (
+                    {actionLoading ? (
                       <FontAwesomeIcon icon={faSpinner} spin />
                     ) : (
                       "Update Note"

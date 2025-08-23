@@ -45,20 +45,33 @@
   padding: 0;
 }
 
-/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+/* Custom scrollbar styling - completely hidden */
 ::-webkit-scrollbar {
   width: 0px;
+  height: 0px;
   background: transparent;
 }
 
-/* Hide scrollbar for Firefox */
-html {
-  scrollbar-width: none;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Hide scrollbar for IE and Edge Legacy */
-body {
-  -ms-overflow-style: none;
+::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar - hidden */
+html {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
 }
 
 /* --- 1. MAIN CONTENT & HEADER --- */
@@ -70,27 +83,19 @@ body {
     transparent 20%
   );
   width: 100%;
+  height: 100vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
-  /* Hide scrollbar but allow scrolling */
-  overflow-y: scroll;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-/* Hide scrollbar for webkit browsers on main content */
-.friends-main-content::-webkit-scrollbar {
-  display: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .friends-container-section {
-  /* Remove flex: 1 */
-  /* Remove display: flex and flex-direction: column */
   padding: 2rem 2.5rem;
-  /* Remove min-height: 0 */
-  /* Add minimum height for content */
-  min-height: calc(100vh - 4rem);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* NEW: Page header with title and add friend button */
@@ -321,6 +326,17 @@ body {
 /* --- 4. CONTENT AREA STYLES - CONNECTED TO TABS --- */
 .friends-content-area {
   margin-bottom: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.friends-content-area::-webkit-scrollbar {
+  display: none;
 }
 
 .friends-grid {
@@ -328,6 +344,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   width: 100%;
+  padding-bottom: 2rem;
 }
 
 /* Add specific class for collaborators and suggestions to override default behavior */
@@ -760,10 +777,12 @@ body {
 .friends-modal-body {
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex-grow: 1;
-  /* Hide scrollbar but allow scrolling */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  max-height: calc(90vh - 180px); /* Ensure modal body can scroll */
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* Hide scrollbar for webkit browsers in modal body */
@@ -829,9 +848,18 @@ body {
 .friends-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* Giảm từ 1rem xuống 0.75rem */
-  /* Add proper bottom padding */
+  gap: 0.75rem;
   padding-bottom: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 300px);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.friends-list::-webkit-scrollbar {
+  display: none;
 }
 
 .friends-list-item {
@@ -931,26 +959,16 @@ body {
 
 /* --- 9. RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 992px) {
-  .friends-content-header {
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch; /* Reset về stretch cho mobile */
-    gap: 1rem;
-  }
-  .friends-search-bar {
-    min-width: unset;
-    width: 100%;
+  .friends-container-section {
+    padding: 1.5rem 2rem;
   }
   
-  /* Responsive tabs */
-  .friends-tabs {
-    overflow-x: auto;
-    border-bottom: 1px solid var(--border-main);
+  .friends-list {
+    max-height: calc(100vh - 250px);
   }
   
-  .friends-tab {
-    flex: none;
-    min-width: 120px;
+  .collaborators-grid {
+    max-height: calc(100vh - 250px);
   }
 }
 
@@ -960,26 +978,12 @@ body {
     min-height: calc(100vh - 3rem);
   }
   
-  .friends-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .friends-list {
+    max-height: calc(100vh - 200px);
   }
   
-  .friends-page-header .friends-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .friends-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  /* Keep border tabs horizontal on mobile */
-  .friends-content-area {
-    border-radius: var(--border-radius-md);
-    padding: 1.5rem;
+  .collaborators-grid {
+    max-height: calc(100vh - 200px);
   }
 }
 
@@ -1057,6 +1061,16 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 1.5rem;
   padding-bottom: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 300px);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.collaborators-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .collaborator-card {
@@ -1344,6 +1358,9 @@ body {
   gap: 0.75rem;
   max-height: 300px;
   overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0; /* Remove space for scrollbar since it's hidden */
+  /* Hide scrollbar */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

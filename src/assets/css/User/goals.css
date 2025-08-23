@@ -870,60 +870,161 @@ body {
   color: var(--primary-main);
 }
 
-/* Responsive Adjustments */
+/* Loading Spinner (giống Settings) */
+@keyframes goalsPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes goalsDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.goals-loading-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 60vh;
+  margin: 2rem 0;
+}
+
+.goals-loading-container::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: goalsPulse 3s ease-in-out infinite;
+}
+
+.goals-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
+}
+
+.goals-loading-spinner div {
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-main);
+  border-radius: 50%;
+  animation: goalsDotBounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3);
+}
+
+.goals-loading-spinner div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.goals-loading-spinner div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.goals-loading-spinner div:nth-child(3) {
+  animation-delay: 0s;
+}
+
+.goals-loading-container p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.025em;
+}
+
+/* Loading spinner nhỏ cho filter/search */
+.goals-filter-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.goals-filter-loading .goals-loading-spinner {
+  margin-bottom: 0;
+}
+
+.goals-filter-loading .goals-loading-spinner div {
+  width: 8px;
+  height: 8px;
+}
+
+/* Responsive adjustments for loading */
 @media (max-width: 768px) {
-  .goals-section {
-    padding: 1.5rem;
-    /* Ensure proper minimum height on mobile */
-    min-height: calc(100vh - 3rem);
+  .goals-loading-container::before {
+    width: 200px;
+    height: 200px;
   }
 
-  .goals-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .goals-loading-spinner div {
+    width: 10px;
+    height: 10px;
   }
 
-  .goals-actions {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
+  .goals-loading-spinner {
+    gap: 0.4rem;
   }
 
-  .goals-filter-dropdown {
-    flex: 1;
+  .goals-loading-container p {
+    font-size: 1rem;
   }
 
-  .goals-filter-dropdown-button {
-    width: 100%;
-  }
-
-  .goals-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .goals-form-group-inline {
-    flex-direction: column;
-    gap: 0;
-  }
-  
-  .goals-page-title {
-    font-size: 1.75rem;
+  .goals-loading-container {
+    min-height: 50vh;
   }
 }
 
 @media (max-width: 480px) {
-  .goals-section {
-    padding: 1rem;
-    /* Adjust minimum height for very small screens */
-    min-height: calc(100vh - 2rem);
+  .goals-loading-container::before {
+    width: 150px;
+    height: 150px;
   }
-  
-  .goals-modal-content {
-    width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+
+  .goals-loading-spinner div {
+    width: 8px;
+    height: 8px;
+  }
+
+  .goals-loading-spinner {
+    gap: 0.3rem;
+  }
+
+  .goals-loading-container {
+    min-height: 40vh;
   }
 }
+
+/* ... rest of existing CSS ... */

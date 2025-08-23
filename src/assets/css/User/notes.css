@@ -743,8 +743,8 @@ body {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-/* --- 6. LOADING & EMPTY STATES --- */
-@keyframes notes-pulse {
+/* --- 6. LOADING & EMPTY STATES (Updated to match Settings) --- */
+@keyframes notesPulse {
   0%,
   100% {
     opacity: 1;
@@ -754,8 +754,92 @@ body {
   }
 }
 
+@keyframes notesDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.notes-loading-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  grid-column: 1 / -1;
+}
+
+.notes-loading-container::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: notesPulse 3s ease-in-out infinite;
+}
+
+.notes-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
+}
+
+.notes-loading-spinner div {
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-main);
+  border-radius: 50%;
+  animation: notesDotBounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3);
+}
+
+.notes-loading-spinner div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.notes-loading-spinner div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.notes-loading-spinner div:nth-child(3) {
+  animation-delay: 0s;
+}
+
+.notes-loading-container p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.025em;
+}
+
+/* Remove old loading animation if exists */
 .notes-loading {
-  animation: notes-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: notesPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .notes-empty-state {
@@ -775,6 +859,43 @@ body {
   margin-bottom: 1rem;
   color: var(--primary-light);
   opacity: 0.7;
+}
+
+/* Responsive adjustments for loading */
+@media (max-width: 768px) {
+  .notes-loading-container::before {
+    width: 200px;
+    height: 200px;
+  }
+
+  .notes-loading-spinner div {
+    width: 10px;
+    height: 10px;
+  }
+
+  .notes-loading-spinner {
+    gap: 0.4rem;
+  }
+
+  .notes-loading-container p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .notes-loading-container::before {
+    width: 150px;
+    height: 150px;
+  }
+
+  .notes-loading-spinner div {
+    width: 8px;
+    height: 8px;
+  }
+
+  .notes-loading-spinner {
+    gap: 0.3rem;
+  }
 }
 
 /* --- 7. RESPONSIVE ADJUSTMENTS --- */
