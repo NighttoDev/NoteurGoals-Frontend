@@ -16,6 +16,7 @@ import { useToastHelpers } from "../../hooks/toastContext";
 import { useConfirm } from "../../hooks/confirmContext";
 import ChatWindow from "../User/Chat/ChatWindow";
 import ErrorBoundary from "../../components/Common/ErrorBoundary";
+import { removeCollaborator } from "../../services/goalsService";
 
 interface UserCardData {
   friendship_id?: string;
@@ -32,6 +33,29 @@ interface UserCardData {
     | "request_sent"
     | "request_received"
     | "not_friends";
+}
+
+interface CollaboratorData extends UserCardData {
+  collaboration_id?: string;
+  shared_goals_count?: number;
+  active_goals_count?: number;
+  collaboration_role?: "owner" | "collaborator";
+  last_activity?: string;
+  shared_goals?: {
+    goal_id: string;
+    title: string;
+    status: string;
+    role: string;
+  }[];
+}
+
+interface SharedGoal {
+  goal_id: string;
+  title: string;
+  status: 'new' | 'in_progress' | 'completed' | 'cancelled';
+  role: 'owner' | 'collaborator';
+  progress_value?: number;
+  end_date?: string;
 }
 
 type ActiveTab = "friends" | "requests" | "collaborators" | "find-people";
@@ -77,7 +101,7 @@ const FriendsPage: React.FC = () => {
   const [friends, setFriends] = useState<UserCardData[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [suggestions, setSuggestions] = useState<UserCardData[]>([]);
-  const [collaborators, setCollaborators] = useState<UserCardData[]>([]);
+  const [collaborators, setCollaborators] = useState<CollaboratorData[]>([]);
 
   const { searchTerm } = useSearch();
   const [mainSearchResults, setMainSearchResults] = useState<UserCardData[]>(
@@ -93,6 +117,12 @@ const FriendsPage: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [userToReport, setUserToReport] = useState<UserCardData | null>(null);
   const [reportReason, setReportReason] = useState("");
+
+  // New states for collaborator details modal
+  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<CollaboratorData | null>(null);
+  const [collaboratorSharedGoals, setCollaboratorSharedGoals] = useState<SharedGoal[]>([]);
+  const [loadingSharedGoals, setLoadingSharedGoals] = useState(false);
 
   const [modalSearchQuery, setModalSearchQuery] = useState("");
   const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>([]);
@@ -228,7 +258,6 @@ const FriendsPage: React.FC = () => {
         );
       setSuggestions(updateUserState);
       setMainSearchResults(updateUserState);
-      setCollaborators(updateUserState);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to send request.");
     } finally {
@@ -248,7 +277,6 @@ const FriendsPage: React.FC = () => {
         status === "accepted" ? "Friend request accepted." : "Friend request rejected."
       );
 
-      // --- START: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
       if (status === "accepted") {
         const acceptedRequest = requests.find(
           (req) => req.friendship_id === friendshipId
@@ -256,13 +284,12 @@ const FriendsPage: React.FC = () => {
         if (acceptedRequest) {
           addNotification({
             id: `accepted-${friendshipId}`,
-            type: "friend_request_accepted", // Sử dụng type mới
+            type: "friend_request_accepted",
             message: `You are now friends with ${acceptedRequest.name}.`,
             link: "/friends",
           });
         }
       }
-      // --- END: THÊM LOGIC TẠO THÔNG BÁO TẠI ĐÂY ---
       
       fetchInitialData();
     } catch (err) {
@@ -316,7 +343,126 @@ const FriendsPage: React.FC = () => {
     }
   };
 
-  // ... (phần còn lại của file giữ nguyên) ...
+  // New function to view collaborator details
+  const handleViewCollaboratorDetails = async (collaborator: CollaboratorData) => {
+    setSelectedCollaborator(collaborator);
+    setShowCollaboratorModal(true);
+    setLoadingSharedGoals(true);
+    
+    try {
+      const response = await getSharedGoals(collaborator.id);
+      setCollaboratorSharedGoals(response.data.goals || []);
+    } catch (err) {
+      console.error("Failed to load shared goals:", err);
+      setCollaboratorSharedGoals([]);
+    } finally {
+      setLoadingSharedGoals(false);
+    }
+  };
+
+  // New function to remove collaborator
+  const handleRemoveCollaborator = async (userId: string, collaborationId: string) => {
+    const ok = await confirm({
+      title: "Remove Collaborator",
+      message: "Are you sure you want to remove this collaborator from all shared goals?",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    
+    if (ok) {
+      setCardLoading((prev) => ({ ...prev, [userId]: true }));
+      try {
+        await removeCollaborator(collaborationId, userId);
+        toast.success("Collaborator removed successfully.");
+        setCollaborators(prev => prev.filter(c => c.id !== userId));
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to remove collaborator.");
+      } finally {
+        setCardLoading((prev) => ({ ...prev, [userId]: false }));
+      }
+    }
+  };
+
+  const renderCollaboratorCard = (collaborator: CollaboratorData) => {
+    const isLoading = cardLoading[collaborator.id];
+    
+    return (
+      <div className="collaborator-card" key={`collaborator-${collaborator.id}`}>
+        <div className="collaborator-card-header">
+          <img
+            src={collaborator.avatar || `https://i.pravatar.cc/80?u=${collaborator.id}`}
+            alt="Avatar"
+            className="collaborator-avatar"
+          />
+          <div className="collaborator-info">
+            <h3 className="collaborator-name">
+              {collaborator.name}
+              {collaborator.is_premium && (
+                <i className="fas fa-crown" title="Premium User"></i>
+              )}
+            </h3>
+            <p className="collaborator-email">{collaborator.email}</p>
+            <div className="collaborator-stats">
+              <span className="stat-item">
+                <i className="fas fa-handshake"></i>
+                {collaborator.shared_goals_count || 0} Shared Goals
+              </span>
+              <span className="stat-item">
+                <i className="fas fa-clock"></i>
+                {collaborator.active_goals_count || 0} Active
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="collaborator-activity">
+          <div className="activity-indicator">
+            <span className="activity-dot active"></span>
+            <span>Last activity: {collaborator.last_activity ? 
+              new Date(collaborator.last_activity).toLocaleDateString() : 'Never'}</span>
+          </div>
+        </div>
+
+        <div className="collaborator-actions">
+          <button
+            className="btn-view-details"
+            onClick={() => handleViewCollaboratorDetails(collaborator)}
+          >
+            <i className="fas fa-eye"></i> View Goals
+          </button>
+          
+          {collaborator.friend_status === "friends" ? (
+            <button
+              className="btn-message"
+              onClick={() => setActiveChat(collaborator)}
+            >
+              <i className="fas fa-comment"></i> Message
+            </button>
+          ) : (
+            <button
+              className="btn-add-friend"
+              onClick={() => handleAddFriendFromCard(collaborator.id)}
+              disabled={isLoading}
+            >
+              <i className={`fas ${isLoading ? "fa-spinner fa-spin" : "fa-user-plus"}`}></i>
+              {isLoading ? "Sending..." : "Add Friend"}
+            </button>
+          )}
+          
+          <button
+            className="btn-remove-collaborator"
+            onClick={() => handleRemoveCollaborator(collaborator.id, collaborator.collaboration_id!)}
+            disabled={isLoading}
+            title="Remove from all collaborations"
+          >
+            <i className="fas fa-user-times"></i> Remove
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderUserCard = (
     user: UserCardData,
     type: "friend" | "suggestion" | "searchResult"
@@ -368,6 +514,83 @@ const FriendsPage: React.FC = () => {
         </div>
       );
     }
+
+    // For suggestions in list view when activeTab is "find-people"
+    if (type === "suggestion" && activeTab === "find-people") {
+      const isLoading = cardLoading[user.id];
+      return (
+        <div className="friends-list-item" key={`suggestion-${user.id}`}>
+          <div className="friends-list-item__info">
+            <img
+              src={user.avatar || `https://i.pravatar.cc/80?u=${user.id}`}
+              alt="Avatar"
+              className="friends-list-item__avatar"
+            />
+            <div className="friends-list-item__details">
+              <h3 className="friends-list-item__name">
+                {user.name}
+                {user.is_premium && (
+                  <i className="fas fa-crown" title="Premium User"></i>
+                )}
+              </h3>
+              <p className="friends-list-item__email">{user.email}</p>
+              {user.mutual_friends_count && user.mutual_friends_count > 0 && (
+                <p className="friends-mutual">
+                  <i className="fas fa-users"></i> {user.mutual_friends_count} mutual
+                  friend{user.mutual_friends_count > 1 ? "s" : ""}
+                </p>
+              )}
+              <div className="friends-list-item__stats">
+                <span>
+                  <i className="fas fa-bullseye"></i> {user.total_goals || 0}{" "}
+                  Goals
+                </span>
+                <span>
+                  <i className="fas fa-sticky-note"></i> {user.total_notes || 0}{" "}
+                  Notes
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="friends-list-item__actions">
+            {user.friend_status === "friends" ? (
+              <button className="friends-btn" disabled>
+                <i className="fas fa-user-check"></i> Friends
+              </button>
+            ) : user.friend_status === "request_sent" ? (
+              <button className="friends-btn" disabled>
+                <i className="fas fa-paper-plane"></i> Request Sent
+              </button>
+            ) : (
+              <button
+                className="friends-btn friends-btn-primary"
+                onClick={() => handleAddFriendFromCard(user.id)}
+                disabled={isLoading}
+              >
+                <i
+                  className={`fas ${
+                    isLoading ? "fa-spinner fa-spin" : "fa-user-plus"
+                  }`}
+                ></i>{" "}
+                {isLoading ? "Sending..." : "Add Friend"}
+              </button>
+            )}
+            <button
+              className="friends-action-btn friends-action-btn-reject"
+              title="Reject suggestion"
+              onClick={() => {
+                setSuggestions(prev => prev.filter(u => u.id !== user.id));
+                toast.success(`Removed ${user.name} from suggestions.`);
+              }}
+            >
+              <i className="fas fa-times"></i> Reject
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Default card view for other cases
     const isLoading = cardLoading[user.id];
     const renderActionButton = () => {
       switch (user.friend_status) {
@@ -440,14 +663,15 @@ const FriendsPage: React.FC = () => {
         <div className="friends-actions" style={{ marginTop: "1rem" }}>
           {renderActionButton()}
           <button
-            className="friends-action-btn friends-action-btn-report"
-            title="Report user"
+            className="friends-action-btn friends-action-btn-reject"
+            title="Reject suggestion"
             onClick={() => {
-              setUserToReport(user);
-              setShowReportModal(true);
+              setSuggestions(prev => prev.filter(u => u.id !== user.id));
+              setMainSearchResults(prev => prev.filter(u => u.id !== user.id));
+              toast.success(`Removed ${user.name} from suggestions.`);
             }}
           >
-            <i className="fas fa-ellipsis-h"></i>
+            <i className="fas fa-times"></i> Reject
           </button>
         </div>
       </div>
@@ -455,7 +679,19 @@ const FriendsPage: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) return <div className="friends-loading">Loading...</div>;
+    if (loading) {
+      return (
+        <div className="friends-loading">
+          <div className="friends-loading-dots">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <p>Loading friends...</p>
+        </div>
+      );
+    }
+    
     if (isMainSearching && searchTerm) {
       return (
         <div className="friends-grid">
@@ -499,7 +735,7 @@ const FriendsPage: React.FC = () => {
         );
       case "requests":
         return (
-          <div className="friends-grid">
+          <div className="friends-list">
             {requests.length === 0 ? (
               <div className="friends-empty-state">
                 <img
@@ -511,56 +747,49 @@ const FriendsPage: React.FC = () => {
               </div>
             ) : (
               requests.map((req) => (
-                <div className="friends-card" key={req.friendship_id}>
-                  <img
-                    src={req.avatar || `https://i.pravatar.cc/80?u=${req.id}`}
-                    alt="Avatar"
-                    className="friends-avatar"
-                  />
-                  <h3 className="friends-name">{req.name}</h3>
-                  <p className="friends-email">{req.email}</p>
-                  <span className={`friends-status friends-status-pending`}>
-                    {req.status === "received"
-                      ? "Request Received"
-                      : "Request Sent"}
-                  </span>
-                  <div className="friends-actions">
+                <div className="friends-list-item" key={req.friendship_id}>
+                  <div className="friends-list-item__info">
+                    <img
+                      src={req.avatar || `https://i.pravatar.cc/80?u=${req.id}`}
+                      alt="Avatar"
+                      className="friends-list-item__avatar"
+                    />
+                    <div className="friends-list-item__details">
+                      <h3 className="friends-list-item__name">{req.name}</h3>
+                      <p className="friends-list-item__email">{req.email}</p>
+                      <span className={`friends-status friends-status-pending`}>
+                        {req.status === "received" ? "Received" : "Sent"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="friends-list-item__actions">
                     {req.status === "received" ? (
                       <>
                         <button
                           className="friends-action-btn friends-action-btn-accept"
+                          onClick={() => handleRequestResponse(req.friendship_id, "accepted")}
                           disabled={loadingUserId === req.friendship_id}
-                          onClick={() =>
-                            handleRequestResponse(
-                              req.friendship_id!,
-                              "accepted"
-                            )
-                          }
                         >
-                          <i className="fas fa-check"></i> Accept
+                          <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-check"}`}></i>
+                          Accept
                         </button>
                         <button
                           className="friends-action-btn friends-action-btn-reject"
+                          onClick={() => handleRequestResponse(req.friendship_id, "rejected")}
                           disabled={loadingUserId === req.friendship_id}
-                          onClick={() =>
-                            handleRequestResponse(
-                              req.friendship_id!,
-                              "rejected"
-                            )
-                          }
                         >
-                          <i className="fas fa-times"></i> Reject
+                          <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-times"}`}></i>
+                          Decline
                         </button>
                       </>
                     ) : (
                       <button
                         className="friends-action-btn friends-action-btn-reject"
+                        onClick={() => handleDeleteFriendship(req.friendship_id)}
                         disabled={loadingUserId === req.friendship_id}
-                        onClick={() =>
-                          handleDeleteFriendship(req.friendship_id!)
-                        }
                       >
-                        <i className="fas fa-times"></i> Cancel
+                        <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-times"}`}></i>
+                        Cancel
                       </button>
                     )}
                   </div>
@@ -571,10 +800,10 @@ const FriendsPage: React.FC = () => {
         );
       case "collaborators":
         return (
-          <div className="friends-grid">
+          <div className="collaborators-grid">
             {collaborators.length === 0 ? (
               <div className="friends-empty-state">
-                 <img
+                <img
                   src="/images/no-collaborators.svg"
                   alt="No collaborators"
                   className="friends-empty-image"
@@ -585,19 +814,16 @@ const FriendsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              collaborators.map((user) => renderUserCard(user, "suggestion"))
+              collaborators.map((collaborator) => renderCollaboratorCard(collaborator))
             )}
           </div>
         );
       case "find-people":
         return (
-          <div className="friends-grid">
+          <div className="friends-list">
             {suggestions.length === 0 ? (
               <div className="friends-empty-state">
                 <h3 className="friends-empty-title">No Suggestions For Now</h3>
-                <p className="friends-empty-message">
-                  Check back later to discover new people!
-                </p>
               </div>
             ) : (
               suggestions.map((user) => renderUserCard(user, "suggestion"))
@@ -620,7 +846,15 @@ const FriendsPage: React.FC = () => {
   return (
     <main className="friends-main-content">
       <section className="friends-container-section">
-        <h1 className="friends-page-title">Community</h1>
+        <div className="friends-page-header">
+          <h1 className="friends-page-title">Community</h1>
+          <button
+            className="friends-btn friends-btn-primary"
+            onClick={() => setShowAddFriendModal(true)}
+          >
+            <i className="fas fa-user-plus"></i>Add Friend
+          </button>
+        </div>
         <div className="friends-content-header">
           <div className="friends-tabs">
             {[
@@ -639,15 +873,6 @@ const FriendsPage: React.FC = () => {
                 {tab.label}
               </div>
             ))}
-          </div>
-          <div style={{ flex: 1 }}></div>
-          <div className="friends-action-buttons">
-            <button
-              className="friends-btn friends-btn-primary"
-              onClick={() => setShowAddFriendModal(true)}
-            >
-              <i className="fas fa-user-plus"></i> Add Friend
-            </button>
           </div>
         </div>
         <div className="friends-content-area">{renderContent()}</div>
@@ -734,6 +959,86 @@ const FriendsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Collaborator Details Modal */}
+      {showCollaboratorModal && selectedCollaborator && (
+        <div className="friends-modal-overlay">
+          <div className="collaborator-modal-content">
+            <div className="friends-modal-header">
+              <h2>Collaboration with {selectedCollaborator.name}</h2>
+              <button
+                className="friends-modal-close-btn"
+                onClick={() => setShowCollaboratorModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="friends-modal-body">
+              <div className="collaborator-details">
+                <div className="collaborator-summary">
+                  <img
+                    src={selectedCollaborator.avatar || `https://i.pravatar.cc/80?u=${selectedCollaborator.id}`}
+                    alt="Avatar"
+                    className="collaborator-modal-avatar"
+                  />
+                  <div className="collaborator-modal-info">
+                    <h3>{selectedCollaborator.name}</h3>
+                    <p>{selectedCollaborator.email}</p>
+                    <div className="collaboration-stats">
+                      <span><i className="fas fa-handshake"></i> {selectedCollaborator.shared_goals_count || 0} Shared Goals</span>
+                      <span><i className="fas fa-clock"></i> {selectedCollaborator.active_goals_count || 0} Active</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="shared-goals-section">
+                  <h4>Shared Goals</h4>
+                  {loadingSharedGoals ? (
+                    <div className="loading-goals">Loading shared goals...</div>
+                  ) : collaboratorSharedGoals.length === 0 ? (
+                    <div className="no-shared-goals">No shared goals found.</div>
+                  ) : (
+                    <div className="shared-goals-list">
+                      {collaboratorSharedGoals.map((goal) => (
+                        <div key={goal.goal_id} className="shared-goal-item">
+                          <div className="goal-info">
+                            <h5>{goal.title}</h5>
+                            <div className="goal-meta">
+                              <span className={`goal-status status-${goal.status}`}>
+                                {goal.status.replace('_', ' ')}
+                              </span>
+                              <span className={`goal-role role-${goal.role}`}>
+                                {goal.role}
+                              </span>
+                            </div>
+                            {goal.progress_value !== undefined && (
+                              <div className="goal-progress">
+                                <div className="progress-bar">
+                                  <div 
+                                    className="progress-fill" 
+                                    style={{ width: `${goal.progress_value}%` }}
+                                  ></div>
+                                </div>
+                                <span>{goal.progress_value}%</span>
+                              </div>
+                            )}
+                          </div>
+                          <button 
+                            className="btn-view-goal"
+                            onClick={() => window.open(`/goals/${goal.goal_id}`, '_blank')}
+                          >
+                            <i className="fas fa-external-link-alt"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReportModal && userToReport && (
         <div className="friends-modal-overlay">
           <div className="friends-modal-content">
@@ -785,6 +1090,7 @@ const FriendsPage: React.FC = () => {
           </div>
         </div>
       )}
+      
       {activeChat && currentUserId && (
         <ErrorBoundary
           fallback={<div style={{padding:12}}>Chat failed to render.</div>}
@@ -802,3 +1108,9 @@ const FriendsPage: React.FC = () => {
 };
 
 export default FriendsPage;
+
+async function getSharedGoals(id: string): Promise<{ data: { goals: SharedGoal[] } }> {
+  // TODO: Replace with actual API call
+  // Example: return await fetchSharedGoalsFromApi(id);
+  return { data: { goals: [] } };
+}

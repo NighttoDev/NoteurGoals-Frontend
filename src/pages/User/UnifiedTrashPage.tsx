@@ -1,66 +1,87 @@
 // src/pages/User/UnifiedTrashPage.tsx
 
 import React, { useState } from "react";
-import TrashList from "../../components/User/TrashList";
-import "../../assets/css/User/unifiedTrashPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
-
-// Đã tách import thành 2 dòng
+import {
+  faStickyNote,
+  faCalendarAlt,
+  faBullseye,
+  faFile,
+} from "@fortawesome/free-solid-svg-icons";
+import TrashList from "../../components/User/TrashList";
 import { TrashableItems } from "../../types/types";
 import type { ItemType } from "../../types/types";
+import "../../assets/css/User/unifiedTrashPage.css";
 
 const UnifiedTrashPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ItemType>(TrashableItems.Notes);
 
+  const tabs = [
+    {
+      key: TrashableItems.Notes,
+      label: "Notes",
+      icon: faStickyNote,
+    },
+    {
+      key: TrashableItems.Goals,
+      label: "Goals",
+      icon: faBullseye,
+    },
+    {
+      key: TrashableItems.Schedule,
+      label: "Schedule",
+      icon: faCalendarAlt,
+    },
+    {
+      key: TrashableItems.Files,
+      label: "Files",
+      icon: faFile,
+    },
+  ];
+
+  const getTabTitle = (tabKey: ItemType) => {
+    const tab = tabs.find((t) => t.key === tabKey);
+    return tab ? tab.label : tabKey;
+  };
+
   return (
-    <main className="unified-trash-container">
-      <div className="unified-trash-header">
-        <h1>
-          <FontAwesomeIcon icon={faTrash} /> Thùng rác
-        </h1>
+    <div className="unified-trash-container">
+      {/* Sidebar */}
+      <div className="trash-sidebar">
+        <nav className="sidebar-nav">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`nav-button ${
+                activeTab === tab.key ? "active" : ""
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <FontAwesomeIcon icon={tab.icon} />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      <div className="trash-tabs">
-        {/* THAY ĐỔI 3: Mọi so sánh và gán giá trị đều dùng enum */}
-        <button
-          className={`tab-button ${
-            activeTab === TrashableItems.Notes ? "active" : ""
-          }`}
-          onClick={() => setActiveTab(TrashableItems.Notes)}
-        >
-          Ghi chú (Notes)
-        </button>
-        <button
-          className={`tab-button ${
-            activeTab === TrashableItems.Goals ? "active" : ""
-          }`}
-          onClick={() => setActiveTab(TrashableItems.Goals)}
-        >
-          Mục tiêu (Goals)
-        </button>
-        <button
-          className={`tab-button ${
-            activeTab === TrashableItems.Schedule ? "active" : ""
-          }`}
-          onClick={() => setActiveTab(TrashableItems.Schedule)}
-        >
-          Lịch trình (Schedule)
-        </button>
-        <button
-          className={`tab-button ${
-            activeTab === TrashableItems.Files ? "active" : ""
-          }`}
-          onClick={() => setActiveTab(TrashableItems.Files)}
-        >
-          Tệp tin (Files)
-        </button>
-      </div>
+      {/* Content Area */}
+      <div className="trash-content-area">
+        <div className="content-header">
+          <h2>
+            <FontAwesomeIcon
+              icon={
+                tabs.find((t) => t.key === activeTab)?.icon || faStickyNote
+              }
+            />
+            {getTabTitle(activeTab)}
+          </h2>
+        </div>
 
-      <div className="trash-content">
-        <TrashList key={activeTab} type={activeTab} />
+        <div className="trash-content">
+          <TrashList type={activeTab} />
+        </div>
       </div>
-    </main>
+    </div>
   );
 };
 

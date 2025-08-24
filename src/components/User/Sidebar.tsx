@@ -6,6 +6,8 @@ import {
   AiOutlineSearch,
   AiOutlineBell,
   AiOutlineLogout,
+  AiOutlineDelete, // Thêm icon thùng rác
+  AiOutlineFolder, // Thêm icon folder cho Files
 } from "react-icons/ai";
 import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
@@ -199,6 +201,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/notes" className={getNavLinkClass}>
             <BiNote /> NOTES
           </NavLink>
+          <NavLink to="/files" className={getNavLinkClass}>
+            <AiOutlineFolder /> FILES
+          </NavLink>
           <NavLink to="/schedule" className={getNavLinkClass}>
             <BsCalendar3 /> SCHEDULE
           </NavLink>
@@ -208,9 +213,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS
           </NavLink>
-          <NavLink to="/trash" className={getNavLinkClass}>
-            <AiOutlineSetting /> TRASH
-          </NavLink>
+          {/* Xóa mục TRASH khỏi navigation */}
         </nav>
       </div>
 
@@ -239,6 +242,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             </button>
           )}
         </div>
+
+        {/* Thêm icon thùng rác */}
+        <div className="trash-container">
+          <NavLink to="/trash" className="trash-button" title="Trash">
+            <AiOutlineDelete />
+          </NavLink>
+        </div>
+
         <div className="notification-container" ref={notificationRef}>
           <button className="notification-button" onClick={handleBellClick}>
             <AiOutlineBell />
@@ -286,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </div>
 
         <div
-          className="user-avatar"
+          className={`user-avatar ${isPro ? 'premium' : ''}`}
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           ref={userDropdownRef}
         >
@@ -299,27 +310,31 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             }}
           />
           {isPro && (
-            <span className="avatar-crown" title="Pro user">
-              <FaCrown />
-            </span>
+            <>
+              <span className="avatar-crown" title="Premium user">
+                <FaCrown />
+              </span>
+              <span className="premium-badge">Premium</span>
+            </>
           )}
           {showUserDropdown && (
             <div className="user-dropdown">
               <div className="dropdown-header">
-                <div style={{ position: "relative" }}>
+                <div className="dropdown-avatar-container">
                   <img src={avatarUrl} alt="User" className="dropdown-avatar" />
                   {isPro && (
-                    <span
-                      className="avatar-crown avatar-crown--dropdown"
-                      title="Pro user"
-                    >
-                      <FaCrown />
-                    </span>
+                    <>
+                      <span className="avatar-crown avatar-crown--dropdown" title="Premium user">
+                        <FaCrown />
+                      </span>
+                      <span className="dropdown-premium-badge">Premium</span>
+                    </>
                   )}
                 </div>
                 <div className="dropdown-user-info">
                   <div className="dropdown-username">
                     {user?.display_name || "User"}
+                    {isPro && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>✨</span>}
                   </div>
                   <div className="dropdown-email">
                     {user?.email || "user@example.com"}

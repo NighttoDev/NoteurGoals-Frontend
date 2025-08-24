@@ -45,25 +45,67 @@
   padding: 0;
 }
 
+/* Custom scrollbar styling - completely hidden */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar - hidden */
+html {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
 /* --- 1. MAIN CONTENT & HEADER --- */
 .friends-main-content {
-  background-color: var(--surface-main); /* Changed from --background-main */
-  /* background-image was removed for a clean white look */
-  min-height: 100vh;
-  height: 100%;
+  background-color: var(--background-main);
+  background-image: radial-gradient(
+    circle at 10% 20%,
+    rgba(167, 139, 250, 0.05) 0%,
+    transparent 20%
+  );
   width: 100%;
+  height: 100vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.friends-container-section {
+  padding: 2rem 2.5rem;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.friends-container-section {
-  flex: 1;
+/* NEW: Page header with title and add friend button */
+.friends-page-header {
   display: flex;
-  flex-direction: column;
-  padding: 2rem 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .friends-page-title {
@@ -71,7 +113,7 @@
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.025em;
-  margin-bottom: 1.5rem;
+  margin: 0;
   position: relative;
   display: inline-block;
 }
@@ -90,16 +132,18 @@
 .friends-content-header {
   display: flex;
   align-items: center;
+  justify-content: flex-end; /* Thay đổi từ mặc định sang flex-end */
   margin-bottom: 2.5rem;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
 
-.friends-action-buttons {
+/* Remove the old action buttons container since we moved the button */
+/* .friends-action-buttons {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
+} */
 
 /* --- NEW: SEARCH BAR --- */
 .friends-search-bar {
@@ -184,19 +228,62 @@
   color: var(--primary-main);
 }
 
-/* Kích thước nhỏ hơn cho button "Add" trong danh sách kết quả */
-.friends-btn.friends-btn-sm {
-  padding: 5px 12px;
+/* --- BUTTONS IN LIST ITEMS --- */
+/* Override styles for buttons inside list items to match action buttons */
+.friends-list-item__actions .friends-btn {
+  padding: 0.6rem 1rem;
   font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  transition: var(--transition-main);
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
 }
 
-/* --- 3. TABS STYLES --- */
+.friends-list-item__actions .friends-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.friends-list-item__actions .friends-btn-primary {
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-main) 0%,
+    var(--primary-deep) 100%
+  );
+  color: white;
+}
+
+.friends-list-item__actions .friends-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 12px -2px var(--primary-glow);
+}
+
+.friends-list-item__actions .friends-btn:disabled {
+  background: var(--border-main);
+  color: var(--text-light);
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* --- 3. TABS STYLES - BORDER TAB MENU --- */
 .friends-tabs {
   display: flex;
   border-bottom: 1px solid var(--border-main);
-  overflow-x: auto;
+  background-color: transparent;
+  box-shadow: none;
   flex-shrink: 0;
+  margin-bottom: 0; /* Remove gap between tabs and content */
+  /* Hide horizontal scrollbar but allow scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers on tabs */
+.friends-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .friends-tab {
@@ -204,25 +291,52 @@
   cursor: pointer;
   font-weight: 500;
   color: var(--text-light);
-  border-bottom: 3px solid transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background-color: transparent;
   transition: var(--transition-main);
   white-space: nowrap;
+  position: relative;
+  margin-bottom: -1px; /* Pull tab down to cover content border */
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; /* Round only top corners */
 }
 
 .friends-tab:hover {
+  background-color: var(--surface-alt);
   color: var(--primary-main);
+  border-color: var(--border-main);
+  border-bottom: 1px solid var(--surface-alt); /* Match background to create seamless connection */
 }
 
 .friends-tab-active {
   color: var(--primary-main);
-  border-bottom-color: var(--primary-main);
+  background-color: var(--surface-main);
+  border-color: var(--border-main);
+  border-bottom: 1px solid var(--surface-main); /* Hide bottom border by matching content background */
   font-weight: 600;
+  z-index: 1; /* Ensure active tab is above content border */
 }
 
-/* --- 4. CONTENT AREA STYLES - GRID VIEW --- */
+.friends-tab-active:hover {
+  background-color: var(--surface-main);
+  border-bottom: 1px solid var(--surface-main);
+  color: var(--primary-main);
+}
+
+/* --- 4. CONTENT AREA STYLES - CONNECTED TO TABS --- */
 .friends-content-area {
+  margin-bottom: 2rem;
   flex: 1;
-  padding-bottom: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.friends-content-area::-webkit-scrollbar {
+  display: none;
 }
 
 .friends-grid {
@@ -230,6 +344,16 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
   width: 100%;
+  padding-bottom: 2rem;
+}
+
+/* Add specific class for collaborators and suggestions to override default behavior */
+.friends-content-area.collaborators-list .friends-grid,
+.friends-content-area.suggestions-list .friends-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 2rem;
 }
 
 .friends-card {
@@ -361,6 +485,7 @@
   box-shadow: var(--shadow-sm);
   white-space: nowrap;
 }
+
 .friends-action-btn:hover {
   transform: translateY(-2px);
 }
@@ -372,45 +497,63 @@
     #16a34a 100%
   );
   color: white;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  border: none;
 }
 
 .friends-action-btn-accept:hover {
-  box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 6px 12px -2px rgba(34, 197, 94, 0.4);
 }
 
 .friends-action-btn-reject {
-  background-image: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-red) 0%,
+    #dc2626 100%
+  );
   color: white;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  border: none;
 }
 
-.friends-action-btn-reject:hover {
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+.friends-action-btn-reject:hover:not(:disabled) {
+  box-shadow: 0 6px 12px -2px rgba(239, 68, 68, 0.4);
 }
 
 .friends-action-btn-message {
   background-image: linear-gradient(
     135deg,
-    var(--primary-main) 0%,
-    var(--primary-deep) 100%
+    var(--accent-blue) 0%,
+    #1d4ed8 100%
   );
   color: white;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  border: none;
 }
 
 .friends-action-btn-message:hover {
-  box-shadow: 0 10px 15px -3px var(--primary-glow);
+  box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.4);
 }
 
 .friends-action-btn-report {
-  background-color: var(--surface-alt);
+  background-color: var(--surface-main);
   color: var(--text-light);
-  padding: 0.6rem;
-  width: 36px;
-  height: 36px;
-  justify-content: center;
+  border: 1px solid var(--border-main);
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
 }
+
 .friends-action-btn-report:hover {
-  background-color: var(--border-main);
-  color: var(--text-main);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+  box-shadow: 0 6px 12px -2px rgba(239, 68, 68, 0.2);
 }
 
 /* --- Card for Shared Goals --- */
@@ -452,46 +595,96 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
+  color: var(--text-light);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
+
 .friends-empty-state {
   background-color: var(--surface-main);
   border-radius: var(--border-radius-lg);
   border: 1px dashed var(--border-main);
 }
-
 .friends-empty-image {
   width: 180px;
   height: 180px;
   margin-bottom: 1.5rem;
   opacity: 0.7;
 }
-
 .friends-empty-title {
   font-size: 1.5rem;
   color: var(--text-main);
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
-
 .friends-empty-message {
   color: var(--text-light);
   margin-bottom: 1.5rem;
   max-width: 400px;
 }
-
-.friends-loading {
-  color: var(--text-light);
-  font-weight: 500;
-  animation: friends-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.friends-loading::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: friendsPulse 3s ease-in-out infinite;
 }
+
+.friends-loading-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
+}
+
+.friends-loading-dots div {
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-main);
+  border-radius: 50%;
+  animation: friendsDotBounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3);
+}
+
+.friends-loading-dots div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.friends-loading-dots div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.friends-loading-dots div:nth-child(3) {
+  animation-delay: 0s;
+}
+
+.friends-loading p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.025em;
+}
+
+/* Remove old loading animation */
 @keyframes friends-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  /* This keyframes block is intentionally left empty or can be removed */
 }
 
 /* --- 6. MODAL STYLES --- */
@@ -503,7 +696,6 @@
     opacity: 1;
   }
 }
-
 @keyframes friends-modalPopIn {
   0% {
     transform: scale(0.95) translateY(20px);
@@ -514,7 +706,6 @@
     opacity: 1;
   }
 }
-
 .friends-modal-overlay {
   position: fixed;
   inset: 0;
@@ -528,7 +719,6 @@
   animation: friends-modalFadeIn 0.3s ease forwards;
   padding: 1rem;
 }
-
 .friends-modal-content {
   background: var(--surface-main);
   border-radius: var(--border-radius-lg);
@@ -539,6 +729,8 @@
   display: flex;
   flex-direction: column;
   animation: friends-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Hide scrollbar in modal */
+  overflow: hidden;
 }
 
 .friends-modal-header {
@@ -549,7 +741,6 @@
   border-bottom: 1px solid var(--border-main);
   flex-shrink: 0;
 }
-
 .friends-modal-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -564,7 +755,6 @@
   background-clip: text;
   color: transparent;
 }
-
 .friends-modal-close-btn {
   background: 0 0;
   border: none;
@@ -579,22 +769,30 @@
   justify-content: center;
   transition: var(--transition-main);
 }
-
 .friends-modal-close-btn:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--primary-main);
   transform: rotate(90deg) scale(1.1);
 }
-
 .friends-modal-body {
   padding: 1.5rem 1.75rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex-grow: 1;
+  max-height: calc(90vh - 180px); /* Ensure modal body can scroll */
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+/* Hide scrollbar for webkit browsers in modal body */
+.friends-modal-body::-webkit-scrollbar {
+  display: none;
+}
+
 .friends-modal-form .friends-modal-group {
   margin-bottom: 1.25rem;
 }
-
 .friends-modal-form label {
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -602,8 +800,6 @@
   font-size: 0.9rem;
   display: block;
 }
-
-.friends-modal-form input[type="text"],
 .friends-modal-form input[type="email"],
 .friends-modal-form textarea {
   width: 100%;
@@ -616,19 +812,14 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
   color: var(--text-main);
 }
-
 .friends-modal-form textarea {
   min-height: 120px;
   resize: vertical;
 }
-
-.friends-modal-form input[type="text"]:hover,
 .friends-modal-form input[type="email"]:hover,
 .friends-modal-form textarea:hover {
   border-color: var(--primary-light);
 }
-
-.friends-modal-form input[type="text"]:focus,
 .friends-modal-form input[type="email"]:focus,
 .friends-modal-form textarea:focus {
   border-color: var(--primary-main);
@@ -636,7 +827,6 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px var(--primary-glow);
   outline: none;
 }
-
 .friends-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -647,7 +837,6 @@
   border-top: 1px solid var(--border-main);
   flex-shrink: 0;
 }
-
 .friends-form-error {
   color: var(--accent-red);
   font-size: 0.85rem;
@@ -655,134 +844,40 @@
   font-weight: 500;
 }
 
-/* === CSS CHO MODAL TÌM KIẾM BẠN BÈ === */
-
-/* Polished search input styles (Add Friend modal) */
-.friends-modal-body .friends-modal-group label[for="friend-search"] {
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-#friend-search {
-  width: 100%;
-  padding: 0.85rem 1rem 0.85rem 2.5rem; /* space for icon */
-  border: 1px solid var(--border-main);
-  border-radius: var(--border-radius-md);
-  background: var(--surface-alt);
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
-  color: var(--text-main);
-  outline: none;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
-  background-repeat: no-repeat;
-  background-size: 16px 16px;
-  background-position: 12px center;
-}
-
-#friend-search::placeholder {
-  color: var(--text-light);
-  opacity: 0.8;
-}
-
-#friend-search:hover {
-  border-color: var(--primary-light);
-}
-
-#friend-search:focus {
-  border-color: var(--primary-main);
-  background: var(--surface-main);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 3px var(--primary-glow);
-}
-
-
-.friends-search-results {
-  margin-top: 1rem;
-  max-height: 250px; /* Giới hạn chiều cao và cho phép cuộn */
-  overflow-y: auto;
-  border: 1px solid var(--border-main);
-  border-radius: var(--border-radius-md);
-  background-color: var(--surface-alt);
-}
-
-.search-results-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-main);
-  transition: background-color 0.2s ease;
-}
-.search-result-item:hover {
-  background-color: var(--surface-main);
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.search-result-item img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 12px;
-  object-fit: cover;
-}
-
-.search-result-info {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.search-result-name {
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.search-result-email {
-  font-size: 0.85rem;
-  color: var(--text-light);
-}
-
-.search-loading,
-.search-no-results {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-light);
-  font-style: italic;
-}
-
 /* --- 7. LIST VIEW STYLES (NEW) --- */
 .friends-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding-bottom: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 300px);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.friends-list::-webkit-scrollbar {
+  display: none;
 }
 
 .friends-list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem; /* Giảm từ 1rem 1.5rem xuống 0.75rem 1.25rem */
   background-color: var(--surface-main);
   border: 1px solid var(--border-main);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-md); /* Giảm từ lg xuống md */
   box-shadow: var(--shadow-sm);
   transition: var(--transition-main);
   flex-wrap: wrap; /* Add for responsiveness */
-  gap: 1rem; /* Add for responsiveness */
+  gap: 0.75rem; /* Giảm từ 1rem xuống 0.75rem */
 }
 
 .friends-list-item:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px); /* Giảm từ -4px xuống -2px */
   box-shadow: var(--shadow-md);
   border-color: var(--primary-light);
 }
@@ -790,16 +885,16 @@
 .friends-list-item__info {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem; /* Giảm từ 1.25rem xuống 1rem */
   flex: 1 1 300px; /* Allow shrinking and growing */
 }
 
 .friends-list-item__avatar {
-  width: 60px;
-  height: 60px;
+  width: 50px; /* Giảm từ 60px xuống 50px */
+  height: 50px; /* Giảm từ 60px xuống 50px */
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--border-main);
+  border: 2px solid var(--border-main); /* Giảm từ 3px xuống 2px */
 }
 
 .friends-list-item__details {
@@ -808,64 +903,106 @@
 
 .friends-list-item__name {
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem; /* Giảm từ 1.1rem xuống 1rem */
   color: var(--text-main);
   margin-bottom: 2px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px; /* Giảm từ 8px xuống 6px */
 }
 .friends-list-item__name .fa-crown {
   color: var(--accent-yellow);
 }
 
 .friends-list-item__email {
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* Giảm từ 0.9rem xuống 0.85rem */
   color: var(--text-light);
-  margin-bottom: 6px;
+  margin-bottom: 4px; /* Giảm từ 6px xuống 4px */
 }
 
 .friends-list-item__stats {
   display: flex;
-  gap: 1.5rem;
-  font-size: 0.8rem;
+  gap: 1rem; /* Giảm từ 1.5rem xuống 1rem */
+  font-size: 0.75rem; /* Giảm từ 0.8rem xuống 0.75rem */
   color: var(--text-light);
 }
 .friends-list-item__stats span {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px; /* Giảm từ 6px xuống 4px */
 }
 
 .friends-list-item__actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem; /* Giảm từ 0.75rem xuống 0.6rem */
   flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+/* --- ADDITIONAL STYLES FOR REQUEST LIST ITEMS --- */
+.friends-list-item__details .friends-status {
+  margin-bottom: 0.4rem; /* Giảm từ 0.5rem xuống 0.4rem */
+  margin-top: 0.4rem; /* Giảm từ 0.5rem xuống 0.4rem */
+  display: inline-block;
+  padding: 0.25rem 0.7rem; /* Giảm từ 0.35rem 0.85rem */
+  font-size: 0.7rem; /* Giảm từ 0.75rem */
+}
+
+/* Thu nhỏ các action buttons */
+.friends-action-btn-accept,
+.friends-action-btn-reject,
+.friends-action-btn-message {
+  padding: 0.6rem 1.2rem; /* Giảm từ 0.8rem 1.5rem */
+  font-size: 0.85rem; /* Giảm từ 0.95rem */
+  gap: 0.4rem; /* Giảm từ 0.6rem */
 }
 
 /* --- 9. RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 992px) {
-  .friends-content-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
+  .friends-container-section {
+    padding: 1.5rem 2rem;
   }
-  .friends-search-bar {
-    min-width: unset;
-    width: 100%;
+  
+  .friends-list {
+    max-height: calc(100vh - 250px);
+  }
+  
+  .collaborators-grid {
+    max-height: calc(100vh - 250px);
   }
 }
+
 @media (max-width: 768px) {
   .friends-container-section {
     padding: 1.5rem;
+    min-height: calc(100vh - 3rem);
   }
-  .friends-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
+  
+  .friends-list {
+    max-height: calc(100vh - 200px);
+  }
+  
+  .collaborators-grid {
+    max-height: calc(100vh - 200px);
   }
 }
+
 @media (max-width: 640px) {
+  .friends-tabs {
+    overflow-x: auto;
+    padding-bottom: 0;
+  }
+  
+  .friends-tab {
+    min-width: 100px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .friends-content-area {
+    padding: 1rem;
+  }
+  
   .friends-list-item {
     flex-direction: column;
     align-items: flex-start;
@@ -879,6 +1016,7 @@
     justify-content: center;
   }
 }
+
 @media (max-width: 480px) {
   .friends-modal-content {
     width: 100%;
@@ -887,8 +1025,527 @@
   }
   .friends-container-section {
     padding: 1rem;
+    min-height: calc(100vh - 2rem);
   }
+  
   .friends-page-title {
     font-size: 1.75rem;
+  }
+}
+
+/* Loading Animation Keyframes */
+@keyframes friendsPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes friendsDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- COLLABORATORS SPECIFIC STYLES --- */
+.collaborators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 300px);
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.collaborators-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.collaborator-card {
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border-main);
+  transition: var(--transition-main);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.collaborator-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
+}
+
+.collaborator-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.collaborator-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border-main);
+  transition: var(--transition-main);
+  flex-shrink: 0;
+}
+
+.collaborator-card:hover .collaborator-avatar {
+  border-color: var(--primary-light);
+}
+
+.collaborator-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.collaborator-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collaborator-name .fa-crown {
+  color: var(--accent-yellow);
+}
+
+.collaborator-email {
+  color: var(--text-light);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  word-break: break-all;
+}
+
+.collaborator-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.stat-item i {
+  width: 14px;
+  color: var(--primary-main);
+}
+
+.collaborator-activity {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: var(--surface-alt);
+  border-radius: var(--border-radius-md);
+  border-left: 4px solid var(--primary-main);
+}
+
+.activity-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--border-main);
+}
+
+.activity-dot.active {
+  background-color: var(--accent-green);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.collaborator-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.collaborator-actions button {
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.collaborator-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.btn-view-details {
+  background-image: linear-gradient(135deg, var(--primary-main) 0%, var(--primary-deep) 100%);
+  color: white;
+}
+
+.btn-view-details:hover {
+  box-shadow: 0 6px 12px -2px var(--primary-glow);
+}
+
+.btn-message {
+  background-image: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%);
+  color: white;
+}
+
+.btn-message:hover {
+  box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.4);
+}
+
+.btn-add-friend {
+  background-image: linear-gradient(135deg, var(--accent-green) 0%, #16a34a 100%);
+  color: white;
+}
+
+.btn-add-friend:hover:not(:disabled) {
+  box-shadow: 0 6px 12px -2px rgba(34, 197, 94, 0.4);
+}
+
+.btn-remove-collaborator {
+  background-color: var(--surface-main);
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+}
+
+.btn-remove-collaborator:hover:not(:disabled) {
+  background-color: var(--accent-red);
+  color: white;
+  box-shadow: 0 6px 12px -2px rgba(239, 68, 68, 0.4);
+}
+
+.collaborator-actions button:disabled {
+  background: var(--border-main);
+  color: var(--text-light);
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+  border: 1px solid var(--border-main);
+}
+
+/* --- COLLABORATOR MODAL STYLES --- */
+.collaborator-modal-content {
+  background: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: friends-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  overflow: hidden;
+}
+
+.collaborator-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.collaborator-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--surface-alt);
+  border-radius: var(--border-radius-md);
+  border-left: 4px solid var(--primary-main);
+}
+
+.collaborator-modal-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-light);
+}
+
+.collaborator-modal-info h3 {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.collaborator-modal-info p {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.collaboration-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.collaboration-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.collaboration-stats i {
+  color: var(--primary-main);
+}
+
+.shared-goals-section h4 {
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shared-goals-section h4::before {
+  content: "";
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--primary-main), var(--primary-light));
+  border-radius: 2px;
+}
+
+.loading-goals,
+.no-shared-goals {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.shared-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0; /* Remove space for scrollbar since it's hidden */
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shared-goals-list::-webkit-scrollbar {
+  display: none;
+}
+
+.shared-goal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: var(--surface-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--border-radius-md);
+  transition: var(--transition-main);
+}
+
+.shared-goal-item:hover {
+  border-color: var(--primary-light);
+  transform: translateX(4px);
+}
+
+.goal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-info h5 {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+}
+
+.goal-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.goal-status {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.goal-status.status-new {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.goal-status.status-in_progress {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.goal-status.status-completed {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.goal-status.status-cancelled {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.goal-role {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.goal-role.role-owner {
+  background-color: #f3e8ff;
+  color: var(--primary-deep);
+}
+
+.goal-role.role-collaborator {
+  background-color: #f0f9ff;
+  color: #0369a1;
+}
+
+.goal-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background-color: var(--border-main);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.goal-progress span {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 600;
+  min-width: 35px;
+}
+
+.btn-view-goal {
+  padding: 0.5rem;
+  border: none;
+  background-color: var(--primary-main);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.btn-view-goal:hover {
+  background-color: var(--primary-deep);
+  transform: scale(1.1);
+}
+
+/* --- RESPONSIVE ADJUSTMENTS FOR COLLABORATORS --- */
+@media (max-width: 768px) {
+  .collaborators-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .collaborator-actions {
+    flex-direction: column;
+  }
+  
+  .collaborator-actions button {
+    flex: none;
+  }
+  
+  .collaborator-modal-content {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+  
+  .collaborator-summary {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .collaboration-stats {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .collaborator-card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .shared-goal-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .goal-meta {
+    flex-wrap: wrap;
+  }
+  
+  .btn-view-goal {
+    align-self: flex-end;
   }
 }

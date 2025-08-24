@@ -42,6 +42,24 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE and Edge Legacy */
+body {
+  -ms-overflow-style: none;
 }
 
 /* --- 1. MAIN CONTENT & HEADER --- */
@@ -52,17 +70,35 @@
     rgba(167, 139, 250, 0.05) 0%,
     transparent 20%
   );
-  padding: 2rem 2.5rem;
-  min-height: 100vh;
+  width: 100%;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
+  /* Hide scrollbar but allow scrolling */
+  overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
+/* Hide scrollbar for webkit browsers on main content */
 .notes-main-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+}
+
+.notes-container-section {
+  padding: 2rem 2.5rem;
+  /* Add minimum height for content */
+  min-height: calc(100vh - 4rem);
+}
+
+/* Thêm container cho header */
+.notes-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .notes-page-title {
@@ -70,7 +106,7 @@
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.025em;
-  margin-bottom: 1.5rem;
+  margin: 0; /* Xóa margin-bottom */
   position: relative;
   display: inline-block;
 }
@@ -86,13 +122,9 @@
   border-radius: 2px;
 }
 
+/* Xóa .notes-content-header vì chúng ta sẽ không dùng nữa */
 .notes-content-header {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  justify-content: flex-end;
-  margin-bottom: 2.5rem;
-  flex-wrap: wrap;
+  display: none;
 }
 
 .notes-action-buttons {
@@ -222,6 +254,10 @@
 /* --- 2. NOTE CARD STYLES --- */
 .notes-main-container {
   transition: opacity 0.3s ease, transform 0.3s ease;
+  /* Add proper bottom padding */
+  padding-bottom: 2rem;
+  /* Add proper bottom margin */
+  margin-bottom: 2rem;
 }
 
 .notes-main-container.grid-view {
@@ -502,6 +538,8 @@
   display: flex;
   flex-direction: column;
   animation: notes-modalPopIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Hide scrollbar in modal */
+  overflow: hidden;
 }
 
 .notes-modal-header {
@@ -555,12 +593,16 @@
     rgba(167, 139, 250, 0.1),
     transparent 50%
   );
+  /* Hide scrollbar but allow scrolling */
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none; /* IE and Edge */
 }
+
+/* Hide scrollbar for webkit browsers in modal body */
 .notes-modal-body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
+
 .notes-modal-form .notes-modal-group {
   margin-bottom: 1.25rem;
 }
@@ -622,6 +664,14 @@
   border-radius: var(--border-radius-md);
   padding: 0.75rem;
   background-color: var(--surface-alt);
+  /* Hide scrollbar but allow scrolling */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers in checkbox group */
+.notes-checkbox-group::-webkit-scrollbar {
+  display: none;
 }
 
 .notes-checkbox-item {
@@ -693,8 +743,8 @@
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-/* --- 6. LOADING & EMPTY STATES --- */
-@keyframes notes-pulse {
+/* --- 6. LOADING & EMPTY STATES (Updated to match Settings) --- */
+@keyframes notesPulse {
   0%,
   100% {
     opacity: 1;
@@ -704,8 +754,92 @@
   }
 }
 
+@keyframes notesDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.notes-loading-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  grid-column: 1 / -1;
+}
+
+.notes-loading-container::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: notesPulse 3s ease-in-out infinite;
+}
+
+.notes-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
+}
+
+.notes-loading-spinner div {
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-main);
+  border-radius: 50%;
+  animation: notesDotBounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3);
+}
+
+.notes-loading-spinner div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.notes-loading-spinner div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.notes-loading-spinner div:nth-child(3) {
+  animation-delay: 0s;
+}
+
+.notes-loading-container p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.025em;
+}
+
+/* Remove old loading animation if exists */
 .notes-loading {
-  animation: notes-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: notesPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .notes-empty-state {
@@ -717,6 +851,7 @@
   text-align: center;
   color: var(--text-light);
   grid-column: 1 / -1;
+  min-height: 400px;
 }
 
 .notes-empty-state-icon {
@@ -726,14 +861,53 @@
   opacity: 0.7;
 }
 
-/* --- 7. RESPONSIVE ADJUSTMENTS --- */
+/* Responsive adjustments for loading */
 @media (max-width: 768px) {
-  .notes-main-content {
-    padding: 1.5rem;
+  .notes-loading-container::before {
+    width: 200px;
+    height: 200px;
   }
 
-  .notes-content-header {
-    flex-direction: column-reverse;
+  .notes-loading-spinner div {
+    width: 10px;
+    height: 10px;
+  }
+
+  .notes-loading-spinner {
+    gap: 0.4rem;
+  }
+
+  .notes-loading-container p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .notes-loading-container::before {
+    width: 150px;
+    height: 150px;
+  }
+
+  .notes-loading-spinner div {
+    width: 8px;
+    height: 8px;
+  }
+
+  .notes-loading-spinner {
+    gap: 0.3rem;
+  }
+}
+
+/* --- 7. RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 768px) {
+  .notes-container-section {
+    padding: 1.5rem;
+    /* Ensure proper minimum height on mobile */
+    min-height: calc(100vh - 3rem);
+  }
+
+  .notes-header-container {
+    flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
@@ -754,10 +928,20 @@
   }
 }
 
-.notes-header-row {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-  justify-content: flex-end;
+@media (max-width: 480px) {
+  .notes-modal-content {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .notes-container-section {
+    padding: 1rem;
+    /* Adjust minimum height for very small screens */
+    min-height: calc(100vh - 2rem);
+  }
+  
+  .notes-page-title {
+    font-size: 1.75rem;
+  }
 }

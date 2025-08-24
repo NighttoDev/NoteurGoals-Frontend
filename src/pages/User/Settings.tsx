@@ -343,11 +343,6 @@ const SettingsPage = () => {
             <div></div>
             <div></div>
             <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
           </div>
           <p>Loading user data...</p>
         </div>

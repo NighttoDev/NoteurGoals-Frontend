@@ -16,10 +16,6 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 
-// CKEditor imports
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-
 // Định nghĩa các interface
 interface NotesCard {
   id: string;
@@ -76,35 +72,32 @@ const NoteDetailPage: React.FC = () => {
   }, [selectedGoalIds]);
 
   useEffect(() => {
-    // Chỉ fetch khi có ID
     if (id) {
-      fetchNoteDetails(id);
-      fetchGoalsList();
+      loadData(id);
     } else {
       setLoading(false);
     }
   }, [id]);
 
-  // Thêm useEffect để set selectedGoalIds sau khi cả note và goals đã được load
-  useEffect(() => {
-    if (note && goals.length > 0) {
-      const linkedGoalIds =
-        note.linkedGoals?.map((g: LinkedGoal) => g.id) || [];
-      console.log("Note linked goals:", note.linkedGoals);
-      console.log("Available goals:", goals);
-      console.log("Setting selected goal IDs:", linkedGoalIds);
-      setSelectedGoalIds(linkedGoalIds);
-    }
-  }, [note, goals]);
-
-  /**
-   * THAY ĐỔI 3: Tối ưu hóa hàm fetch, chỉ lấy 1 note
-   */
-  const fetchNoteDetails = async (noteId: string) => {
+  const loadData = async (noteId: string) => {
     try {
-      const res = await getNote(noteId); // Gọi API lấy chi tiết
-      const item: NoteData = res.data;
+      // Fetch goals trước
+      const goalsRes = await getGoals();
+      const rawGoals = Array.isArray(goalsRes.data)
+        ? goalsRes.data
+        : goalsRes.data.data;
+      const mappedGoals = rawGoals.map((g: GoalData) => ({
+        id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
+        title: g.title,
+      }));
+      setGoals(mappedGoals);
+      console.log("Goals loaded:", mappedGoals);
+
+      // Sau đó fetch note
+      const noteRes = await getNote(noteId);
+      const item: NoteData = noteRes.data;
       console.log("Raw note data from API:", item);
+      console.log("Goals in note:", item.goals); // Debug goals trong note
 
       const mappedNote: NotesCard = {
         id: item.note_id?.toString() ?? item.id?.toString() ?? "",
@@ -131,45 +124,43 @@ const NoteDetailPage: React.FC = () => {
         attachments: item.attachments_count,
       };
 
+      console.log("Mapped note linkedGoals:", mappedNote.linkedGoals);
       setNote(mappedNote);
       setForm({ title: mappedNote.title, content: mappedNote.content });
-      setSelectedGoalIds(
-        mappedNote.linkedGoals?.map((g: LinkedGoal) => g.id) || []
+
+      // Set selectedGoalIds sau khi đã có goals
+      const linkedGoalIds =
+        mappedNote.linkedGoals?.map((g: LinkedGoal) => g.id) || [];
+      console.log("Setting selected goal IDs:", linkedGoalIds);
+      console.log(
+        "Available goals IDs:",
+        mappedGoals.map((g) => g.id)
       );
+
+      // Debug: So sánh IDs
+      linkedGoalIds.forEach((linkedId) => {
+        const found = mappedGoals.find((g) => g.id === linkedId);
+        console.log(`Linked goal ${linkedId} found in goals list:`, found);
+      });
+
+      setSelectedGoalIds(linkedGoalIds);
     } catch (err) {
-      console.error("Failed to fetch note:", err);
-      setNote(null); // Set là null nếu không tìm thấy hoặc có lỗi
+      console.error("Failed to load data:", err);
+      setNote(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchGoalsList = async () => {
-    try {
-      const res = await getGoals();
-      const rawGoals = Array.isArray(res.data) ? res.data : res.data.data;
-      console.log("Raw goals data from API:", rawGoals);
-      const mappedGoals = rawGoals.map((g: GoalData) => {
-        const goalId = g.goal_id?.toString() ?? g.id?.toString() ?? "";
-        console.log("Mapping goal in list:", g, "to ID:", goalId);
-        return {
-          id: goalId,
-          title: g.title,
-        };
-      });
-      console.log("Final mapped goals:", mappedGoals);
-      setGoals(mappedGoals);
-    } catch (err) {
-      console.error("Failed to fetch goals", err);
-    }
-  };
-
   const handleGoalToggle = (goalId: string) => {
-    setSelectedGoalIds((prev) =>
-      prev.includes(goalId)
+    console.log("Toggling goal:", goalId);
+    setSelectedGoalIds((prev) => {
+      const newIds = prev.includes(goalId)
         ? prev.filter((id) => id !== goalId)
-        : [...prev, goalId]
-    );
+        : [...prev, goalId];
+      console.log("New selected goal IDs:", newIds);
+      return newIds;
+    });
   };
 
   const handleSave = async () => {
@@ -192,37 +183,55 @@ const NoteDetailPage: React.FC = () => {
       // Đồng bộ hóa các goal được liên kết
       await syncGoalsForNote(note.id, selectedGoalIds);
 
-      alert("Ghi chú đã được lưu thành công!");
+      alert("The note has been saved successfully!");
       navigate("/notes");
     } catch (err) {
       console.error("Failed to save note", err);
-      alert("Lưu thất bại. Vui lòng thử lại.");
+      alert("Save failed. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  /**
-   * THAY ĐỔI 4: Cập nhật hàm handleDelete để thực hiện xóa mềm
-   */
   const handleDelete = async () => {
-    if (window.confirm("Chuyển ghi chú này vào thùng rác?")) {
+    if (window.confirm("Move this note to trash?")) {
       if (!note) return;
       try {
-        // Sử dụng hàm softDeleteNote mới
         await softDeleteNote(note.id);
-        alert("Ghi chú đã được chuyển vào thùng rác.");
-        navigate("/notes"); // Điều hướng về trang danh sách chính
+        alert("The note has been moved to trash.");
+        navigate("/notes");
       } catch (err) {
         console.error("Failed to move note to trash:", err);
-        alert("Thao tác thất bại. Vui lòng thử lại.");
+        alert("Operation failed. Please try again.");
       }
     }
   };
 
-  // ----- PHẦN JSX GIỮ NGUYÊN -----
-  if (loading) return <div className="note-detail-loading">Loading...</div>; // Thêm text cho dễ hiểu
-  if (!note) return <div className="note-detail-notfound">Note not found.</div>;
+  if (loading)
+    return (
+      <div className="note-detail-container">
+        <div className="note-detail-loading">
+          <div className="note-detail-loading-dots">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <p>Loading note details...</p>
+        </div>
+      </div>
+    );
+
+  if (!note)
+    return (
+      <div className="note-detail-container">
+        <div className="note-detail-notfound">
+          <p>Note not found.</p>
+          <button onClick={() => navigate("/notes")} className="back-button">
+            <FontAwesomeIcon icon={faArrowLeft} /> Back to Notes
+          </button>
+        </div>
+      </div>
+    );
 
   return (
     <main className="note-detail-container">
@@ -262,42 +271,19 @@ const NoteDetailPage: React.FC = () => {
               className="note-detail-content-editor"
               style={{ color: "#000000" }}
             >
-              <CKEditor
-                editor={ClassicEditor}
-                data={form.content}
-                onChange={(event, editor) => {
-                  const data = editor.getData();
-                  setForm({ ...form, content: data });
-                }}
-                config={{
-                  toolbar: [
-                    "heading",
-                    "|",
-                    "bold",
-                    "italic",
-                    "link",
-                    "bulletedList",
-                    "numberedList",
-                    "|",
-                    "outdent",
-                    "indent",
-                    "|",
-                    "blockQuote",
-                    "insertTable",
-                    "undo",
-                    "redo",
-                  ],
-                  placeholder: "Bắt đầu viết nội dung ghi chú của bạn...",
-                  removePlugins: [
-                    "CKFinderUploadAdapter",
-                    "CKFinder",
-                    "EasyImage",
-                    "Image",
-                    "ImageCaption",
-                    "ImageStyle",
-                    "ImageToolbar",
-                    "ImageUpload",
-                  ],
+              <textarea
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="Bắt đầu viết nội dung ghi chú của bạn..."
+                style={{
+                  width: "100%",
+                  minHeight: "300px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  resize: "vertical",
                 }}
               />
             </div>
@@ -316,20 +302,24 @@ const NoteDetailPage: React.FC = () => {
           <div className="note-detail-goals-panel">
             <h3 className="goals-panel-title">Linked Goals</h3>
             <div className="goal-checkbox-group">
-              {goals.map((g) => {
-                const isChecked = selectedGoalIds.includes(g.id);
-                console.log(`Goal ${g.title} (${g.id}) checked:`, isChecked);
-                return (
-                  <label key={g.id} className="goal-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleGoalToggle(g.id)}
-                    />
-                    {g.title}
-                  </label>
-                );
-              })}
+              {goals.length === 0 ? (
+                <p>Loading goals...</p>
+              ) : (
+                goals.map((g) => {
+                  const isChecked = selectedGoalIds.includes(g.id);
+                  console.log(`Goal ${g.title} (${g.id}) checked:`, isChecked);
+                  return (
+                    <label key={g.id} className="goal-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleGoalToggle(g.id)}
+                      />
+                      {g.title}
+                    </label>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
