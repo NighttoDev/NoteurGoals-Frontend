@@ -1,0 +1,117 @@
+/* Payment shared styles */
+:root {
+  --pay-primary: #4f46e5;
+  --pay-success: #16a34a;
+  --pay-error: #dc2626;
+  --pay-text: #0f172a;
+  --pay-muted: #64748b;
+  --pay-border: #e2e8f0;
+  --pay-bg: #f8fafc;
+}
+
+.pay-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  padding: 32px 16px;
+}
+
+.pay-card {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+  border: 1px solid var(--pay-border);
+  padding: 28px;
+  text-align: center;
+}
+
+.pay-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: var(--pay-text);
+}
+
+.pay-subtitle {
+  margin: 0;
+  color: var(--pay-muted);
+}
+
+.pay-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 6px;
+}
+
+/* Spinner */
+.pay-spinner {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 5px solid #e9eefa;
+  border-top-color: var(--pay-primary);
+  animation: pay-rotate 1s linear infinite;
+}
+
+@keyframes pay-rotate { to { transform: rotate(360deg); } }
+
+/* Success icon */
+.pay-icon.success {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  border: 2px solid #bbf7d0;
+  position: relative;
+}
+.pay-icon.success::after{
+  content: "";
+  position: absolute;
+  left: 18px; top: 32px;
+  width: 14px; height: 28px;
+  border: solid var(--pay-success);
+  border-width: 0 4px 4px 0;
+  transform: rotate(45deg);
+}
+
+/* Error icon */
+.pay-icon.error {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  position: relative;
+}
+.pay-icon.error::before,
+.pay-icon.error::after{
+  content: "";
+  position: absolute;
+  left: 20px; top: 20px;
+  width: 28px; height: 4px;
+  background: var(--pay-error);
+}
+.pay-icon.error::before { transform: rotate(45deg); }
+.pay-icon.error::after  { transform: rotate(-45deg); }
+
+.pay-actions { margin-top: 18px; }
+.pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--pay-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(79,70,229,.25);
+}
+.pay-btn.secondary { background: #111827; box-shadow: none; }
+.pay-btn:hover { filter: brightness(0.98); }

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getNote,
   updateNote,
-  deleteNote,
+  softDeleteNote,
   syncGoalsForNote,
 } from "../../../services/notesService";
 import { getGoals } from "../../../services/goalsService";
@@ -65,6 +65,7 @@ const NoteDetailPage: React.FC = () => {
 
   const [note, setNote] = useState<NotesCard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [goals, setGoals] = useState<GoalOption[]>([]);
   const [form, setForm] = useState({ title: "", content: "" });
   const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
@@ -132,6 +133,9 @@ const NoteDetailPage: React.FC = () => {
 
       setNote(mappedNote);
       setForm({ title: mappedNote.title, content: mappedNote.content });
+      setSelectedGoalIds(
+        mappedNote.linkedGoals?.map((g: LinkedGoal) => g.id) || []
+      );
     } catch (err) {
       console.error("Failed to fetch note:", err);
       setNote(null); // Set là null nếu không tìm thấy hoặc có lỗi
@@ -170,21 +174,31 @@ const NoteDetailPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!note) return;
+
+    // Validate form
+    if (!form.title.trim()) {
+      alert("Vui lòng nhập tiêu đề cho ghi chú");
+      return;
+    }
+
+    setSaving(true);
     try {
       // Lưu thông tin cơ bản của note
       await updateNote(note.id, {
-        title: form.title,
+        title: form.title.trim(),
         content: form.content,
       });
 
       // Đồng bộ hóa các goal được liên kết
       await syncGoalsForNote(note.id, selectedGoalIds);
 
-      alert("Note saved successfully!");
+      alert("Ghi chú đã được lưu thành công!");
       navigate("/notes");
     } catch (err) {
       console.error("Failed to save note", err);
-      alert("Save failed");
+      alert("Lưu thất bại. Vui lòng thử lại.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -195,8 +209,8 @@ const NoteDetailPage: React.FC = () => {
     if (window.confirm("Chuyển ghi chú này vào thùng rác?")) {
       if (!note) return;
       try {
-        // Sử dụng hàm deleteNote mới
-        await deleteNote(note.id);
+        // Sử dụng hàm softDeleteNote mới
+        await softDeleteNote(note.id);
         alert("Ghi chú đã được chuyển vào thùng rác.");
         navigate("/notes"); // Điều hướng về trang danh sách chính
       } catch (err) {
@@ -220,65 +234,105 @@ const NoteDetailPage: React.FC = () => {
           <button className="note-detail-delete" onClick={handleDelete}>
             <FontAwesomeIcon icon={faTrash} /> Delete
           </button>
-          <button className="note-detail-save" onClick={handleSave}>
-            <FontAwesomeIcon icon={faSave} /> Save Changes
+          <button
+            className="note-detail-save"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            <FontAwesomeIcon icon={faSave} />
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
       </div>
 
-      <div className={`note-detail-card notes-color-${note.color || "purple"}`}>
-        <input
-          className="note-detail-title-input"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-        <p className="note-detail-date">Updated: {note.updatedDate}</p>
+      <div className="note-detail-layout">
+        {/* Cột trái - Content (65%) */}
+        <div className="note-detail-content-column">
+          <div
+            className={`note-detail-card notes-color-${note.color || "purple"}`}
+          >
+            <input
+              className="note-detail-title-input"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+            <p className="note-detail-date">Updated: {note.updatedDate}</p>
 
-        <div
-          className="note-detail-content-editor"
-          style={{ color: "#000000" }}
-        >
-          <CKEditor
-            editor={ClassicEditor}
-            data={form.content}
-            onChange={(event, editor) => {
-              const data = editor.getData();
-              setForm({ ...form, content: data });
-            }}
-            config={
-              {
-                /* Cấu hình CKEditor của bạn */
-              }
-            }
-          />
-        </div>
+            <div
+              className="note-detail-content-editor"
+              style={{ color: "#000000" }}
+            >
+              <CKEditor
+                editor={ClassicEditor}
+                data={form.content}
+                onChange={(event, editor) => {
+                  const data = editor.getData();
+                  setForm({ ...form, content: data });
+                }}
+                config={{
+                  toolbar: [
+                    "heading",
+                    "|",
+                    "bold",
+                    "italic",
+                    "link",
+                    "bulletedList",
+                    "numberedList",
+                    "|",
+                    "outdent",
+                    "indent",
+                    "|",
+                    "blockQuote",
+                    "insertTable",
+                    "undo",
+                    "redo",
+                  ],
+                  placeholder: "Bắt đầu viết nội dung ghi chú của bạn...",
+                  removePlugins: [
+                    "CKFinderUploadAdapter",
+                    "CKFinder",
+                    "EasyImage",
+                    "Image",
+                    "ImageCaption",
+                    "ImageStyle",
+                    "ImageToolbar",
+                    "ImageUpload",
+                  ],
+                }}
+              />
+            </div>
 
-        <div className="note-detail-goals">
-          <label>Linked Goals:</label>
-          <div className="goal-checkbox-group">
-            {goals.map((g) => {
-              const isChecked = selectedGoalIds.includes(g.id);
-              console.log(`Goal ${g.title} (${g.id}) checked:`, isChecked);
-              return (
-                <label key={g.id} className="goal-checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleGoalToggle(g.id)}
-                  />
-                  {g.title}
-                </label>
-              );
-            })}
+            {note.attachments && (
+              <div className="note-detail-attachments">
+                <FontAwesomeIcon icon={faPaperclip} className="meta-icon" />
+                {note.attachments} file(s) attached
+              </div>
+            )}
           </div>
         </div>
 
-        {note.attachments && (
-          <div className="note-detail-attachments">
-            <FontAwesomeIcon icon={faPaperclip} className="meta-icon" />
-            {note.attachments} file(s) attached
+        {/* Cột phải - Linked Goals (35%) */}
+        <div className="note-detail-sidebar">
+          <div className="note-detail-goals-panel">
+            <h3 className="goals-panel-title">Linked Goals</h3>
+            <div className="goal-checkbox-group">
+              {goals.map((g) => {
+                const isChecked = selectedGoalIds.includes(g.id);
+                console.log(`Goal ${g.title} (${g.id}) checked:`, isChecked);
+                return (
+                  <label key={g.id} className="goal-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleGoalToggle(g.id)}
+                    />
+                    {g.title}
+                  </label>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </main>
   );

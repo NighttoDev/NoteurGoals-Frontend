@@ -49,12 +49,12 @@
     transparent 20%
   );
   padding: 2rem 2.5rem;
-  min-height: 100vh;
+  min-height: 80vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
 }
 
 .schedule-main-content::-webkit-scrollbar {
@@ -66,6 +66,7 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr);
   gap: 2rem;
+  margin-bottom: 50px;
 }
 
 /* --- Calendar Container --- */

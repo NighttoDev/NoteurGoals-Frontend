@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "../assets/css/User/payment.css";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios"; // Import axios
 
@@ -59,26 +60,26 @@ const PaymentCallback = () => {
 
   // Giao diện hiển thị trạng thái cho người dùng
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        fontFamily: "sans-serif",
-        padding: "20px",
-      }}
-    >
-      <h2
-        style={{ color: error ? "#d9534f" : "#5cb85c", marginBottom: "15px" }}
-      >
-        {error ? "An error occurred" : "Processing..."}
-      </h2>
-      <p style={{ fontSize: "1.1rem", color: "#555" }}>{error || message}</p>
-      <p style={{ marginTop: "20px", color: "#777" }}>
-        The page will automatically redirect after a few seconds.
-      </p>
+    <div className="pay-screen">
+      <div className="pay-card">
+        <h2 className="pay-title">{error ? "An error occurred" : "Verifying Payment"}</h2>
+        <p className="pay-subtitle">Please wait while we confirm your transaction.</p>
+
+        <div className="pay-status">
+          {error ? (
+            <div className="pay-icon error" aria-label="Error"></div>
+          ) : (
+            <div className="pay-spinner" aria-label="Loading"></div>
+          )}
+          <p style={{ color: error ? "var(--pay-error)" : "var(--pay-muted)", margin: 0 }}>
+            {error || message}
+          </p>
+        </div>
+
+        <div className="pay-actions">
+          <p className="pay-subtitle">You will be redirected shortly...</p>
+        </div>
+      </div>
     </div>
   );
 };

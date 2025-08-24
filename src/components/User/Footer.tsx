@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
         padding: "5px",
         textAlign: "center",
         zIndex: 1000,
-        opacity: 0.5,
+        opacity: 0.8,
       }}
       className="footer"
     >

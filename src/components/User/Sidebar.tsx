@@ -7,6 +7,7 @@ import {
   AiOutlineBell,
   AiOutlineLogout,
 } from "react-icons/ai";
+import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
 import { BiNote, BiMessageDetail } from "react-icons/bi";
 import { FiUsers, FiUser, FiUserCheck } from "react-icons/fi";
@@ -21,6 +22,7 @@ interface SidebarProps {
     display_name: string;
     avatar_url: string | null;
     email?: string;
+    is_premium?: boolean;
   } | null;
 }
 
@@ -94,7 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     return isActive ? "nav-link active" : "nav-link";
   };
 
-  const avatarUrl = user?.avatar_url || "/default-avatar.png";
+  const avatarUrl = user?.avatar_url || "/default-avatar.png"; // fallback default image
+  const isPro = !!user?.is_premium;
   const { searchTerm, setSearchTerm, clearSearch } = useSearch();
 
   useEffect(() => {
@@ -295,10 +298,25 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
               e.currentTarget.src = "/default-avatar.png";
             }}
           />
+          {isPro && (
+            <span className="avatar-crown" title="Pro user">
+              <FaCrown />
+            </span>
+          )}
           {showUserDropdown && (
             <div className="user-dropdown">
               <div className="dropdown-header">
-                <img src={avatarUrl} alt="User" className="dropdown-avatar" />
+                <div style={{ position: "relative" }}>
+                  <img src={avatarUrl} alt="User" className="dropdown-avatar" />
+                  {isPro && (
+                    <span
+                      className="avatar-crown avatar-crown--dropdown"
+                      title="Pro user"
+                    >
+                      <FaCrown />
+                    </span>
+                  )}
+                </div>
                 <div className="dropdown-user-info">
                   <div className="dropdown-username">
                     {user?.display_name || "User"}

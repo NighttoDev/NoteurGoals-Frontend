@@ -1,5 +1,7 @@
 /* --- Main Content Area --- */
 .checkout-page-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  min-height: 100vh;
   background-color: var(--background-main);
   padding: 3rem 2rem;
   width: 100%;
@@ -7,6 +9,11 @@
 }
 
 /* --- Checkout Page Specific CSS --- */
+.checkout-page-container, .checkout-page-container * { box-sizing: border-box; }
+.checkout-page-container { color: var(--text-dark); }
+.checkout-payment-details h2 { color: var(--text-dark); }
+.checkout-payment-details p { color: var(--text-light); }
+
 .checkout-layout {
   display: flex;
   gap: 2.5rem;
@@ -202,6 +209,67 @@
   background: linear-gradient(45deg, #4c1d95, var(--primary-purple-dark));
   box-shadow: 0 7px 20px rgba(124, 58, 237, 0.35);
   transform: translateY(-2px);
+}
+
+/* Loading & States */
+/* remove box style to mimic settings loader */
+/* .checkout-loading-box{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:32px 28px; background:#fff; border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--shadow-md); } */
+.checkout-loading-box{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:0; background: transparent; border: 0; box-shadow: none; } display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:32px 28px; background:#fff; border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--shadow-md); }
+.checkout-loading-text{ color: var(--text-light); font-weight:500; }
+/* Orbit dots spinner */
+.checkout-orbit { position: relative; width:72px; height:72px; animation: orbit-rotate 1.25s linear infinite; }
+.checkout-orbit .dot { position:absolute; width:10px; height:10px; border-radius:50%; background: var(--primary-purple); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
+.checkout-orbit .d1{ top:0; left:50%; transform: translate(-50%, -50%); }
+.checkout-orbit .d5{ bottom:0; left:50%; transform: translate(-50%, 50%); }
+.checkout-orbit .d3{ left:0; top:50%; transform: translate(-50%, -50%); }
+.checkout-orbit .d7{ right:0; top:50%; transform: translate(50%, -50%); }
+.checkout-orbit .d2{ top:14px; right:14px; }
+.checkout-orbit .d4{ bottom:14px; right:14px; }
+.checkout-orbit .d6{ bottom:14px; left:14px; }
+.checkout-orbit .d8{ top:14px; left:14px; }
+@keyframes orbit-rotate { to { transform: rotate(360deg); } }
+
+.checkout-loading-container {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkout-loading-card {
+  width: 100%;
+  max-width: 880px;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+}
+.checkout-loading-skeleton {
+  height: 14px;
+  background: linear-gradient(90deg, #eef2ff 25%, #f8fafc 37%, #eef2ff 63%);
+  background-size: 400% 100%;
+  border-radius: 8px;
+  animation: checkout-shimmer 1.4s ease infinite;
+}
+.checkout-loading-skeleton.big { height: 18px; }
+.checkout-loading-skeleton.mt { margin-top: 10px; }
+@keyframes checkout-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+.checkout-spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  animation: checkout-rotate 0.9s linear infinite;
+}
+@keyframes checkout-rotate { to { transform: rotate(360deg); } }
+
+.checkout-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
 }
 
 /* Responsive Design */

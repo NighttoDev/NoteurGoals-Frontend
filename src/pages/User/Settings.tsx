@@ -770,14 +770,6 @@ const SettingsPage = () => {
                     Your plan will automatically renew. You can cancel anytime.
                   </p>
                 </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.autoRenewal}
-                    onChange={() => handleNotificationToggle("autoRenewal")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
               </div>
 
               <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>
