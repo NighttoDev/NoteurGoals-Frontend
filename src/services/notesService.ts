@@ -51,7 +51,7 @@ export const deleteNote = (id: string) => axiosAuth.delete(`/notes/${id}`);
  * @param id ID của note cần xóa mềm.
  */
 export const softDeleteNote = (id: string) =>
-  axiosAuth.post(`/notes/${id}/soft-delete`);
+  axiosAuth.post(`/notes-trash/${id}/soft-delete`);
 
 /**
  * [MỚI] Lấy danh sách các note trong thùng rác.

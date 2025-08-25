@@ -1,37 +1,510 @@
-.unified-trash-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 1rem;
+/* 
+================================================================
+  STYLESHEET FOR UNIFIED TRASH PAGE - SIDEBAR LAYOUT
+  Designer: AI
+  Focus: Vertical sidebar on left, content on right
+================================================================
+*/
+
+/* --- 0. ROOT & GENERAL STYLES (Same as Notes) --- */
+:root {
+  --primary-glow: rgba(167, 139, 250, 0.4);
+  --primary-deep: #4c1d95;
+  --primary-main: #7c3aed;
+  --primary-light: #a78bfa;
+
+  --background-main: #f5f3ff;
+  --surface-main: #ffffff;
+  --surface-alt: #fcfcff;
+  --border-main: #e7e5e4;
+
+  --text-main: #1f2937;
+  --text-light: #6b7280;
+  --text-on-primary: #ffffff;
+
+  --accent-red: #ef4444;
+  --accent-red-glow: rgba(239, 68, 68, 0.3);
+  --accent-green: #22c55e;
+  --accent-blue: #3b82f6;
+  --accent-yellow: #f59e0b;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07),
+    0 4px 6px -4px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --transition-main: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --sidebar-width: 280px;
 }
 
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+body {
+  -ms-overflow-style: none;
+}
+
+/* --- 1. MAIN CONTAINER --- */
+.unified-trash-container {
+  background-color: var(--background-main);
+  background-image: radial-gradient(
+    circle at 10% 20%,
+    rgba(167, 139, 250, 0.05) 0%,
+    transparent 20%
+  );
+  width: 100%;
+  min-height: calc(100vh - 4rem);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, sans-serif;
+  line-height: 1.6;
+  padding: 2rem;
+  display: flex;
+  gap: 2rem;
+  overflow: hidden;
+}
+
+/* --- 2. HEADER STYLES --- */
 .unified-trash-header {
-  text-align: center;
   margin-bottom: 2rem;
 }
 
-.trash-tabs {
-  display: flex;
-  border-bottom: 2px solid #eee;
-  margin-bottom: 1.5rem;
+.unified-trash-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
+  margin: 0;
+  position: relative;
+  display: inline-block;
 }
 
-.tab-button {
+.unified-trash-header h1::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-main), var(--primary-light));
+  border-radius: 2px;
+}
+
+/* --- 3. SIDEBAR LAYOUT --- */
+.trash-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-main);
+  height: fit-content;
+  min-height: calc(100vh - 8rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 2rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-main);
+  background: linear-gradient(135deg, var(--primary-main), var(--primary-light));
+  color: var(--text-on-primary);
+}
+
+.sidebar-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-on-primary);
+  text-align: center;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.nav-button {
+  width: 100%;
   padding: 1rem 1.5rem;
   border: none;
   background-color: transparent;
   cursor: pointer;
   font-size: 1rem;
-  color: #666;
+  font-weight: 500;
+  color: var(--text-light);
+  text-align: left;
+  transition: var(--transition-main);
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-button:hover {
+  background-color: rgba(124, 58, 237, 0.05);
+  color: var(--primary-main);
+  border-left-color: var(--primary-light);
+}
+
+.nav-button.active {
+  background-color: rgba(124, 58, 237, 0.1);
+  color: var(--primary-main);
+  font-weight: 600;
+  border-left-color: var(--primary-main);
+}
+
+.nav-button svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+}
+
+.nav-button.active svg {
+  opacity: 1;
+}
+
+/* --- 4. CONTENT AREA --- */
+.trash-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 8rem);
+}
+
+.content-header {
+  background-color: var(--surface-main);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem 2rem;
+  border: 1px solid var(--border-main);
+  border-bottom: none;
+}
+
+.content-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.content-header svg {
+  color: var(--primary-main);
+}
+
+.trash-content {
+  flex: 1;
+  background-color: var(--surface-main);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 2rem;
+  border: 1px solid var(--border-main);
+  border-top: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.trash-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- 5. EMPTY STATE STYLES --- */
+.trash-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-light);
+  min-height: 300px;
+}
+
+.trash-empty svg {
+  color: var(--primary-light);
+  opacity: 0.7;
+  margin-bottom: 1rem;
+}
+
+.trash-empty p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+}
+
+/* --- 6. TRASH ITEMS LIST --- */
+.trashed-notes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trashed-note-item {
+  background-color: var(--surface-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--border-radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: var(--transition-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
   position: relative;
-  bottom: -2px; /* Dịch nút xuống để đường kẻ dưới trùng với border-bottom của container */
-  border-bottom: 2px solid transparent;
+  overflow: hidden;
 }
 
-.tab-button.active {
-  font-weight: bold;
-  color: #007bff;
-  border-bottom-color: #007bff;
+.trashed-note-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-red), #fca5a5);
+  opacity: 0;
+  transition: var(--transition-main);
 }
 
-/* Tái sử dụng CSS từ trashPage.css cũ nếu có */
-/* (Bạn có thể copy các style cho .trashed-note-item, .trash-empty... từ file trước) */
+.trashed-note-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+
+.trashed-note-item:hover::before {
+  opacity: 1;
+}
+
+.note-info {
+  flex-grow: 1;
+}
+
+.note-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  margin: 0 0 0.5rem 0;
+}
+
+.note-deleted-date {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* --- 7. ACTION BUTTONS --- */
+.note-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.restore-button,
+.force-delete-button {
+  padding: 0.7rem;
+  border-radius: var(--border-radius-md);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.restore-button {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--accent-green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.restore-button:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+}
+
+.force-delete-button {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--accent-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.force-delete-button:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--accent-red-glow);
+}
+
+/* --- 8. LOADING STATE --- */
+@keyframes trash-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.trash-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-light);
+  font-size: 1.1rem;
+}
+
+.trash-loading::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--primary-light);
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  margin-right: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- 9. RESPONSIVE DESIGN --- */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+  
+  .unified-trash-container {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .unified-trash-container {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    overflow-y: auto;
+  }
+
+  .trash-sidebar {
+    width: 100%;
+    min-height: auto;
+    height: auto;
+  }
+
+  .sidebar-nav {
+    padding: 0.5rem 0;
+  }
+
+  .nav-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .content-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .trash-content {
+    padding: 1.5rem;
+  }
+
+  .trashed-note-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .note-actions {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .unified-trash-container {
+    padding: 0.75rem;
+  }
+
+  .sidebar-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .content-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .content-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .trash-content {
+    padding: 1rem;
+  }
+
+  .trashed-note-item {
+    padding: 1rem;
+  }
+
+  .note-title {
+    font-size: 1rem;
+  }
+
+  .note-deleted-date {
+    font-size: 0.8rem;
+  }
+}
+
+/* --- 10. ANIMATION UTILITIES --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trashed-note-item {
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+.trashed-note-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.trashed-note-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.trashed-note-item:nth-child(4) {
+  animation-delay: 0.3s;
+}

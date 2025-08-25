@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import "../../assets/css/User/schedule.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -31,13 +32,28 @@ interface Event {
   linkedGoal?: string;
 }
 
+type EventPayload = {
+  title: string;
+  description: string;
+  event_time: string;
+};
+
+type EventApiItem = {
+  event_id?: string | number;
+  user_id?: string;
+  title?: string;
+  description?: string;
+  event_time?: string;
+  goal_id?: string;
+  linked_goal?: string;
+};
+
 const Schedule: React.FC = () => {
   const toast = useToastHelpers();
   const { addNotification, removeNotification } = useNotifications();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -66,9 +82,6 @@ const Schedule: React.FC = () => {
       const response = await getEvents();
       console.log("API response nhận được:", response);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
       // Bước 1: Kiểm tra xem response hoặc response.data có tồn tại không
       if (!response || !response.data) {
         console.error(
@@ -79,12 +92,15 @@ const Schedule: React.FC = () => {
       }
 
       // Bước 2: Xác định vị trí của mảng sự kiện một cách an toàn
-      let eventsArray: any[] = [];
+      let eventsArray: EventApiItem[] = [];
       if (Array.isArray(response.data)) {
-        eventsArray = response.data;
+        eventsArray = response.data as EventApiItem[];
         console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data'");
-      } else if (response.data && Array.isArray(response.data.data)) {
-        eventsArray = response.data.data;
+      } else if (
+        response.data &&
+        Array.isArray((response.data as { data?: unknown }).data as unknown[])
+      ) {
+        eventsArray = (response.data as { data: EventApiItem[] }).data;
         console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data.data'");
       } else {
         console.warn(
@@ -99,8 +115,8 @@ const Schedule: React.FC = () => {
 
       // Bước 3: Ánh xạ dữ liệu một cách an toàn
       const formattedEvents = eventsArray
-        .map((item: any) => {
-          if (!item || typeof item.event_id === "undefined") {
+        .map((item: EventApiItem | null) => {
+          if (!item || item.event_id === undefined || !item.event_time) {
             console.warn(
               "Bỏ qua một item không hợp lệ trong mảng sự kiện:",
               item
@@ -109,40 +125,34 @@ const Schedule: React.FC = () => {
           }
           return {
             event_id: String(item.event_id),
-            user_id: item.user_id,
-            title: item.title,
-            description: item.description,
+            user_id: String(item.user_id ?? ""),
+            title: item.title ?? "",
+            description: item.description ?? "",
             event_time: item.event_time,
             linkedGoal: item.goal_id || item.linked_goal || "",
-          };
+          } as Event;
         })
-        .filter(Boolean); // Lọc ra tất cả các giá trị null
+        .filter((e): e is Event => Boolean(e));
 
       console.log("Sự kiện đã được định dạng thành công:", formattedEvents);
-      setEvents(formattedEvents as Event[]);
-    } catch (error: any) {
+      setEvents(formattedEvents);
+    } catch (error: unknown) {
       toast.error(
         "Không thể tải danh sách sự kiện! Vui lòng kiểm tra Console (F12) để biết chi tiết."
       );
 
-      if (error.response) {
+      if (axios.isAxiosError(error)) {
         console.error("LỖI API KHI TẢI SỰ KIỆN:", {
           message: "Server đã phản hồi với một mã lỗi.",
-          status: error.response.status,
-          data: error.response.data,
-        });
-      } else if (error.request) {
-        console.error("LỖI MẠNG KHI TẢI SỰ KIỆN:", {
-          message:
-            "Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng, URL API và cấu hình CORS.",
-          request: error.request,
+          status: error.response?.status,
+          data: error.response?.data,
         });
       } else {
-        console.error("LỖI JAVASCRIPT KHI TẢI SỰ KIỆN:", error.message, error);
+        console.error("LỖI JAVASCRIPT KHI TẢI SỰ KIỆN:", error);
       }
       setEvents([]);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchEvents();
@@ -290,7 +300,6 @@ const Schedule: React.FC = () => {
       linkedGoal: "",
     });
     setAddErrors({});
-    setSelectedDay(day || null);
     setIsAddModalOpen(true);
   };
 
@@ -314,7 +323,6 @@ const Schedule: React.FC = () => {
     setEditingEvent(null);
     setIsSubmitting(false);
     setIsDeleting(false);
-    setSelectedDay(null);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -325,20 +333,41 @@ const Schedule: React.FC = () => {
     setIsSubmitting(true);
     try {
       const event_time = `${addForm.date}T${addForm.time}:00`;
-      const payload: any = {
+      const payload: EventPayload = {
         title: addForm.title,
         description: addForm.description,
         event_time,
       };
       const res = await createEvent(payload);
-      const item = res.data.event ?? res.data;
+      const dataUnknown = res.data as unknown;
+      let item: EventApiItem;
+      if (
+        typeof dataUnknown === "object" &&
+        dataUnknown !== null &&
+        "event" in dataUnknown &&
+        typeof (dataUnknown as { event?: unknown }).event === "object" &&
+        (dataUnknown as { event: unknown }).event !== null
+      ) {
+        item = (dataUnknown as { event: EventApiItem }).event;
+      } else {
+        item = dataUnknown as EventApiItem;
+      }
       if (addForm.linkedGoal) {
-        await linkGoalToEvent(item.event_id, { goal_id: addForm.linkedGoal });
+        await linkGoalToEvent(String(item.event_id ?? ""), {
+          goal_id: addForm.linkedGoal,
+        });
       }
       closeAddModal();
       await fetchEvents();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Có lỗi khi thêm sự kiện!");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          (err.response?.data as { message?: string } | undefined)?.message ||
+            "Có lỗi khi thêm sự kiện!"
+        );
+      } else {
+        toast.error("Có lỗi khi thêm sự kiện!");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -352,7 +381,7 @@ const Schedule: React.FC = () => {
     setIsSubmitting(true);
     try {
       const event_time = `${editForm.date}T${editForm.time}:00`;
-      const payload: any = {
+      const payload: EventPayload = {
         title: editForm.title,
         description: editForm.description,
         event_time,
@@ -373,8 +402,15 @@ const Schedule: React.FC = () => {
       }
       closeEditModal();
       await fetchEvents();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Có lỗi khi sửa sự kiện!");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          (err.response?.data as { message?: string } | undefined)?.message ||
+            "Có lỗi khi sửa sự kiện!"
+        );
+      } else {
+        toast.error("Có lỗi khi sửa sự kiện!");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -393,11 +429,39 @@ const Schedule: React.FC = () => {
         alert("Event moved to trash successfully."); // Thông báo thành công
         closeEditModal();
         await fetchEvents();
-      } catch (err: any) {
-        alert(err?.response?.data?.message || "Failed to delete the event!");
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          alert(
+            (err.response?.data as { message?: string } | undefined)?.message ||
+              "Failed to delete the event!"
+          );
+        } else {
+          alert("Failed to delete the event!");
+        }
       } finally {
         // Dùng finally để đảm bảo isDeleting luôn được reset
         setIsDeleting(false);
+      }
+    }
+  };
+
+  const handleQuickDelete = async (event: Event, e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn không cho mở modal edit
+    
+    if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
+      try {
+        await deleteEvent(event.event_id);
+        toast.success("Event deleted successfully!");
+        await fetchEvents();
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          toast.error(
+            (err.response?.data as { message?: string } | undefined)?.message ||
+              "Failed to delete the event!"
+          );
+        } else {
+          toast.error("Failed to delete the event!");
+        }
       }
     }
   };
@@ -472,8 +536,17 @@ const Schedule: React.FC = () => {
                             openEditModal(event);
                           }}
                         >
-                          <FontAwesomeIcon icon={faBullseye} />
-                          {event.title}
+                          <div className="schedule-event-content">
+                            <FontAwesomeIcon icon={faBullseye} />
+                            <span className="schedule-event-title">{event.title}</span>
+                          </div>
+                          <button
+                            className="schedule-event-delete-btn"
+                            onClick={(e) => handleQuickDelete(event, e)}
+                            title="Delete event"
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -503,17 +576,26 @@ const Schedule: React.FC = () => {
                 className="schedule-agenda-item"
                 onClick={() => openEditModal(event)}
               >
-                <h4 className="schedule-agenda-item-title">{event.title}</h4>
-                <p className="schedule-agenda-item-time">
-                  {new Date(event.event_time).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                  - {event.event_time.slice(11, 16)}
-                </p>
-                <p className="schedule-agenda-item-desc">{event.description}</p>
+                <div className="schedule-agenda-item-content">
+                  <h4 className="schedule-agenda-item-title">{event.title}</h4>
+                  <p className="schedule-agenda-item-time">
+                    {new Date(event.event_time).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                    - {event.event_time.slice(11, 16)}
+                  </p>
+                  <p className="schedule-agenda-item-desc">{event.description}</p>
+                </div>
+                <button
+                  className="schedule-agenda-delete-btn"
+                  onClick={(e) => handleQuickDelete(event, e)}
+                  title="Delete event"
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
               </div>
             ))}
           </div>

@@ -42,7 +42,8 @@
     transparent 20%
   );
 
-  height: 100vh;
+  /* Thay đổi từ height: 100vh thành min-height */
+  min-height: 100vh;
   width: 100vw;
   margin: 0;
   padding: 0;
@@ -50,18 +51,17 @@
     Oxygen, Ubuntu, sans-serif;
   line-height: 1.6;
 
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  /* Bỏ display: flex và flex-direction: column */
+  /* Bỏ overflow: hidden */
+  
+  /* Thêm overflow-y: scroll để cho phép cuộn */
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .settings-main-content::-webkit-scrollbar {
   display: none;
-}
-
-.settings-main-content {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 .settings-page-title {
@@ -73,7 +73,7 @@
   position: relative;
   display: inline-block;
 
-  flex-shrink: 0; /* Ngăn tiêu đề bị co lại */
+  /* Bỏ flex-shrink: 0 */
 }
 
 .settings-page-title::after {
@@ -90,27 +90,35 @@
 /* --- Settings Container --- */
 .settings-container {
   display: flex;
-  flex: 1;
+  /* Bỏ flex: 1 */
   gap: 1.5rem;
   align-items: stretch;
   padding: 0 1.5rem 1.5rem;
 
-  overflow: hidden;
+  /* Bỏ overflow: hidden */
+  
+  /* Thêm min-height để đảm bảo container có chiều cao tối thiểu */
+  min-height: calc(100vh - 4rem);
 }
 
-/* --- Loading Spinner (NEW) --- */
-@keyframes settings-spinner-rotate {
+/* --- Loading Spinner (Updated to match GoalsDetail) --- */
+@keyframes settingsPulse {
+  0%,
   100% {
-    transform: rotate(360deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 
-@keyframes settings-spinner-dot-fade {
-  80%,
-  100% {
-    opacity: 0;
+@keyframes settingsDotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
   }
   40% {
+    transform: scale(1);
     opacity: 1;
   }
 }
@@ -123,93 +131,126 @@
   justify-content: center;
   color: var(--text-light);
   font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 4rem);
+}
+
+.settings-loading-container::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: settingsPulse 3s ease-in-out infinite;
 }
 
 .settings-loading-spinner {
-  position: relative;
-  width: 50px;
-  height: 50px;
-  animation: settings-spinner-rotate 2.5s infinite linear;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+  z-index: 2;
+  position: relative;
 }
 
 .settings-loading-spinner div {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-.settings-loading-spinner div::before {
-  content: "";
-  display: block;
-  width: 15%;
-  height: 15%;
-  background-color: var(--primary-light);
-  border-radius: 100%;
-  animation: settings-spinner-dot-fade 1.2s infinite ease-in-out both;
+  width: 12px;
+  height: 12px;
+  background-color: var(--primary-main);
+  border-radius: 50%;
+  animation: settingsDotBounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3);
 }
 
 .settings-loading-spinner div:nth-child(1) {
-  transform: rotate(0deg);
-}
-.settings-loading-spinner div:nth-child(2) {
-  transform: rotate(45deg);
-}
-.settings-loading-spinner div:nth-child(3) {
-  transform: rotate(90deg);
-}
-.settings-loading-spinner div:nth-child(4) {
-  transform: rotate(135deg);
-}
-.settings-loading-spinner div:nth-child(5) {
-  transform: rotate(180deg);
-}
-.settings-loading-spinner div:nth-child(6) {
-  transform: rotate(225deg);
-}
-.settings-loading-spinner div:nth-child(7) {
-  transform: rotate(270deg);
-}
-.settings-loading-spinner div:nth-child(8) {
-  transform: rotate(315deg);
+  animation-delay: -0.32s;
 }
 
-.settings-loading-spinner div:nth-child(1)::before {
-  animation-delay: -1.1s;
+.settings-loading-spinner div:nth-child(2) {
+  animation-delay: -0.16s;
 }
-.settings-loading-spinner div:nth-child(2)::before {
-  animation-delay: -1s;
+
+.settings-loading-spinner div:nth-child(3) {
+  animation-delay: 0s;
 }
-.settings-loading-spinner div:nth-child(3)::before {
-  animation-delay: -0.9s;
+
+.settings-loading-container p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-light);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.025em;
 }
-.settings-loading-spinner div:nth-child(4)::before {
-  animation-delay: -0.8s;
+
+/* Remove old spinner animation keyframes - xóa các keyframes cũ */
+@keyframes settings-spinner-rotate {
+  /* Xóa hoặc comment out animation này */
 }
-.settings-loading-spinner div:nth-child(5)::before {
-  animation-delay: -0.7s;
+
+@keyframes settings-spinner-dot-fade {
+  /* Xóa hoặc comment out animation này */
 }
-.settings-loading-spinner div:nth-child(6)::before {
-  animation-delay: -0.6s;
+
+/* Responsive adjustments for loading */
+@media (max-width: 768px) {
+  .settings-loading-container::before {
+    width: 200px;
+    height: 200px;
+  }
+
+  .settings-loading-spinner div {
+    width: 10px;
+    height: 10px;
+  }
+
+  .settings-loading-spinner {
+    gap: 0.4rem;
+  }
+
+  .settings-loading-container p {
+    font-size: 1rem;
+  }
 }
-.settings-loading-spinner div:nth-child(7)::before {
-  animation-delay: -0.5s;
-}
-.settings-loading-spinner div:nth-child(8)::before {
-  animation-delay: -0.4s;
+
+@media (max-width: 480px) {
+  .settings-loading-container::before {
+    width: 150px;
+    height: 150px;
+  }
+
+  .settings-loading-spinner div {
+    width: 8px;
+    height: 8px;
+  }
+
+  .settings-loading-spinner {
+    gap: 0.3rem;
+  }
 }
 
 /* --- Navigation --- */
 .settings-nav {
-  flex: 0 0 220px;
+  margin-top: 20px;
+  flex: 0 0 300px;
   background-color: var(--surface-main);
   border: 1px solid var(--border-main);
   border-radius: var(--border-radius-lg);
-  padding: 1.5rem;
+  padding: 1.2rem;
   box-shadow: var(--shadow-md);
   overflow-y: auto;
+  margin-bottom: 55px;
 }
 
 .settings-nav-list {
@@ -273,21 +314,52 @@
   width: 100%;
   text-align: left;
   cursor: pointer;
+  /* Thêm các thuộc tính để đồng bộ với design tổng thể */
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-main);
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-md);
+  transition: var(--transition-main);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.settings-nav-link.settings-logout-link:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--accent-red);
+}
+
+.settings-nav-link.settings-logout-link svg {
+  width: 20px;
+  text-align: center;
+  color: var(--text-light);
+  transition: var(--transition-main);
+}
+
+.settings-nav-link.settings-logout-link:hover svg {
+  color: var(--accent-red);
+}
+
+/* Thêm state loading cho logout button */
+.settings-nav-link.settings-logout-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* --- Content Area --- */
 .settings-content {
+  margin-top: 20px;
   flex-grow: 1;
-  overflow-y: auto;
+  /* Bỏ overflow-y: auto */
+  /* Bỏ padding-bottom: 2rem */
+  
+  /* Thêm padding-bottom để tạo khoảng cách cuối trang */
   padding-bottom: 2rem;
-}
-
-.settings-content::-webkit-scrollbar {
-  display: none;
-}
-.settings-content {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 .settings-section {
@@ -334,7 +406,7 @@
 .settings-section-body {
   padding: 1.5rem;
   flex: 1;
-  overflow-y: auto;
+  /* Bỏ overflow-y: auto vì không cần nữa */
 }
 
 /* --- Form Elements --- */
@@ -684,12 +756,14 @@ input:checked + .settings-slider:before {
 @media (max-width: 992px) {
   .settings-container {
     flex-direction: column;
+    /* Thêm min-height cho mobile */
+    min-height: calc(100vh - 3rem);
   }
 
   .settings-nav {
-    flex: 1;
+    flex: none; /* Thay đổi từ flex: 1 */
     width: 100%;
-    overflow-y: visible;
+    overflow-y: visible; /* Thay đổi từ overflow-y: visible */
   }
 
   .settings-content {
@@ -699,19 +773,20 @@ input:checked + .settings-slider:before {
 
 @media (max-width: 768px) {
   .settings-main-content {
-    height: auto;
+    /* Bỏ height: auto */
     min-height: 100vh;
-    overflow: visible;
+    /* Bỏ overflow: visible */
   }
 
   .settings-container {
     padding: 0 1rem 1rem;
-    overflow: visible;
+    min-height: calc(100vh - 2rem);
   }
 
-  .settings-content {
+  /* Bỏ rule này vì không cần nữa */
+  /* .settings-content {
     overflow-y: visible;
-  }
+  } */
 
   .settings-plans-grid {
     grid-template-columns: 1fr;

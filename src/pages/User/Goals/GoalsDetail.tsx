@@ -12,6 +12,7 @@ import {
   faTrash,
   faPlus,
   faCheck,
+  faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getGoal,
@@ -24,7 +25,9 @@ import {
 import MilestoneList from "../../../components/User/MilestoneList";
 import CollaboratorList from "../../../components/User/CollaboratorList";
 import ProgressChart from "../../../components/User/ProgressChart";
-import "../../../assets/css/User/GoalDetail.css";
+import { useToastHelpers } from "../../../hooks/toastContext";
+import { useConfirm } from "../../../hooks/confirmContext";
+import "../../../assets/css/User/goalDetail.css";
 
 // --- Interfaces ---
 type Status = "in_progress" | "completed" | "new" | "cancelled";
@@ -43,8 +46,9 @@ interface Collaborator {
   goal_id: string;
   user_id: string;
   role: string;
+  name?: string;
+  avatar?: string;
   user?: {
-    // Giả sử API trả về thông tin user lồng nhau để hiển thị
     display_name: string;
     avatar: string;
   };
@@ -71,8 +75,10 @@ interface Goal {
   end_date: string;
   status: Status;
   milestones: Milestone[];
-  collaborations: Collaborator[]; // Khớp với tên quan hệ trong API response
+  collaborators?: Collaborator[];
+  collaborations?: Collaborator[];
   share?: GoalShare;
+  shares?: GoalShare[];
   progress?: GoalProgress;
   notesCount?: number;
   attachmentsCount?: number;
@@ -101,12 +107,15 @@ const statusTags: { [key: string]: string } = {
 // --- Helper function ---
 const formatDateForInput = (dateString: string) => {
   if (!dateString) return "";
-  return dateString.substring(0, 10); // Lấy phần 'YYYY-MM-DD'
+  return dateString.substring(0, 10);
 };
 
 const GoalDetailPage: React.FC = () => {
   const { goalId } = useParams<{ goalId: string }>();
   const navigate = useNavigate();
+  const toast = useToastHelpers();
+  const confirm = useConfirm();
+  
   const [goal, setGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -120,46 +129,52 @@ const GoalDetailPage: React.FC = () => {
   });
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState("");
   const [shareType, setShareType] = useState<Sharing>("private");
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Fetch goal details (Đã sửa lỗi)
+  // Fetch goal details
   const fetchGoalDetails = useCallback(async () => {
-    if (!goalId) return;
+    if (!goalId) {
+      setError("Goal ID is required");
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError("");
     try {
       const response = await getGoal(goalId);
-
-      // === SỬA LỖI QUAN TRỌNG: Xử lý linh hoạt cấu trúc API response ===
       const goalData = response.data.data || response.data;
-      // =================================================================
 
-      // Kiểm tra để đảm bảo goalData là một object hợp lệ
       if (!goalData || typeof goalData !== "object") {
         throw new Error("Invalid data structure received from API.");
       }
 
+      console.log("Fetched goal data:", goalData);
+
       setGoal(goalData);
       setFormData({
-        title: goalData.title,
-        description: goalData.description,
+        title: goalData.title || "",
+        description: goalData.description || "",
         start_date: formatDateForInput(goalData.start_date),
         end_date: formatDateForInput(goalData.end_date),
-        status: goalData.status,
+        status: goalData.status || "new",
       });
-      setShareType(goalData.share?.share_type || "private");
+      
+      // Xử lý shareType an toàn
+      const currentShareType = goalData.share?.share_type || 
+                              (goalData.shares && goalData.shares.length > 0 ? goalData.shares[0].share_type : null) || 
+                              "private";
+      setShareType(currentShareType);
+      
     } catch (err: any) {
       console.error("ERROR FETCHING GOAL:", err.response || err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to load goal details";
+      const errorMessage = err.response?.data?.message || err.message || "Failed to load goal details";
       setError(errorMessage);
+      toast?.showError && toast.showError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [goalId]);
+  }, [goalId, toast]);
 
   useEffect(() => {
     fetchGoalDetails();
@@ -167,101 +182,149 @@ const GoalDetailPage: React.FC = () => {
 
   // Handle form input changes
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Validate form
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      toast?.showError && toast.showError("Title is required");
+      return false;
+    }
+    if (!formData.start_date) {
+      toast?.showError && toast.showError("Start date is required");
+      return false;
+    }
+    if (!formData.end_date) {
+      toast?.showError && toast.showError("End date is required");
+      return false;
+    }
+    if (formData.start_date > formData.end_date) {
+      toast?.showError && toast.showError("End date must be after start date");
+      return false;
+    }
+    return true;
+  };
+
   // Save goal updates
   const handleSaveGoal = async () => {
     if (!goalId || !goal) return;
-    setLoading(true);
+    
+    if (!validateForm()) return;
+    
+    setActionLoading(true);
     setError("");
     try {
       await updateGoal(goalId, formData);
-      await fetchGoalDetails(); // Làm mới dữ liệu
+      toast?.showSuccess && toast.showSuccess("Goal updated successfully!");
+      await fetchGoalDetails();
       setEditMode(false);
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to update goal";
+      const errorMessage = err.response?.data?.message || "Failed to update goal";
       setError(errorMessage);
+      toast?.showError && toast.showError(errorMessage);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   // Delete goal
   const handleDeleteGoal = async () => {
     if (!goalId) return;
-    setLoading(true);
+    
+    const confirmed = await confirm?.show({
+      title: "Delete Goal",
+      message: "Are you sure you want to delete this goal? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel"
+    });
+
+    if (!confirmed) return;
+    
+    setActionLoading(true);
     setError("");
     try {
       await deleteGoal(goalId);
-      navigate("/goals"); // Chuyển hướng sau khi xóa
+      toast?.showSuccess && toast.showSuccess("Goal deleted successfully!");
+      navigate("/goals");
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to delete goal";
+      const errorMessage = err.response?.data?.message || "Failed to delete goal";
       setError(errorMessage);
-    } finally {
-      setLoading(false);
-      setIsDeleteConfirmOpen(false);
+      toast?.showError && toast.showError(errorMessage);
+      setActionLoading(false);
     }
   };
 
   // Add collaborator
   const handleAddCollaborator = async () => {
-    if (!goalId || !newCollaboratorEmail.trim()) return;
-    setLoading(true);
+    if (!goalId || !newCollaboratorEmail.trim()) {
+      toast?.showError && toast.showError("Please enter a valid email");
+      return;
+    }
+    
+    setActionLoading(true);
     setError("");
     try {
       await addCollaborator(goalId, { email: newCollaboratorEmail.trim() });
+      toast?.showSuccess && toast.showSuccess("Collaborator added successfully!");
       setNewCollaboratorEmail("");
       await fetchGoalDetails();
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to add collaborator";
+      const errorMessage = err.response?.data?.message || "Failed to add collaborator";
       setError(errorMessage);
+      toast?.showError && toast.showError(errorMessage);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   // Remove collaborator
   const handleRemoveCollaborator = async (userId: string) => {
     if (!goalId) return;
-    setLoading(true);
+    
+    const confirmed = await confirm?.show({
+      title: "Remove Collaborator",
+      message: "Are you sure you want to remove this collaborator?",
+      confirmText: "Remove",
+      cancelText: "Cancel"
+    });
+
+    if (!confirmed) return;
+    
+    setActionLoading(true);
     setError("");
     try {
       await removeCollaborator(goalId, userId);
+      toast?.showSuccess && toast.showSuccess("Collaborator removed successfully!");
       await fetchGoalDetails();
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to remove collaborator";
+      const errorMessage = err.response?.data?.message || "Failed to remove collaborator";
       setError(errorMessage);
+      toast?.showError && toast.showError(errorMessage);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   // Update sharing settings
   const handleUpdateSharing = async (newShareType: Sharing) => {
     if (!goalId) return;
-    setLoading(true);
-    setError("");
+    
+    const previousShareType = shareType;
+    setShareType(newShareType);
+    
     try {
       await updateShareSettings(goalId, { share_type: newShareType });
-      setShareType(newShareType);
-      // Không cần fetch lại vì API đã trả về goal mới, nhưng fetch lại cho an toàn
+      toast?.showSuccess && toast.showSuccess("Sharing settings updated!");
       await fetchGoalDetails();
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to update sharing settings";
+      setShareType(previousShareType);
+      const errorMessage = err.response?.data?.message || "Failed to update sharing settings";
       setError(errorMessage);
-    } finally {
-      setLoading(false);
+      toast?.showError && toast.showError(errorMessage);
     }
   };
 
@@ -275,29 +338,53 @@ const GoalDetailPage: React.FC = () => {
     });
   };
 
+  // Get collaborators list
+  const getCollaborators = () => {
+    const collaborators = goal?.collaborators || goal?.collaborations || [];
+    return collaborators.map((collab) => ({
+      ...collab,
+      name: collab.name || collab.user?.display_name || "",
+      avatar: collab.avatar || collab.user?.avatar || "",
+    }));
+  };
+
   if (loading && !goal) {
     return (
-      <div className="goal-detail-loading">
-        <div className="spinner"></div>
-        <p>Loading goal details...</p>
+      <div className="goal-detail-container">
+        <div className="goal-detail-loading">
+          <div className="goal-detail-loading-dots">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+          <p>Loading goal details...</p>
+        </div>
       </div>
     );
   }
 
   if (error && !goal) {
     return (
-      <div className="goal-detail-error">
-        <p>{error}</p>
-        <button onClick={() => navigate("/goals")}>Back to Goals</button>
+      <div className="goal-detail-container">
+        <div className="goal-detail-error">
+          <p>{error}</p>
+          <button onClick={() => navigate("/goals")} className="btn-edit">
+            <FontAwesomeIcon icon={faArrowLeft} /> Back to Goals
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!goal) {
     return (
-      <div className="goal-detail-error">
-        <p>Goal not found.</p>
-        <button onClick={() => navigate("/goals")}>Back to Goals</button>
+      <div className="goal-detail-container">
+        <div className="goal-detail-error">
+          <p>Goal not found.</p>
+          <button onClick={() => navigate("/goals")} className="btn-edit">
+            <FontAwesomeIcon icon={faArrowLeft} /> Back to Goals
+          </button>
+        </div>
       </div>
     );
   }
@@ -307,6 +394,14 @@ const GoalDetailPage: React.FC = () => {
       {/* Header Section */}
       <div className="goal-detail-header">
         <div className="goal-detail-header-left">
+          <button 
+            onClick={() => navigate("/goals")} 
+            className="btn-cancel"
+            style={{ padding: "0.5rem 1rem", marginBottom: "1rem" }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} /> Back
+          </button>
+          
           {editMode ? (
             <input
               type="text"
@@ -314,6 +409,7 @@ const GoalDetailPage: React.FC = () => {
               value={formData.title}
               onChange={handleInputChange}
               className="goal-title-input"
+              placeholder="Goal title"
             />
           ) : (
             <h1>{goal.title}</h1>
@@ -333,14 +429,14 @@ const GoalDetailPage: React.FC = () => {
               <button
                 className="btn-edit"
                 onClick={() => setEditMode(true)}
-                disabled={loading}
+                disabled={loading || actionLoading}
               >
                 <FontAwesomeIcon icon={faEdit} /> Edit
               </button>
               <button
                 className="btn-delete"
-                onClick={() => setIsDeleteConfirmOpen(true)}
-                disabled={loading}
+                onClick={handleDeleteGoal}
+                disabled={loading || actionLoading}
               >
                 <FontAwesomeIcon icon={faTrash} /> Delete
               </button>
@@ -351,18 +447,25 @@ const GoalDetailPage: React.FC = () => {
                 className="btn-cancel"
                 onClick={() => {
                   setEditMode(false);
-                  fetchGoalDetails();
+                  setFormData({
+                    title: goal.title || "",
+                    description: goal.description || "",
+                    start_date: formatDateForInput(goal.start_date),
+                    end_date: formatDateForInput(goal.end_date),
+                    status: goal.status || "new",
+                  });
                 }}
-                disabled={loading}
+                disabled={actionLoading}
               >
                 Cancel
               </button>
               <button
                 className="btn-save"
                 onClick={handleSaveGoal}
-                disabled={loading}
+                disabled={actionLoading}
               >
-                <FontAwesomeIcon icon={faCheck} /> Save
+                <FontAwesomeIcon icon={faCheck} /> 
+                {actionLoading ? " Saving..." : " Save"}
               </button>
             </>
           )}
@@ -382,9 +485,12 @@ const GoalDetailPage: React.FC = () => {
                 onChange={handleInputChange}
                 className="goal-description-input"
                 rows={5}
+                placeholder="Goal description"
               />
             ) : (
-              <p>{goal.description || "No description provided."}</p>
+              <p className="goal-description-text">
+                {goal.description || "No description provided."}
+              </p>
             )}
           </section>
 
@@ -440,67 +546,8 @@ const GoalDetailPage: React.FC = () => {
           )}
 
           <section className="goal-section">
-            <h2>Sharing Settings</h2>
-            <div className="sharing-options">
-              {(["private", "friends", "public"] as Sharing[]).map((type) => (
-                <button
-                  key={type}
-                  className={`sharing-option ${
-                    shareType === type ? "active" : ""
-                  }`}
-                  onClick={() => handleUpdateSharing(type)}
-                  disabled={loading}
-                >
-                  <FontAwesomeIcon icon={sharingIcons[type]} />
-                  <span>{sharingTitles[type]}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Right Column */}
-        <div className="goal-detail-right">
-          <section className="goal-section">
             <h2>Progress</h2>
             <ProgressChart progress={goal.progress?.progress_value || 0} />
-          </section>
-
-          <section className="goal-section">
-            <div className="section-header">
-              <h2>Milestones</h2>
-            </div>
-            <MilestoneList
-              milestones={goal.milestones || []}
-              goalId={goal.goal_id}
-              onRefresh={fetchGoalDetails}
-              goalStartDate={goal.start_date}
-              goalEndDate={goal.end_date}
-            />
-          </section>
-
-          <section className="goal-section">
-            <div className="section-header">
-              <h2>Collaborators</h2>
-            </div>
-            <CollaboratorList
-              collaborators={goal.collaborations || []}
-              onRemove={handleRemoveCollaborator}
-            />
-            <div className="add-collaborator">
-              <input
-                type="email"
-                placeholder="Add collaborator by email"
-                value={newCollaboratorEmail}
-                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
-              />
-              <button
-                onClick={handleAddCollaborator}
-                disabled={!newCollaboratorEmail.trim() || loading}
-              >
-                <FontAwesomeIcon icon={faPlus} /> Add
-              </button>
-            </div>
           </section>
 
           {(goal.notesCount || goal.attachmentsCount) && (
@@ -523,39 +570,104 @@ const GoalDetailPage: React.FC = () => {
             </section>
           )}
         </div>
-      </div>
 
-      {isDeleteConfirmOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Confirm Deletion</h3>
-            <p>
-              Are you sure you want to delete this goal? This action will move
-              it to the trash.
-            </p>
-            <div className="modal-actions">
+        {/* Right Column */}
+        <div className="goal-detail-right">
+          <section className="goal-section">
+            <div className="section-header">
+              <h2>Milestones</h2>
+            </div>
+            <MilestoneList
+              milestones={goal.milestones || []}
+              goalId={goal.goal_id}
+              onRefresh={fetchGoalDetails}
+              goalStartDate={goal.start_date}
+              goalEndDate={goal.end_date}
+            />
+          </section>
+
+          <section className="goal-section">
+            <div className="section-header">
+              <h2>Collaborators</h2>
+            </div>
+            
+            <div className="collaborator-list">
+              {getCollaborators().map((collaborator) => (
+                <div 
+                  key={collaborator.collab_id || collaborator.user_id} 
+                  className="collaborator-item"
+                  data-role={collaborator.role || "Member"}
+                  title={`${collaborator.name} (${collaborator.role || "Member"})`}
+                >
+                  <div className="collaborator-info">
+                    <span className="collaborator-name">
+                      {collaborator.name || "Unknown"}
+                    </span>
+                  </div>
+                  <button
+                    className="collaborator-remove"
+                    onClick={() => handleRemoveCollaborator(collaborator.user_id)}
+                    disabled={actionLoading}
+                    title="Remove collaborator"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="add-collaborator">
+              <input
+                type="email"
+                placeholder="Add collaborator by email"
+                value={newCollaboratorEmail}
+                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
+                disabled={actionLoading}
+              />
               <button
-                onClick={() => setIsDeleteConfirmOpen(false)}
-                disabled={loading}
+                onClick={handleAddCollaborator}
+                disabled={!newCollaboratorEmail.trim() || actionLoading}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteGoal}
-                disabled={loading}
-                className="btn-danger"
-              >
-                {loading ? "Deleting..." : "Delete"}
+                <FontAwesomeIcon icon={faPlus} /> 
+                {actionLoading ? " Adding..." : " Add"}
               </button>
             </div>
-          </div>
+          </section>
+
+          <section className="goal-section">
+            <h2>Sharing Settings</h2>
+            <div className="sharing-options">
+              {(["private", "friends", "public"] as Sharing[]).map((type) => (
+                <button
+                  key={type}
+                  className={`sharing-option ${shareType === type ? "active" : ""}`}
+                  onClick={() => handleUpdateSharing(type)}
+                  disabled={loading || actionLoading}
+                >
+                  <FontAwesomeIcon icon={sharingIcons[type]} />
+                  <span>{sharingTitles[type]}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
-      )}
+      </div>
 
       {error && (
-        <div className="error-message">
+        <div className="error-message" style={{ 
+          position: "fixed", 
+          bottom: "20px", 
+          right: "20px", 
+          background: "red", 
+          color: "white", 
+          padding: "1rem", 
+          borderRadius: "8px",
+          zIndex: 1000
+        }}>
           <p>{error}</p>
-          <button onClick={() => setError("")}>Dismiss</button>
+          <button onClick={() => setError("")} style={{ marginLeft: "10px" }}>
+            Dismiss
+          </button>
         </div>
       )}
     </div>

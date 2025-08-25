@@ -9,6 +9,10 @@ import {
   faCalendarAlt,
   faEllipsisV,
   faTimes,
+  faChevronDown,
+  faBullseye,
+  faStickyNote,
+  faPaperclip,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getGoals,
@@ -21,7 +25,6 @@ import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext";
 import { useToastHelpers } from "../../../hooks/toastContext";
 import { useConfirm } from "../../../hooks/confirmContext";
-
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -92,9 +95,20 @@ const statusTags: { [key: string]: string } = {
   cancelled: "Cancelled",
 };
 
-// --- GOAL CARD COMPONENT (Đã sửa: loại bỏ prop không dùng) ---
+// --- GOAL CARD COMPONENT (Cập nhật để hiển thị collaborators) ---
 const GoalCard = memo(({ goal }: { goal: Goal }) => {
   const navigate = useNavigate();
+  
+  // Lấy share type một cách an toàn
+  const getShareType = (goal: Goal): Sharing => {
+    // Kiểm tra nhiều cách có thể có trong API response
+    if (goal.share?.share_type) return goal.share.share_type;
+    if (goal.shares && goal.shares.length > 0) return goal.shares[0].share_type;
+    return "private";
+  };
+  
+  const shareType = getShareType(goal);
+  
   return (
     <div
       className={`goals-card${
@@ -107,19 +121,9 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
         <div className="goals-title-container">
           <span
             className="goals-sharing-status"
-            title={
-              goal.share?.share_type
-                ? sharingTitles[goal.share.share_type]
-                : "Private"
-            }
+            title={sharingTitles[shareType]}
           >
-            <FontAwesomeIcon
-              icon={
-                goal.share?.share_type
-                  ? sharingIcons[goal.share.share_type]
-                  : sharingIcons.private
-              }
-            />
+            <FontAwesomeIcon icon={sharingIcons[shareType]} />
           </span>
           <h3 className="goals-card-title">{goal.title}</h3>
         </div>
@@ -171,6 +175,37 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
           <span>{goal.progress ? goal.progress.progress_value : 0}%</span>
         </div>
       </div>
+
+      {/* Thêm phần hiển thị collaborators như code cũ */}
+      <div className="goals-card-footer">
+        <div className="goals-card-collaborators">
+          {goal.collaborators && goal.collaborators.length > 0 && (
+            <div className="goals-user-avatars">
+              {goal.collaborators.map((collaborator) => (
+                <img
+                  key={collaborator.collab_id}
+                  src={collaborator.avatar || '/default-avatar.png'}
+                  alt={collaborator.name || 'Collaborator'}
+                  title={collaborator.name || 'Collaborator'}
+                  className="goals-collaborator-avatar"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="goals-card-stats">
+          {goal.notesCount ? (
+            <span>
+              <FontAwesomeIcon icon={faStickyNote} /> {goal.notesCount}
+            </span>
+          ) : null}
+          {goal.attachmentsCount ? (
+            <span>
+              <FontAwesomeIcon icon={faPaperclip} /> {goal.attachmentsCount}
+            </span>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 });
@@ -181,6 +216,7 @@ const GoalsPage: React.FC = () => {
   const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -189,47 +225,55 @@ const GoalsPage: React.FC = () => {
     description: "",
     start_date: "",
     end_date: "",
-    share_type: "private" as Sharing, // Sửa tên để khớp API
+    share_type: "private" as Sharing,
   });
   const [milestones, setMilestones] = useState<
     Omit<Milestone, "goal_id" | "milestone_id">[]
   >([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const highlightRef = useRef<HTMLSpanElement>(null);
   const filterTabsRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { searchTerm } = useSearch();
 
-  // Fetch goals
+  // Fetch goals - BỎ isInitialLoad ra khỏi dependency array
   const fetchGoals = useCallback(async () => {
-    setLoading(true);
+    // Chỉ hiển thị loading spinner nhỏ khi không phải lần đầu load
+    if (!isInitialLoad) {
+      setLoading(true);
+    }
+    
     try {
       const res = await getGoals({ status: filter, search: searchTerm });
-      // API trả về object phân trang, dữ liệu nằm trong res.data.data
       const goalsData = res.data.data || res.data || [];
       setGoals(goalsData);
+      setErrorMsg(""); // Clear error khi load thành công
     } catch (err) {
       setErrorMsg("Failed to load goals.");
       console.error(err);
     } finally {
       setLoading(false);
+      // Set isInitialLoad = false sau lần load đầu tiên
+      setIsInitialLoad(false);
     }
-  }, [filter, searchTerm]);
+  }, [filter, searchTerm]); // BỎ isInitialLoad ra khỏi đây
 
   useEffect(() => {
     // Thêm debounce để tránh gọi API liên tục khi gõ search
     const handler = setTimeout(() => {
       fetchGoals();
-    }, 300); // Đợi 300ms sau khi người dùng ngừng gõ
+    }, 300);
 
     return () => {
       clearTimeout(handler);
     };
   }, [fetchGoals]);
 
-  // Move highlight bar
+  // Move highlight bar 
   useEffect(() => {
     const activeBtn = filterTabsRef.current?.querySelector(
       ".goals-active"
@@ -276,6 +320,20 @@ const GoalsPage: React.FC = () => {
     setIsModalOpen(false);
     setErrors({});
     setEditingGoal(null);
+  }, []);
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Validate form
@@ -333,74 +391,135 @@ const GoalsPage: React.FC = () => {
     }
   };
 
+  const filterOptions = [
+    { value: "all" as Status, label: "All" },
+    { value: "in_progress" as Status, label: "In Progress" },
+    { value: "completed" as Status, label: "Completed" },
+    { value: "new" as Status, label: "New" }
+  ];
+
+  const currentFilterLabel = filterOptions.find(option => option.value === filter)?.label || "All";
+
+  const renderEmptyState = () => (
+    <div className="goals-empty-state">
+      <FontAwesomeIcon icon={faBullseye} className="goals-empty-state-icon" />
+      <h3>No goals yet</h3>
+      <p>Create your first goal by clicking the "New Goal" button</p>
+      <button
+        className="goals-btn goals-btn-primary"
+        onClick={() => openModal("add")}
+        style={{ marginTop: "1rem" }}
+      >
+        <FontAwesomeIcon icon={faPlus} /> Create First Goal
+      </button>
+    </div>
+  );
+
+  // Hiển thị loading screen chỉ khi đang load lần đầu
+  if (isInitialLoad) {
+    return (
+      <main
+        className="goals-main-content"
+        style={{ margin: "0", borderRadius: "0" }}
+      >
+        <section className="goals-section">
+          <div className="goals-page-header">
+            <h1 className="goals-page-title">My Goals</h1>
+          </div>
+          <div className="goals-loading-container">
+            <div className="goals-loading-spinner">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+            <p>Loading goals...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main
       className="goals-main-content"
       style={{ margin: "0", borderRadius: "0" }}
     >
       <section className="goals-section">
-        <h1 className="goals-page-title">My Goals</h1>
-        <div className="goals-header">
-          <div className="goals-actions">
-            <div className="goals-filter-tabs" ref={filterTabsRef}>
-              <span
-                className="goals-filter-highlight"
-                ref={highlightRef}
-              ></span>
-              {(["all", "in_progress", "completed", "new"] as Status[]).map(
-                (s) => (
-                  <button
-                    key={s}
-                    className={`goals-filter-btn${
-                      filter === s ? " goals-active" : ""
-                    }`}
-                    onClick={() => setFilter(s)}
-                    type="button"
-                  >
-                    {s === "all"
-                      ? "All"
-                      : s.charAt(0).toUpperCase() +
-                        s.slice(1).replace("_", " ")}
-                  </button>
-                )
-              )}
+        <div className="goals-page-header">
+          <h1 className="goals-page-title">My Goals</h1>
+          <div className="goals-header">
+            <div className="goals-actions">
+              <div className="goals-filter-dropdown" ref={dropdownRef}>
+                <button
+                  className="goals-filter-dropdown-button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  type="button"
+                >
+                  <span>{currentFilterLabel}</span>
+                  <FontAwesomeIcon 
+                    icon={faChevronDown} 
+                    className={`goals-dropdown-icon ${isDropdownOpen ? 'goals-dropdown-icon-open' : ''}`}
+                  />
+                </button>
+                {isDropdownOpen && (
+                  <div className="goals-filter-dropdown-menu">
+                    {filterOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        className={`goals-filter-dropdown-item ${
+                          filter === option.value ? "goals-filter-dropdown-item-active" : ""
+                        }`}
+                        onClick={() => {
+                          setFilter(option.value);
+                          setIsDropdownOpen(false);
+                        }}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                className="goals-btn goals-btn-primary"
+                onClick={() => openModal("add")}
+              >
+                <FontAwesomeIcon icon={faPlus} /> New Goal
+              </button>
             </div>
-            <button
-              className="goals-btn goals-btn-primary"
-              onClick={() => openModal("add")}
-            >
-              <FontAwesomeIcon icon={faPlus} /> New Goal
-            </button>
           </div>
         </div>
 
         {errorMsg && (
-          <div
-            className="form-error"
-            style={{ color: "red", textAlign: "center", padding: "1rem" }}
-          >
+          <div className="form-error">
             {errorMsg}
           </div>
         )}
-        <div className="goals-grid">
-          {loading ? (
-            <div className="goals-loading-container">
-              <div className="goals-loading-spinner"></div>
-              <p>Loading your goals...</p>
+        
+        {/* Chỉ hiển thị loading spinner nhỏ khi đang filter/search và không phải lần đầu load */}
+        {loading && !isInitialLoad && (
+          <div className="goals-filter-loading">
+            <div className="goals-loading-spinner">
+              <div></div>
+              <div></div>
+              <div></div>
             </div>
-          ) : goals.length > 0 ? (
+          </div>
+        )}
+        
+        <div className="goals-grid">
+          {goals.length > 0 ? (
             goals.map((goal) => (
-              // --- SỬA LỖI: THÊM key PROP VÀO ĐÂY ---
               <GoalCard key={goal.goal_id} goal={goal} />
             ))
-          ) : (
-            <div className="goals-no-goals-found">
-              No goals found. Try changing your filters or creating a new goal!
-            </div>
-          )}
+          ) : !loading ? (
+            renderEmptyState()
+          ) : null}
         </div>
       </section>
 
+      {/* Modal code remains the same */}
       {isModalOpen && (
         <div className="goals-modal-overlay" onClick={closeModal}>
           <div
