@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   AiOutlineHome,
@@ -6,6 +6,8 @@ import {
   AiOutlineSearch,
   AiOutlineBell,
   AiOutlineLogout,
+  AiOutlineDelete, // Thêm icon thùng rác
+  AiOutlineFolder, // Thêm icon folder cho Files
 } from "react-icons/ai";
 import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
@@ -15,7 +17,6 @@ import "../../assets/css/User/sidebar.css";
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
 import echo from "../../services/echo"; // Nhập Echo
-
 
 interface SidebarProps {
   user: {
@@ -41,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
   const newNotificationCount = notifications.filter((n) => !n.seen).length;
 
+  const [loading, setLoading] = useState({
+    profile: false,
+    password: false,
+    delete: false,
+  });
+
   // BỘ LẮNG NGHE SỰ KIỆN TOÀN CỤC
   useEffect(() => {
     if (user && user.id) {
@@ -51,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       channel.listen("NewMessageNotification", (data: any) => {
         const { sender_id, sender_name, message_content } = data;
         const notificationId = `new-message-${sender_id}`;
-        
+
         // Rút gọn tin nhắn để hiển thị preview
         const shortMessage =
           message_content.length > 30
@@ -79,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           link: "/friends",
         });
       });
-      
+
       // Hàm dọn dẹp khi component unmount
       return () => {
         echo.leave(userChannel);
@@ -166,6 +173,20 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         return <AiOutlineBell className="notification-item-icon" />;
     }
   };
+
+  const handleLogout = useCallback(async (isForced = false) => {
+    setLoading((prev) => ({ ...prev, logout: true }));
+    if (!isForced) {
+      try {
+        await api.post("/logout");
+      } catch (err) {
+        console.error("Logout API failed, but logging out locally anyway.");
+      }
+    }
+    // removeItem tất cả trong localStorage
+    localStorage.clear();
+    window.location.href = "/login";
+  }, []);
   return (
     <header className="main-header">
       <div className="header-left">
@@ -180,6 +201,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/notes" className={getNavLinkClass}>
             <BiNote /> NOTES
           </NavLink>
+          <NavLink to="/files" className={getNavLinkClass}>
+            <AiOutlineFolder /> FILES
+          </NavLink>
           <NavLink to="/schedule" className={getNavLinkClass}>
             <BsCalendar3 /> SCHEDULE
           </NavLink>
@@ -189,15 +213,12 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS
           </NavLink>
-          <NavLink to="/trash" className={getNavLinkClass}>
-            <AiOutlineSetting /> TRASH
-          </NavLink>
+          {/* Xóa mục TRASH khỏi navigation */}
         </nav>
       </div>
 
       <div className="header-right">
         <div className="search-container">
-
           <AiOutlineSearch className="search-icon" />
           <input
             type="text"
@@ -221,6 +242,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             </button>
           )}
         </div>
+
+        {/* Thêm icon thùng rác */}
+        <div className="trash-container">
+          <NavLink to="/trash" className="trash-button" title="Trash">
+            <AiOutlineDelete />
+          </NavLink>
+        </div>
+
         <div className="notification-container" ref={notificationRef}>
           <button className="notification-button" onClick={handleBellClick}>
             <AiOutlineBell />
@@ -268,7 +297,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </div>
 
         <div
-          className="user-avatar"
+          className={`user-avatar ${isPro ? 'premium' : ''}`}
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           ref={userDropdownRef}
         >
@@ -281,24 +310,31 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
             }}
           />
           {isPro && (
-            <span className="avatar-crown" title="Pro user">
-              <FaCrown />
-            </span>
+            <>
+              <span className="avatar-crown" title="Premium user">
+                <FaCrown />
+              </span>
+              <span className="premium-badge">Premium</span>
+            </>
           )}
           {showUserDropdown && (
             <div className="user-dropdown">
               <div className="dropdown-header">
-                <div style={{ position: 'relative' }}>
+                <div className="dropdown-avatar-container">
                   <img src={avatarUrl} alt="User" className="dropdown-avatar" />
                   {isPro && (
-                    <span className="avatar-crown avatar-crown--dropdown" title="Pro user">
-                      <FaCrown />
-                    </span>
+                    <>
+                      <span className="avatar-crown avatar-crown--dropdown" title="Premium user">
+                        <FaCrown />
+                      </span>
+                      <span className="dropdown-premium-badge">Premium</span>
+                    </>
                   )}
                 </div>
                 <div className="dropdown-user-info">
                   <div className="dropdown-username">
                     {user?.display_name || "User"}
+                    {isPro && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>✨</span>}
                   </div>
                   <div className="dropdown-email">
                     {user?.email || "user@example.com"}
@@ -307,7 +343,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
               </div>
               <div className="dropdown-menu">
                 <NavLink
-                  to="/profile"
+                  to="/settings#profile"
                   className="dropdown-item"
                   onClick={() => setShowUserDropdown(false)}
                 >
@@ -323,7 +359,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   <span>Settings</span>
                 </NavLink>
                 <hr className="dropdown-divider" />
-                <button className="dropdown-item logout-item">
+                <button
+                  onClick={() => handleLogout()}
+                  className="dropdown-item logout-item"
+                >
                   <AiOutlineLogout className="dropdown-item-icon" />
                   <span>Logout</span>
                 </button>

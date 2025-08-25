@@ -6,7 +6,7 @@ import axios from "axios";
 import "../../assets/css/User/checkout.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useToastHelpers } from "../../hooks/toastContext";
-import { faLock } from "@fortawesome/free-solid-svg-icons";
+import { faLock, faArrowLeft, faCreditCard, faShield } from "@fortawesome/free-solid-svg-icons";
 
 // --- API CONFIG ---
 const API_BASE_URL = "http://localhost:8000/api";
@@ -48,7 +48,6 @@ const CheckoutPage: React.FC = () => {
     const fetchPlanDetails = async () => {
       try {
         setLoading(true);
-        // === ĐÂY LÀ DÒNG ĐÃ ĐƯỢC SỬA LẠI CHO ĐÚNG ===
         const response = await api.get(`/subscriptions/plans/${planId}`);
         setPlan(response.data);
       } catch (err) {
@@ -89,55 +88,133 @@ const CheckoutPage: React.FC = () => {
   const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(price);
 
   if (loading) {
-    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>Loading payment details...</p></main>;
+    return (
+      <main className="checkout-page-container">
+        <div className="checkout-loading-container">
+          <div className="checkout-loading-spinner"></div>
+          <p>Loading payment details...</p>
+        </div>
+      </main>
+    );
   }
 
   if (error || !plan) {
-    return <main className="checkout-page-container"><p style={{textAlign: 'center', padding: '50px'}}>{error || "Invalid plan."} <button onClick={() => navigate('/settings#subscription')}>Back</button></p></main>;
+    return (
+      <main className="checkout-page-container">
+        <div className="checkout-error-container">
+          <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: '2rem', marginBottom: '1rem' }} />
+          <p style={{ marginBottom: '1.5rem' }}>{error || "Invalid plan."}</p>
+          <button 
+            className="checkout-btn-back" 
+            onClick={() => navigate('/settings#subscription')}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
+            Back to Settings
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="checkout-page-container">
-        <div className="checkout-layout">
-          <div className="checkout-payment-details">
-             <h2 style={{ marginBottom: '1rem' }}>Payment Confirmation</h2>
-             <p>You will be redirected to the secure VNPay gateway to complete your transaction. Please do not close the browser during this process.</p>
-          </div>
+      <div className="checkout-header-container">
+        <h1 className="checkout-page-title">Checkout</h1>
+      </div>
 
-          <div className="checkout-order-summary">
-            <section className="checkout-card">
-              <div className="checkout-card-header">
-                <h2>Order Summary</h2>
-              </div>
-              <div className="checkout-card-body">
-                <div className="checkout-summary-item checkout-plan">
-                  <div className="checkout-plan-details">
-                    <strong>{plan.name}</strong>
-                    <span>One-time payment</span>
-                  </div>
-                  <span className="checkout-plan-price">{formatPrice(plan.price)}</span>
+      {/* Main Layout */}
+      <div className="checkout-layout">
+        {/* Payment Details Section */}
+        <div className="checkout-payment-details">
+          <div className="checkout-card">
+            <div className="checkout-card-header">
+              <h2>
+                <FontAwesomeIcon icon={faCreditCard} />
+                Payment Information
+              </h2>
+            </div>
+            <div className="checkout-card-body">
+              <div className="checkout-payment-info">
+                <div className="checkout-payment-info-title">
+                  <FontAwesomeIcon icon={faShield} />
+                  VNPay Secure Gateway
                 </div>
-
-                <div className="checkout-summary-total">
-                  <span>Total</span>
-                  <span>{formatPrice(plan.price)}</span>
-                </div>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-light)", marginTop: "1rem" }}>
-                  By completing the purchase, you agree to our Terms of Service.
-                </p>
-                <div id="checkout-button-container">
-                  <div className="checkout-security-note">
-                    <FontAwesomeIcon icon={faLock} />
-                    <span>Secure and encrypted transaction</span>
-                  </div>
-                  <button onClick={handlePayment} className="checkout-btn-submit" disabled={paymentLoading}>
-                    {paymentLoading ? "Processing..." : "Pay with VNPay"}
-                  </button>
+                <div className="checkout-payment-info-description">
+                  You will be redirected to the secure VNPay payment gateway to complete your transaction. 
+                  VNPay supports all major Vietnamese banks and ensures your payment information is protected 
+                  with bank-level security. Please do not close your browser during the payment process.
                 </div>
               </div>
-            </section>
+
+              <div className="checkout-info-box">
+                <h3>What happens next?</h3>
+                <ul>
+                  <li>Click "Pay with VNPay" to proceed</li>
+                  <li>You'll be redirected to VNPay's secure payment page</li>
+                  <li>Complete payment using your preferred method</li>
+                  <li>Return to NoteurGoals with your subscription activated</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Order Summary Section */}
+        <div className="checkout-order-summary">
+          <div className="checkout-card">
+            <div className="checkout-card-header">
+              <h2>Order Summary</h2>
+            </div>
+            <div className="checkout-card-body">
+              <div className="checkout-summary-item">
+                <div className="checkout-plan-details">
+                  <strong>{plan.name}</strong>
+                  <span>{plan.duration} days access</span>
+                </div>
+                <span className="checkout-plan-price">{formatPrice(plan.price)}</span>
+              </div>
+
+              <div className="checkout-summary-total">
+                <span>Total Amount</span>
+                <span>{formatPrice(plan.price)}</span>
+              </div>
+
+              <div className="checkout-security-note">
+                <FontAwesomeIcon icon={faLock} />
+                <span>Secure and encrypted transaction</span>
+              </div>
+
+              <button 
+                onClick={handlePayment} 
+                className="checkout-btn-submit" 
+                disabled={paymentLoading}
+              >
+                {paymentLoading ? (
+                  <>
+                    <div className="checkout-loading-spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white' }}></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faCreditCard} />
+                    Pay with VNPay
+                  </>
+                )}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                <button 
+                  className="checkout-btn-back" 
+                  onClick={() => navigate('/settings#subscription')}
+                >
+                  <FontAwesomeIcon icon={faArrowLeft} />
+                  Back to Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 };

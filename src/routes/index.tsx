@@ -6,7 +6,8 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-
+import React, { useEffect } from "react";
+import { initializeCsrfToken } from "../api/apiClient";
 // --- Layouts ---
 import HomeLayout from "../layouts/Home";
 import AuthLayout from "../layouts/AuthLayout";
@@ -22,9 +23,9 @@ import SocialAuthCallback from "../pages/SocialAuthCallback";
 
 import DashboardPage from "../pages/User/DashboardPage";
 import GoalsPage from "../pages/User/Goals/Goals";
-import GoalsDetailPage from "../pages/User/Goals/GoalsDetail"; // Giả sử bạn đã tạo trang chi tiết mục tiêu
+import GoalsDetailPage from "../pages/User/Goals/GoalsDetail";
 import NotesPage from "../pages/User/Notes/Notes";
-import NotesDetailPage from "../pages/User/Notes/NotesDetail"; // Giả sử bạn đã tạo trang chi tiết ghi chú
+import NotesDetailPage from "../pages/User/Notes/NotesDetail";
 import Schedule from "../pages/User/Schedule";
 import Friends from "../pages/User/Friends";
 import Settings from "../pages/User/Settings";
@@ -33,6 +34,7 @@ import CheckoutPage from "../pages/User/Checkout";
 import PaymentCallback from "../pages/PaymentCallback";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
+import Files from "../pages/User/Files/Files";
 
 // --- AUTHENTICATION HELPERS ---
 const isAuthenticated = (): boolean => !!localStorage.getItem("auth_token");
@@ -70,7 +72,6 @@ const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-
         // *** ĐÃ CẬP NHẬT: BỌC DASHBOARDLAYOUT BẰNG NOTIFICATIONPROVIDER ***
         element: (
           <NotificationProvider>
@@ -83,13 +84,11 @@ const router = createBrowserRouter([
           { path: "goals/:goalId", element: <GoalsDetailPage /> },
           { path: "notes", element: <NotesPage /> },
           { path: "notes/:id", element: <NotesDetailPage /> },
+          { path: "files", element: <Files /> }, // *** THÊM ROUTE FILES ***
           { path: "schedule", element: <Schedule /> },
           { path: "friends", element: <Friends /> },
           { path: "settings", element: <Settings /> },
           { path: "trash", element: <UnifiedTrashPage /> },
-
-          // *** MỚI: Route cho trang checkout, có `:planId` động ***
-          // Đã sửa lại đường dẫn để tường minh hơn, ví dụ: /checkout/2
           { path: "checkout/:planId", element: <CheckoutPage /> },
         ],
       },
@@ -109,4 +108,16 @@ const router = createBrowserRouter([
   },
 ]);
 
-export const AppRouter = () => <RouterProvider router={router} />;
+export const AppRouter = () => {
+  
+  // Thêm đoạn code này vào
+  // Thực hiện "bắt tay" lấy CSRF cookie một lần khi app được tải
+  useEffect(() => {
+    // Chỉ thực hiện "bắt tay" nếu người dùng đã đăng nhập
+    if (isAuthenticated()) {
+      initializeCsrfToken();
+    }
+  }, []); // Mảng rỗng đảm bảo nó chỉ chạy một lần
+
+  return <RouterProvider router={router} />;
+};
