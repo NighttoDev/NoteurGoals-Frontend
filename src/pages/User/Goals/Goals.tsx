@@ -248,7 +248,7 @@ const GoalsPage: React.FC = () => {
     }
     
     try {
-      const res = await getGoals({ status: filter, search: searchTerm });
+      const res = await getGoals(0, filter, searchTerm);
       const goalsData = res.data.data || res.data || [];
       setGoals(goalsData);
       setErrorMsg(""); // Clear error khi load thành công

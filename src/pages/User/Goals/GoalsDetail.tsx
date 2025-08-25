@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -130,7 +130,7 @@ const GoalDetailPage: React.FC = () => {
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState("");
   const [shareType, setShareType] = useState<Sharing>("private");
   const [actionLoading, setActionLoading] = useState(false);
-
+  const hasFetchedRef = useRef(false);
   // Fetch goal details
   const fetchGoalDetails = useCallback(async () => {
     if (!goalId) {
@@ -138,7 +138,10 @@ const GoalDetailPage: React.FC = () => {
       setLoading(false);
       return;
     }
-
+    if (hasFetchedRef.current) {
+      return;
+    }
+    hasFetchedRef.current = true;
     setLoading(true);
     setError("");
     try {
@@ -170,7 +173,7 @@ const GoalDetailPage: React.FC = () => {
       console.error("ERROR FETCHING GOAL:", err.response || err);
       const errorMessage = err.response?.data?.message || err.message || "Failed to load goal details";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -191,19 +194,19 @@ const GoalDetailPage: React.FC = () => {
   // Validate form
   const validateForm = () => {
     if (!formData.title.trim()) {
-      toast?.showError && toast.showError("Title is required");
+      toast?.error("Title is required");
       return false;
     }
     if (!formData.start_date) {
-      toast?.showError && toast.showError("Start date is required");
+      toast?.error("Start date is required");
       return false;
     }
     if (!formData.end_date) {
-      toast?.showError && toast.showError("End date is required");
+      toast?.error("End date is required");
       return false;
     }
     if (formData.start_date > formData.end_date) {
-      toast?.showError && toast.showError("End date must be after start date");
+      toast?.error("End date must be after start date");
       return false;
     }
     return true;
@@ -219,13 +222,13 @@ const GoalDetailPage: React.FC = () => {
     setError("");
     try {
       await updateGoal(goalId, formData);
-      toast?.showSuccess && toast.showSuccess("Goal updated successfully!");
+      toast?.success("Goal updated successfully!");
       await fetchGoalDetails();
       setEditMode(false);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to update goal";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -235,7 +238,7 @@ const GoalDetailPage: React.FC = () => {
   const handleDeleteGoal = async () => {
     if (!goalId) return;
     
-    const confirmed = await confirm?.show({
+    const confirmed = await confirm?.({
       title: "Delete Goal",
       message: "Are you sure you want to delete this goal? This action cannot be undone.",
       confirmText: "Delete",
@@ -248,12 +251,12 @@ const GoalDetailPage: React.FC = () => {
     setError("");
     try {
       await deleteGoal(goalId);
-      toast?.showSuccess && toast.showSuccess("Goal deleted successfully!");
+      toast?.success("Goal deleted successfully!");
       navigate("/goals");
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to delete goal";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+      toast?.error(errorMessage);
       setActionLoading(false);
     }
   };
@@ -261,7 +264,7 @@ const GoalDetailPage: React.FC = () => {
   // Add collaborator
   const handleAddCollaborator = async () => {
     if (!goalId || !newCollaboratorEmail.trim()) {
-      toast?.showError && toast.showError("Please enter a valid email");
+      toast?.error("Please enter a valid email");
       return;
     }
     
@@ -269,13 +272,13 @@ const GoalDetailPage: React.FC = () => {
     setError("");
     try {
       await addCollaborator(goalId, { email: newCollaboratorEmail.trim() });
-      toast?.showSuccess && toast.showSuccess("Collaborator added successfully!");
+      toast?.success("Collaborator added successfully!");
       setNewCollaboratorEmail("");
       await fetchGoalDetails();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to add collaborator";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -285,7 +288,7 @@ const GoalDetailPage: React.FC = () => {
   const handleRemoveCollaborator = async (userId: string) => {
     if (!goalId) return;
     
-    const confirmed = await confirm?.show({
+    const confirmed = await confirm?.({
       title: "Remove Collaborator",
       message: "Are you sure you want to remove this collaborator?",
       confirmText: "Remove",
@@ -298,12 +301,12 @@ const GoalDetailPage: React.FC = () => {
     setError("");
     try {
       await removeCollaborator(goalId, userId);
-      toast?.showSuccess && toast.showSuccess("Collaborator removed successfully!");
+      toast?.success("Collaborator removed successfully!");
       await fetchGoalDetails();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to remove collaborator";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -318,13 +321,13 @@ const GoalDetailPage: React.FC = () => {
     
     try {
       await updateShareSettings(goalId, { share_type: newShareType });
-      toast?.showSuccess && toast.showSuccess("Sharing settings updated!");
+      toast?.success("Sharing settings updated!");
       await fetchGoalDetails();
     } catch (err: any) {
       setShareType(previousShareType);
       const errorMessage = err.response?.data?.message || "Failed to update sharing settings";
       setError(errorMessage);
-      toast?.showError && toast.showError(errorMessage);
+        toast?.error(errorMessage);
     }
   };
 

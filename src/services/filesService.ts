@@ -51,7 +51,7 @@ export const deleteFile = async (fileId: number) => {
 // =================================
 
 export const getFileUrl = (filePath: string) => {
-  return `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000'}/storage/${filePath}`;
+  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/storage/${filePath}`;
 };
 
 export const isImageFile = (fileType: string) => {
