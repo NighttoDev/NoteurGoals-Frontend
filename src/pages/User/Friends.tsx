@@ -9,6 +9,7 @@ import {
   reportUser,
   searchUsers,
   getCollaborators,
+  getSharedGoals,
 } from "../../services/friendsService";
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
@@ -35,6 +36,21 @@ interface UserCardData {
     | "not_friends";
 }
 
+interface ApiUser {
+  user_id?: string;
+  id?: string;
+  display_name?: string;
+  name?: string;
+  email: string;
+  avatar_url?: string;
+  avatar?: string;
+  goals_count?: number;
+  notes_count?: number;
+  is_premium?: boolean;
+  mutual_friends_count?: number;
+  friend_status?: string;
+}
+
 interface CollaboratorData extends UserCardData {
   collaboration_id?: string;
   shared_goals_count?: number;
@@ -52,10 +68,12 @@ interface CollaboratorData extends UserCardData {
 interface SharedGoal {
   goal_id: string;
   title: string;
-  status: 'new' | 'in_progress' | 'completed' | 'cancelled';
-  role: 'owner' | 'collaborator';
+  status: "new" | "in_progress" | "completed" | "cancelled";
+  role: "owner" | "collaborator";
+  collaborator_role?: "owner" | "collaborator";
   progress_value?: number;
   end_date?: string;
+  share_type?: "private" | "friends" | "public";
 }
 
 type ActiveTab = "friends" | "requests" | "collaborators" | "find-people";
@@ -111,7 +129,9 @@ const FriendsPage: React.FC = () => {
   const mainSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>({});
+  const [cardLoading, setCardLoading] = useState<{ [key: string]: boolean }>(
+    {}
+  );
 
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -120,12 +140,17 @@ const FriendsPage: React.FC = () => {
 
   // New states for collaborator details modal
   const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
-  const [selectedCollaborator, setSelectedCollaborator] = useState<CollaboratorData | null>(null);
-  const [collaboratorSharedGoals, setCollaboratorSharedGoals] = useState<SharedGoal[]>([]);
+  const [selectedCollaborator, setSelectedCollaborator] =
+    useState<CollaboratorData | null>(null);
+  const [collaboratorSharedGoals, setCollaboratorSharedGoals] = useState<
+    SharedGoal[]
+  >([]);
   const [loadingSharedGoals, setLoadingSharedGoals] = useState(false);
 
   const [modalSearchQuery, setModalSearchQuery] = useState("");
-  const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>([]);
+  const [modalSearchResults, setModalSearchResults] = useState<UserCardData[]>(
+    []
+  );
   const [isModalSearching, setIsModalSearching] = useState(false);
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const modalSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,12 +198,15 @@ const FriendsPage: React.FC = () => {
     mainSearchTimeout.current = setTimeout(async () => {
       try {
         const response = await searchUsers(searchTerm);
-        const mappedResults = (response.data.users || []).map((user: any) => ({
-          ...user,
-          id: user.user_id || user.id,
-        }));
+        const mappedResults = (response.data.users || []).map(
+          (user: ApiUser) => ({
+            ...user,
+            id: user.user_id || user.id,
+          })
+        );
         setMainSearchResults(mappedResults);
-      } catch (err) {
+      } catch (err: unknown) {
+        console.error("Search error:", err);
         setMainSearchResults([]);
       } finally {
         setLoading(false);
@@ -196,12 +224,15 @@ const FriendsPage: React.FC = () => {
     modalSearchTimeout.current = setTimeout(async () => {
       try {
         const response = await searchUsers(modalSearchQuery);
-        const mappedResults = (response.data.users || []).map((user: any) => ({
-          ...user,
-          id: user.user_id || user.id,
-        }));
+        const mappedResults = (response.data.users || []).map(
+          (user: ApiUser) => ({
+            ...user,
+            id: user.user_id || user.id,
+          })
+        );
         setModalSearchResults(mappedResults);
-      } catch (err) {
+      } catch (err: unknown) {
+        console.error("Modal search error:", err);
         setModalSearchResults([]);
       } finally {
         setIsModalSearching(false);
@@ -240,8 +271,11 @@ const FriendsPage: React.FC = () => {
       setModalSearchResults((prev) =>
         prev.filter((user) => user.id !== userId)
       );
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send friend request!");
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Failed to send friend request!";
+      toast.error(errorMessage);
     } finally {
       setLoadingUserId(null);
     }
@@ -258,8 +292,11 @@ const FriendsPage: React.FC = () => {
         );
       setSuggestions(updateUserState);
       setMainSearchResults(updateUserState);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send request.");
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Failed to send request.";
+      toast.error(errorMessage);
     } finally {
       setCardLoading((prev) => ({ ...prev, [userId]: false }));
     }
@@ -274,7 +311,9 @@ const FriendsPage: React.FC = () => {
       await respondFriendRequest(friendshipId, status);
       // Toast success feedback
       toast.success(
-        status === "accepted" ? "Friend request accepted." : "Friend request rejected."
+        status === "accepted"
+          ? "Friend request accepted."
+          : "Friend request rejected."
       );
 
       if (status === "accepted") {
@@ -290,9 +329,10 @@ const FriendsPage: React.FC = () => {
           });
         }
       }
-      
+
       fetchInitialData();
-    } catch (err) {
+    } catch (err: unknown) {
+      console.error("Request response error:", err);
       toast.error(
         `Failed to ${status === "accepted" ? "accept" : "reject"} request.`
       );
@@ -315,7 +355,8 @@ const FriendsPage: React.FC = () => {
         await deleteFriend(friendshipId);
         toast.success("Cancelled successfully.");
         fetchInitialData();
-      } catch (err) {
+      } catch (err: unknown) {
+        console.error("Delete friendship error:", err);
         toast.error("Failed to remove friend/request.");
       } finally {
         setLoadingUserId(null);
@@ -336,7 +377,8 @@ const FriendsPage: React.FC = () => {
       setShowReportModal(false);
       setUserToReport(null);
       setReportReason("");
-    } catch (err) {
+    } catch (err: unknown) {
+      console.error("Report user error:", err);
       toast.error("Failed to submit report.");
     } finally {
       setLoadingUserId(null);
@@ -344,15 +386,17 @@ const FriendsPage: React.FC = () => {
   };
 
   // New function to view collaborator details
-  const handleViewCollaboratorDetails = async (collaborator: CollaboratorData) => {
+  const handleViewCollaboratorDetails = async (
+    collaborator: CollaboratorData
+  ) => {
     setSelectedCollaborator(collaborator);
     setShowCollaboratorModal(true);
     setLoadingSharedGoals(true);
-    
+
     try {
       const response = await getSharedGoals(collaborator.id);
       setCollaboratorSharedGoals(response.data.goals || []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load shared goals:", err);
       setCollaboratorSharedGoals([]);
     } finally {
@@ -361,23 +405,30 @@ const FriendsPage: React.FC = () => {
   };
 
   // New function to remove collaborator
-  const handleRemoveCollaborator = async (userId: string, collaborationId: string) => {
+  const handleRemoveCollaborator = async (
+    userId: string,
+    collaborationId: string
+  ) => {
     const ok = await confirm({
       title: "Remove Collaborator",
-      message: "Are you sure you want to remove this collaborator from all shared goals?",
+      message:
+        "Are you sure you want to remove this collaborator from all shared goals?",
       confirmText: "Remove",
       cancelText: "Cancel",
       variant: "danger",
     });
-    
+
     if (ok) {
       setCardLoading((prev) => ({ ...prev, [userId]: true }));
       try {
         await removeCollaborator(collaborationId, userId);
         toast.success("Collaborator removed successfully.");
-        setCollaborators(prev => prev.filter(c => c.id !== userId));
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || "Failed to remove collaborator.");
+        setCollaborators((prev) => prev.filter((c) => c.id !== userId));
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message || "Failed to remove collaborator.";
+        toast.error(errorMessage);
       } finally {
         setCardLoading((prev) => ({ ...prev, [userId]: false }));
       }
@@ -386,12 +437,18 @@ const FriendsPage: React.FC = () => {
 
   const renderCollaboratorCard = (collaborator: CollaboratorData) => {
     const isLoading = cardLoading[collaborator.id];
-    
+
     return (
-      <div className="collaborator-card" key={`collaborator-${collaborator.id}`}>
+      <div
+        className="collaborator-card"
+        key={`collaborator-${collaborator.id}`}
+      >
         <div className="collaborator-card-header">
           <img
-            src={collaborator.avatar || `https://i.pravatar.cc/80?u=${collaborator.id}`}
+            src={
+              collaborator.avatar ||
+              `https://i.pravatar.cc/80?u=${collaborator.id}`
+            }
             alt="Avatar"
             className="collaborator-avatar"
           />
@@ -415,12 +472,16 @@ const FriendsPage: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="collaborator-activity">
           <div className="activity-indicator">
             <span className="activity-dot active"></span>
-            <span>Last activity: {collaborator.last_activity ? 
-              new Date(collaborator.last_activity).toLocaleDateString() : 'Never'}</span>
+            <span>
+              Last activity:{" "}
+              {collaborator.last_activity
+                ? new Date(collaborator.last_activity).toLocaleDateString()
+                : "Never"}
+            </span>
           </div>
         </div>
 
@@ -431,7 +492,7 @@ const FriendsPage: React.FC = () => {
           >
             <i className="fas fa-eye"></i> View Goals
           </button>
-          
+
           {collaborator.friend_status === "friends" ? (
             <button
               className="btn-message"
@@ -445,14 +506,23 @@ const FriendsPage: React.FC = () => {
               onClick={() => handleAddFriendFromCard(collaborator.id)}
               disabled={isLoading}
             >
-              <i className={`fas ${isLoading ? "fa-spinner fa-spin" : "fa-user-plus"}`}></i>
+              <i
+                className={`fas ${
+                  isLoading ? "fa-spinner fa-spin" : "fa-user-plus"
+                }`}
+              ></i>
               {isLoading ? "Sending..." : "Add Friend"}
             </button>
           )}
-          
+
           <button
             className="btn-remove-collaborator"
-            onClick={() => handleRemoveCollaborator(collaborator.id, collaborator.collaboration_id!)}
+            onClick={() =>
+              handleRemoveCollaborator(
+                collaborator.id,
+                collaborator.collaboration_id!
+              )
+            }
             disabled={isLoading}
             title="Remove from all collaborations"
           >
@@ -536,8 +606,8 @@ const FriendsPage: React.FC = () => {
               <p className="friends-list-item__email">{user.email}</p>
               {user.mutual_friends_count && user.mutual_friends_count > 0 && (
                 <p className="friends-mutual">
-                  <i className="fas fa-users"></i> {user.mutual_friends_count} mutual
-                  friend{user.mutual_friends_count > 1 ? "s" : ""}
+                  <i className="fas fa-users"></i> {user.mutual_friends_count}{" "}
+                  mutual friend{user.mutual_friends_count > 1 ? "s" : ""}
                 </p>
               )}
               <div className="friends-list-item__stats">
@@ -579,7 +649,7 @@ const FriendsPage: React.FC = () => {
               className="friends-action-btn friends-action-btn-reject"
               title="Reject suggestion"
               onClick={() => {
-                setSuggestions(prev => prev.filter(u => u.id !== user.id));
+                setSuggestions((prev) => prev.filter((u) => u.id !== user.id));
                 toast.success(`Removed ${user.name} from suggestions.`);
               }}
             >
@@ -666,8 +736,10 @@ const FriendsPage: React.FC = () => {
             className="friends-action-btn friends-action-btn-reject"
             title="Reject suggestion"
             onClick={() => {
-              setSuggestions(prev => prev.filter(u => u.id !== user.id));
-              setMainSearchResults(prev => prev.filter(u => u.id !== user.id));
+              setSuggestions((prev) => prev.filter((u) => u.id !== user.id));
+              setMainSearchResults((prev) =>
+                prev.filter((u) => u.id !== user.id)
+              );
               toast.success(`Removed ${user.name} from suggestions.`);
             }}
           >
@@ -691,7 +763,7 @@ const FriendsPage: React.FC = () => {
         </div>
       );
     }
-    
+
     if (isMainSearching && searchTerm) {
       return (
         <div className="friends-grid">
@@ -767,28 +839,52 @@ const FriendsPage: React.FC = () => {
                       <>
                         <button
                           className="friends-action-btn friends-action-btn-accept"
-                          onClick={() => handleRequestResponse(req.friendship_id, "accepted")}
+                          onClick={() =>
+                            handleRequestResponse(req.friendship_id, "accepted")
+                          }
                           disabled={loadingUserId === req.friendship_id}
                         >
-                          <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-check"}`}></i>
+                          <i
+                            className={`fas ${
+                              loadingUserId === req.friendship_id
+                                ? "fa-spinner fa-spin"
+                                : "fa-check"
+                            }`}
+                          ></i>
                           Accept
                         </button>
                         <button
                           className="friends-action-btn friends-action-btn-reject"
-                          onClick={() => handleRequestResponse(req.friendship_id, "rejected")}
+                          onClick={() =>
+                            handleRequestResponse(req.friendship_id, "rejected")
+                          }
                           disabled={loadingUserId === req.friendship_id}
                         >
-                          <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-times"}`}></i>
+                          <i
+                            className={`fas ${
+                              loadingUserId === req.friendship_id
+                                ? "fa-spinner fa-spin"
+                                : "fa-times"
+                            }`}
+                          ></i>
                           Decline
                         </button>
                       </>
                     ) : (
                       <button
                         className="friends-action-btn friends-action-btn-reject"
-                        onClick={() => handleDeleteFriendship(req.friendship_id)}
+                        onClick={() =>
+                          handleDeleteFriendship(req.friendship_id)
+                        }
                         disabled={loadingUserId === req.friendship_id}
                       >
-                        <i className={`fas ${loadingUserId === req.friendship_id ? "fa-spinner fa-spin" : "fa-times"}`}></i>
+                        <i
+                          className={`fas ${
+                            loadingUserId === req.friendship_id
+                              ? "fa-spinner fa-spin"
+                              : "fa-times"
+                          }`}
+                        ></i>
                         Cancel
                       </button>
                     )}
@@ -810,11 +906,14 @@ const FriendsPage: React.FC = () => {
                 />
                 <h3 className="friends-empty-title">No Collaborators Found</h3>
                 <p className="friends-empty-message">
-                  When you add collaborators to your goals, they will appear here.
+                  When you add collaborators to your goals, they will appear
+                  here.
                 </p>
               </div>
             ) : (
-              collaborators.map((collaborator) => renderCollaboratorCard(collaborator))
+              collaborators.map((collaborator) =>
+                renderCollaboratorCard(collaborator)
+              )
             )}
           </div>
         );
@@ -976,7 +1075,10 @@ const FriendsPage: React.FC = () => {
               <div className="collaborator-details">
                 <div className="collaborator-summary">
                   <img
-                    src={selectedCollaborator.avatar || `https://i.pravatar.cc/80?u=${selectedCollaborator.id}`}
+                    src={
+                      selectedCollaborator.avatar ||
+                      `https://i.pravatar.cc/80?u=${selectedCollaborator.id}`
+                    }
                     alt="Avatar"
                     className="collaborator-modal-avatar"
                   />
@@ -984,18 +1086,27 @@ const FriendsPage: React.FC = () => {
                     <h3>{selectedCollaborator.name}</h3>
                     <p>{selectedCollaborator.email}</p>
                     <div className="collaboration-stats">
-                      <span><i className="fas fa-handshake"></i> {selectedCollaborator.shared_goals_count || 0} Shared Goals</span>
-                      <span><i className="fas fa-clock"></i> {selectedCollaborator.active_goals_count || 0} Active</span>
+                      <span>
+                        <i className="fas fa-handshake"></i>{" "}
+                        {selectedCollaborator.shared_goals_count || 0} Shared
+                        Goals
+                      </span>
+                      <span>
+                        <i className="fas fa-clock"></i>{" "}
+                        {selectedCollaborator.active_goals_count || 0} Active
+                      </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="shared-goals-section">
                   <h4>Shared Goals</h4>
                   {loadingSharedGoals ? (
                     <div className="loading-goals">Loading shared goals...</div>
                   ) : collaboratorSharedGoals.length === 0 ? (
-                    <div className="no-shared-goals">No shared goals found.</div>
+                    <div className="no-shared-goals">
+                      No shared goals found.
+                    </div>
                   ) : (
                     <div className="shared-goals-list">
                       {collaboratorSharedGoals.map((goal) => (
@@ -1003,28 +1114,48 @@ const FriendsPage: React.FC = () => {
                           <div className="goal-info">
                             <h5>{goal.title}</h5>
                             <div className="goal-meta">
-                              <span className={`goal-status status-${goal.status}`}>
-                                {goal.status.replace('_', ' ')}
+                              <span
+                                className={`goal-status status-${goal.status}`}
+                              >
+                                {goal.status.replace("_", " ")}
                               </span>
                               <span className={`goal-role role-${goal.role}`}>
                                 {goal.role}
                               </span>
+                              {goal.collaborator_role && (
+                                <span
+                                  className={`goal-role role-${goal.collaborator_role}`}
+                                >
+                                  {goal.collaborator_role}
+                                </span>
+                              )}
                             </div>
                             {goal.progress_value !== undefined && (
                               <div className="goal-progress">
                                 <div className="progress-bar">
-                                  <div 
-                                    className="progress-fill" 
+                                  <div
+                                    className="progress-fill"
                                     style={{ width: `${goal.progress_value}%` }}
                                   ></div>
                                 </div>
                                 <span>{goal.progress_value}%</span>
                               </div>
                             )}
+                            {goal.end_date && (
+                              <div className="goal-end-date">
+                                <i className="fas fa-calendar"></i>
+                                <span>
+                                  Ends:{" "}
+                                  {new Date(goal.end_date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <button 
+                          <button
                             className="btn-view-goal"
-                            onClick={() => window.open(`/goals/${goal.goal_id}`, '_blank')}
+                            onClick={() =>
+                              window.open(`/goals/${goal.goal_id}`, "_blank")
+                            }
                           >
                             <i className="fas fa-external-link-alt"></i>
                           </button>
@@ -1090,11 +1221,11 @@ const FriendsPage: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {activeChat && currentUserId && (
         <ErrorBoundary
-          fallback={<div style={{padding:12}}>Chat failed to render.</div>}
-          onError={(e) => console.error('Chat error:', e)}
+          fallback={<div style={{ padding: 12 }}>Chat failed to render.</div>}
+          onError={(e) => console.error("Chat error:", e)}
         >
           <ChatWindow
             friend={activeChat}
@@ -1108,9 +1239,3 @@ const FriendsPage: React.FC = () => {
 };
 
 export default FriendsPage;
-
-async function getSharedGoals(id: string): Promise<{ data: { goals: SharedGoal[] } }> {
-  // TODO: Replace with actual API call
-  // Example: return await fetchSharedGoalsFromApi(id);
-  return { data: { goals: [] } };
-}

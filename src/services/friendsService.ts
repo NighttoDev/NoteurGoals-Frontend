@@ -40,6 +40,13 @@ export const getCollaborators = () => {
 };
 
 /**
+ * Lấy danh sách goals được chia sẻ với một collaborator cụ thể.
+ */
+export const getSharedGoals = (collaboratorId: string) => {
+  return axiosAuth.get(`/collaborators/${collaboratorId}/shared-goals`);
+};
+
+/**
  * Lấy danh sách gợi ý kết bạn từ server.
  */
 export const getUserSuggestions = () => {
@@ -95,5 +102,5 @@ export const getMessageHistory = (friendId: string) => {
  * Gửi một tin nhắn mới.
  */
 export const sendMessage = (receiverId: string, content: string) => {
-  return axiosAuth.post('/messages', { receiver_id: receiverId, content });
+  return axiosAuth.post("/messages", { receiver_id: receiverId, content });
 };

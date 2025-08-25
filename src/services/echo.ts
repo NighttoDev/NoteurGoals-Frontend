@@ -1,6 +1,5 @@
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
-
+import Echo from "laravel-echo";
+import Pusher from "pusher-js";
 
 // Khai báo để TypeScript không báo lỗi khi truy cập window.Pusher
 declare global {
@@ -22,13 +21,12 @@ const API_URL = import.meta.env.VITE_API_URL as string;
 
 // Kiểm tra để đảm bảo các biến môi trường đã được định nghĩa
 if (!PUSHER_APP_KEY || !PUSHER_APP_CLUSTER || !API_URL) {
-    console.error("PUSHER or API environment variables are not defined!");
-
+  console.error("PUSHER or API environment variables are not defined!");
 }
 
 // Khởi tạo một đối tượng Echo
 const echo = new Echo({
-  broadcaster: 'pusher',
+  broadcaster: "pusher",
 
   key: PUSHER_APP_KEY,
   cluster: PUSHER_APP_CLUSTER,
@@ -39,8 +37,7 @@ const echo = new Echo({
   auth: {
     headers: {
       Authorization: `Bearer ${getAuthToken()}`,
-      Accept: 'application/json',
-
+      Accept: "application/json",
     },
   },
 });
