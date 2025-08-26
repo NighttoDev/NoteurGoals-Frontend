@@ -882,7 +882,9 @@ body {
 }
 
 @keyframes goalsDotBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -1026,5 +1028,3 @@ body {
     min-height: 40vh;
   }
 }
-
-/* ... rest of existing CSS ... */

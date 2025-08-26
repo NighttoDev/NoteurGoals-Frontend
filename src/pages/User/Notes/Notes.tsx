@@ -12,8 +12,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faThLarge,
   faBars,
-  faFilter,
-  faSortAmountDown,
   faPlus,
   faEllipsisVertical,
   faBullseye,
@@ -47,20 +45,19 @@ interface GoalOption {
 const NOTES_CACHE_KEY = "user_notes_cache";
 
 const NotesPage: React.FC = () => {
-  
   const navigate = useNavigate();
   const toast = useToastHelpers();
-  
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NotesCard | null>(null);
   const [notes, setNotes] = useState<NotesCard[]>([]);
-  
+
   // Tách loading thành 2 state riêng biệt
   const [fetchLoading, setFetchLoading] = useState(true); // Loading khi fetch notes
   const [actionLoading, setActionLoading] = useState(false); // Loading khi thực hiện actions
-  
+
   const [goals, setGoals] = useState<GoalOption[]>([]);
   const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
   const [addForm, setAddForm] = useState({ title: "", content: "" });
@@ -73,12 +70,35 @@ const NotesPage: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
+  interface NoteApiItem {
+    note_id?: number | string;
+    id?: number | string;
+    title: string;
+    content: string;
+    updated_at?: string;
+    color?: "purple" | "green" | "blue" | "yellow" | "red";
+    goals?: Array<{
+      goal_id?: number | string;
+      id?: number | string;
+      title: string;
+    }>;
+    attachments_count?: number;
+  }
+
+  interface GoalApiItem {
+    goal_id?: number | string;
+    id?: number | string;
+    title: string;
+  }
+
   const fetchNotes = async () => {
     setFetchLoading(true); // Set loading khi bắt đầu fetch
     try {
       const res = await getNotes();
-      const rawNotes = Array.isArray(res.data) ? res.data : res.data.data;
-      const mapped = rawNotes.map((item: any) => ({
+      const rawNotes: NoteApiItem[] = Array.isArray(res.data)
+        ? res.data
+        : res.data.data;
+      const mapped = rawNotes.map((item: NoteApiItem) => ({
         id: item.note_id?.toString() ?? item.id?.toString() ?? "",
         title: item.title,
         content: item.content,
@@ -91,19 +111,27 @@ const NotesPage: React.FC = () => {
           : "",
         color: item.color,
         linkedGoals:
-          item.goals?.map((g: any) => ({
-            id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
-            type: "goal",
-            title: g.title,
-          })) || [],
+          item.goals?.map(
+            (g: {
+              goal_id?: number | string;
+              id?: number | string;
+              title: string;
+            }) => ({
+              id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
+              type: "goal" as const,
+              title: g.title,
+            })
+          ) || [],
         attachments: item.attachments_count,
       }));
       if (JSON.stringify(mapped) !== JSON.stringify(notes)) {
         setNotes(mapped);
         localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify(mapped));
       }
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } }).response
+        ?.status;
+      if (status === 401) {
         toast.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
       }
       setNotes([]);
@@ -116,14 +144,19 @@ const NotesPage: React.FC = () => {
     if (goals.length > 0) return;
     try {
       const res = await getGoals();
-      const rawGoals = Array.isArray(res.data) ? res.data : res.data.data;
+      const rawGoals: GoalApiItem[] = Array.isArray(res.data)
+        ? res.data
+        : res.data.data;
       setGoals(
-        rawGoals.map((g: any) => ({
+        rawGoals.map((g: GoalApiItem) => ({
           id: g.goal_id?.toString() ?? g.id?.toString() ?? "",
           title: g.title,
         }))
       );
-    } catch {}
+    } catch (e) {
+      // non-fatal: goals optional
+      console.warn("Failed to load goals list", e);
+    }
   };
 
   const handleGoalSelectionChange = (goalId: string) => {
@@ -141,13 +174,7 @@ const NotesPage: React.FC = () => {
     setIsAddModalOpen(true);
   };
 
-  const openEditModal = (note: NotesCard) => {
-    setEditingNote(note);
-    setEditForm({ title: note.title, content: note.content });
-    setSelectedGoalIds(note.linkedGoals?.map((g) => g.id) ?? []);
-    fetchGoalsList();
-    setIsEditModalOpen(true);
-  };
+  // Removed unused openEditModal to satisfy linter
 
   const closeAddModal = () => setIsAddModalOpen(false);
   const closeEditModal = () => {
@@ -193,8 +220,9 @@ const NotesPage: React.FC = () => {
       });
       closeAddModal();
       toast.success("Note created successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create note");
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || "Failed to create note";
+      toast.error(message);
     } finally {
       setActionLoading(false);
     }
@@ -233,8 +261,9 @@ const NotesPage: React.FC = () => {
       });
       closeEditModal();
       toast.success("Note updated successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update note");
+    } catch (err: unknown) {
+      const message = (err as Error)?.message || "Failed to update note";
+      toast.error(message);
     } finally {
       setActionLoading(false);
     }
@@ -254,8 +283,8 @@ const NotesPage: React.FC = () => {
         }
         closeEditModal();
         toast.success("Note deleted successfully!");
-      } catch (err: any) {
-        alert(err.message || "Failed to delete note");
+      } catch (err: unknown) {
+        alert((err as Error)?.message || "Failed to delete note");
       } finally {
         setActionLoading(false);
       }
@@ -328,7 +357,7 @@ const NotesPage: React.FC = () => {
       <section className="notes-container-section">
         <div className="notes-header-container">
           <h1 className="notes-page-title">My Notes</h1>
-          
+
           <div className="notes-action-buttons">
             <div className="notes-toolbar-group">
               <button
@@ -455,8 +484,8 @@ const NotesPage: React.FC = () => {
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="notes-btn notes-btn-primary"
                     disabled={actionLoading}
                   >
@@ -481,7 +510,10 @@ const NotesPage: React.FC = () => {
           >
             <div className="notes-modal-header">
               <h2>Edit Note</h2>
-              <button className="notes-modal-close-btn" onClick={closeEditModal}>
+              <button
+                className="notes-modal-close-btn"
+                onClick={closeEditModal}
+              >
                 ×
               </button>
             </div>
@@ -500,7 +532,9 @@ const NotesPage: React.FC = () => {
                   />
                 </div>
                 <div className="notes-modal-group">
-                  <label htmlFor="notes-modal-content-input-edit">Content</label>
+                  <label htmlFor="notes-modal-content-input-edit">
+                    Content
+                  </label>
                   <textarea
                     id="notes-modal-content-input-edit"
                     value={editForm.content}
@@ -527,8 +561,8 @@ const NotesPage: React.FC = () => {
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="notes-btn notes-btn-primary"
                     disabled={actionLoading}
                   >

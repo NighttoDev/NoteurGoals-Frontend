@@ -440,54 +440,48 @@ const FriendsPage: React.FC = () => {
 
     return (
       <div
-        className="collaborator-card"
+        className="friends-list-item"
         key={`collaborator-${collaborator.id}`}
       >
-        <div className="collaborator-card-header">
+        <div className="friends-list-item__info">
           <img
             src={
               collaborator.avatar ||
               `https://i.pravatar.cc/80?u=${collaborator.id}`
             }
             alt="Avatar"
-            className="collaborator-avatar"
+            className="friends-list-item__avatar"
           />
-          <div className="collaborator-info">
-            <h3 className="collaborator-name">
+          <div className="friends-list-item__details">
+            <h3 className="friends-list-item__name">
               {collaborator.name}
               {collaborator.is_premium && (
                 <i className="fas fa-crown" title="Premium User"></i>
               )}
             </h3>
-            <p className="collaborator-email">{collaborator.email}</p>
-            <div className="collaborator-stats">
-              <span className="stat-item">
+            <p className="friends-list-item__email">{collaborator.email}</p>
+            <div className="friends-list-item__stats">
+              <span>
                 <i className="fas fa-handshake"></i>
                 {collaborator.shared_goals_count || 0} Shared Goals
               </span>
-              <span className="stat-item">
+              <span>
                 <i className="fas fa-clock"></i>
                 {collaborator.active_goals_count || 0} Active
               </span>
+              {collaborator.last_activity && (
+                <span>
+                  <i className="fas fa-history"></i>
+                  {new Date(collaborator.last_activity).toLocaleDateString()}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="collaborator-activity">
-          <div className="activity-indicator">
-            <span className="activity-dot active"></span>
-            <span>
-              Last activity:{" "}
-              {collaborator.last_activity
-                ? new Date(collaborator.last_activity).toLocaleDateString()
-                : "Never"}
-            </span>
-          </div>
-        </div>
-
-        <div className="collaborator-actions">
+        <div className="friends-list-item__actions">
           <button
-            className="btn-view-details"
+            className="friends-btn friends-btn-secondary"
             onClick={() => handleViewCollaboratorDetails(collaborator)}
           >
             <i className="fas fa-eye"></i> View Goals
@@ -495,14 +489,14 @@ const FriendsPage: React.FC = () => {
 
           {collaborator.friend_status === "friends" ? (
             <button
-              className="btn-message"
+              className="friends-action-btn friends-action-btn-message"
               onClick={() => setActiveChat(collaborator)}
             >
               <i className="fas fa-comment"></i> Message
             </button>
           ) : (
             <button
-              className="btn-add-friend"
+              className="friends-btn friends-btn-primary"
               onClick={() => handleAddFriendFromCard(collaborator.id)}
               disabled={isLoading}
             >
@@ -516,7 +510,7 @@ const FriendsPage: React.FC = () => {
           )}
 
           <button
-            className="btn-remove-collaborator"
+            className="friends-action-btn friends-action-btn-reject"
             onClick={() =>
               handleRemoveCollaborator(
                 collaborator.id,
@@ -896,7 +890,7 @@ const FriendsPage: React.FC = () => {
         );
       case "collaborators":
         return (
-          <div className="collaborators-grid">
+          <div className="friends-list">
             {collaborators.length === 0 ? (
               <div className="friends-empty-state">
                 <img
@@ -1151,14 +1145,6 @@ const FriendsPage: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <button
-                            className="btn-view-goal"
-                            onClick={() =>
-                              window.open(`/goals/${goal.goal_id}`, "_blank")
-                            }
-                          >
-                            <i className="fas fa-external-link-alt"></i>
-                          </button>
                         </div>
                       ))}
                     </div>

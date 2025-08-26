@@ -1,23 +1,16 @@
+import "../../assets/css/footer.css";
 import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer
-      style={{
-        position: "absolute",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-end",
-        bottom: 0,
-        width: "100%",
-        backgroundColor: "var(--primary-main)",
-        padding: "5px",
-        textAlign: "center",
-        zIndex: 100,
-      }}
-      className="footer"
-    >
-      <p>Designed by PSIX - Note to Get Your Goal</p>
+    <footer className="user-footer">
+      <div className="user-footer-content">
+        <span className="user-footer-title">NoteurGoals</span>
+        <span className="user-footer-divider" />
+        <span className="user-footer-desc">
+          Designed by <b>PSIX</b> &mdash; Note to Get Your Goal
+        </span>
+      </div>
     </footer>
   );
 };

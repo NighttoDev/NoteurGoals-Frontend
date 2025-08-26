@@ -69,6 +69,13 @@ interface GoalShare {
   share_type: Sharing;
 }
 
+interface LinkedNote {
+  note_id?: string | number;
+  id?: string | number;
+  title: string;
+  updated_at?: string;
+}
+
 interface GoalProgress {
   progress_id: string;
   goal_id: string;
@@ -89,6 +96,7 @@ interface Goal {
   share?: GoalShare;
   shares?: GoalShare[];
   progress?: GoalProgress;
+  notes?: LinkedNote[];
   notesCount?: number;
   attachmentsCount?: number;
 }
@@ -148,7 +156,7 @@ const GoalDetailPage: React.FC = () => {
       setLoading(false);
       return;
     }
-    
+
     if (hasFetchedRef.current) {
       return;
     }
@@ -195,7 +203,7 @@ const GoalDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [goalId]);
+  }, [goalId, toast]);
 
   useEffect(() => {
     // Reset the fetch flag when goalId changes
@@ -274,6 +282,7 @@ const GoalDetailPage: React.FC = () => {
         "Are you sure you want to delete this goal? This action cannot be undone.",
       confirmText: "Delete",
       cancelText: "Cancel",
+      variant: "danger",
     });
 
     if (!confirmed) return;
@@ -295,8 +304,17 @@ const GoalDetailPage: React.FC = () => {
 
   // Add collaborator
   const handleAddCollaborator = async () => {
-    if (!goalId || !newCollaboratorEmail.trim()) {
-      toast?.error("Please enter a valid email");
+    if (!goalId) return;
+
+    const email = newCollaboratorEmail.trim();
+    if (!email) {
+      toast?.error("Please enter an email address");
+      return;
+    }
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast?.error("Please enter a valid email address");
       return;
     }
 
@@ -304,7 +322,7 @@ const GoalDetailPage: React.FC = () => {
     setError("");
     try {
       const response = await addCollaborator(goalId, {
-        email: newCollaboratorEmail.trim(),
+        email,
       });
       const newCollaborator = response.data.data || response.data;
 
@@ -339,6 +357,7 @@ const GoalDetailPage: React.FC = () => {
       message: "Are you sure you want to remove this collaborator?",
       confirmText: "Remove",
       cancelText: "Cancel",
+      variant: "danger",
     });
 
     if (!confirmed) return;
@@ -632,6 +651,53 @@ const GoalDetailPage: React.FC = () => {
               </div>
             </section>
           )}
+
+          {Array.isArray(goal.notes) && goal.notes.length > 0 && (
+            <section className="goal-section">
+              <h2>Linked Notes</h2>
+              <ul className="linked-notes-list">
+                {goal.notes.map((n) => {
+                  const noteId = (n.note_id ?? n.id)?.toString() || "";
+                  return (
+                    <li key={noteId} className="linked-note-item">
+                      <button
+                        style={{
+                          // nút đẹp hiện đại
+                          backgroundColor: "var(--primary-light)",
+                          color: "var(--text-main)",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "0.5rem",
+                          border: "none",
+                          cursor: "pointer",
+                          transition: "var(--transition-main)",
+                          fontSize: "1rem",
+                          fontWeight: "500",
+                          textDecoration: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                        className="btn-link"
+                        onClick={() => navigate(`/notes/${noteId}`)}
+                        title="Open note"
+                      >
+                        {n.title}
+                      </button>
+                      {n.updated_at && (
+                        <span className="linked-note-date">
+                          {new Date(n.updated_at).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </div>
 
         {/* Right Column */}
@@ -721,26 +787,7 @@ const GoalDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div
-          className="error-message"
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            right: "20px",
-            background: "red",
-            color: "white",
-            padding: "1rem",
-            borderRadius: "8px",
-            zIndex: 1000,
-          }}
-        >
-          <p>{error}</p>
-          <button onClick={() => setError("")} style={{ marginLeft: "10px" }}>
-            Dismiss
-          </button>
-        </div>
-      )}
+      {/* Errors are surfaced via toasts to keep UX consistent */}
     </div>
   );
 };

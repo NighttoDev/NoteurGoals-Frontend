@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  AiOutlineUpload,
   AiOutlineDownload,
   AiOutlineDelete,
   AiOutlineEye,
@@ -12,9 +11,7 @@ import {
   AiOutlineFileWord,
   AiOutlineFileExcel,
   AiOutlineFileZip,
-  AiOutlineFolder,
   AiOutlineLink,
-  AiOutlineClose,
 } from "react-icons/ai";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -30,19 +27,15 @@ import "../../../assets/css/User/files.css";
 import FilePreviewModal from "../../../components/User/FilePreviewModal";
 import LinkModal from "../../../components/User/LinkModal";
 import UploadModal from "../../../components/User/UploadModal";
+import { useSearch } from "../../../hooks/searchContext";
+import { useConfirm } from "../../../hooks/confirmContext";
+import { useToastHelpers } from "../../../hooks/toastContext";
 import {
   getFiles,
   deleteFile,
   downloadFile,
-  getFileUrl,
-  isImageFile,
-  isPdfFile,
-  isTextFile,
-  linkFileToGoal,
-  unlinkFileFromGoal,
   linkFileToNote,
   unlinkFileFromNote,
-  getGoals,
   getNotes,
   uploadFiles,
 } from "../../../services/filesService";
@@ -65,19 +58,23 @@ interface FileItem {
   }>;
 }
 
-interface Goal {
-  goal_id: number;
-  title: string;
-}
+// Removed Goal interface as goal linking is no longer supported
 
 interface Note {
   note_id: number;
   title: string;
 }
 
+// Upload constraints
+const MAX_FILES_PER_UPLOAD = 10; // maximum number of files per upload action
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB per file
+const MAX_TOTAL_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB per upload batch
+
 const Files: React.FC = () => {
+  const { searchTerm } = useSearch();
+  const confirm = useConfirm();
+  const { success, error: showError, warning } = useToastHelpers();
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -97,15 +94,24 @@ const Files: React.FC = () => {
   const [selectedFileForPreview, setSelectedFileForPreview] =
     useState<FileItem | null>(null);
 
+  const getAxiosErrorMessage = (err: unknown): string => {
+    if (err && typeof err === "object") {
+      const maybe = err as { response?: { data?: { message?: string } } };
+      const serverMessage = maybe.response?.data?.message;
+      if (serverMessage) return serverMessage;
+    }
+    if (err instanceof Error) return err.message;
+    return "Unknown error";
+  };
+
   // Dropdown states
-  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   // Refs for dropdowns
   const filterDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
-  const viewDropdownRef = useRef<HTMLDivElement>(null);
+  // const viewDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -136,12 +142,6 @@ const Files: React.FC = () => {
       ) {
         setIsSortDropdownOpen(false);
       }
-      if (
-        viewDropdownRef.current &&
-        !viewDropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsViewDropdownOpen(false);
-      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -161,11 +161,7 @@ const Files: React.FC = () => {
 
   const fetchGoalsAndNotes = async () => {
     try {
-      const [goalsData, notesData] = await Promise.all([
-        getGoals(),
-        getNotes(),
-      ]);
-      setGoals(goalsData.data || []);
+      const notesData = await getNotes();
       setNotes(notesData.data || []);
     } catch (error) {
       console.error("Error fetching goals and notes:", error);
@@ -173,6 +169,28 @@ const Files: React.FC = () => {
   };
 
   const handleFileUpload = async (filesToUpload: FileList) => {
+    // Validate number of files
+    if (filesToUpload.length > MAX_FILES_PER_UPLOAD) {
+      warning(
+        `You can upload up to ${MAX_FILES_PER_UPLOAD} files at a time. You selected ${filesToUpload.length}.`
+      );
+      return;
+    }
+
+    // Validate total size
+    const totalSize = Array.from(filesToUpload).reduce(
+      (sum, f) => sum + f.size,
+      0
+    );
+    if (totalSize > MAX_TOTAL_UPLOAD_SIZE_BYTES) {
+      warning(
+        `Total upload size exceeds the limit of ${formatFileSize(
+          MAX_TOTAL_UPLOAD_SIZE_BYTES
+        )}. Your selection is ${formatFileSize(totalSize)}.`
+      );
+      return;
+    }
+
     const formData = new FormData();
     const fileNames: string[] = [];
 
@@ -180,8 +198,19 @@ const Files: React.FC = () => {
     for (let i = 0; i < filesToUpload.length; i++) {
       const file = filesToUpload[i];
       if (file.name.length > 255) {
-        alert(
+        warning(
           `File name "${file.name}" is too long. Maximum length is 255 characters.`
+        );
+        return;
+      }
+      // Validate per-file size
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        warning(
+          `File "${file.name}" is too large (${formatFileSize(
+            file.size
+          )}). Maximum allowed size is ${formatFileSize(
+            MAX_FILE_SIZE_BYTES
+          )} per file.`
         );
         return;
       }
@@ -214,43 +243,38 @@ const Files: React.FC = () => {
       });
 
       console.log("Upload response:", response);
-      alert("Files uploaded successfully!");
+      success("Files uploaded successfully!");
       fetchFiles();
       setShowUploadModal(false);
       setTimeout(() => setUploadProgress({}), 1000);
     } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
+      const axiosMessage = getAxiosErrorMessage(error);
       console.error("Error uploading files:", error);
-      console.error("Error response:", errorObject.response?.data);
-      console.error("Error status:", errorObject.response?.status);
-      alert(
-        `File upload failed: ${
-          errorObject.response?.data?.message || errorObject.message
-        }`
-      );
+      showError(`File upload failed: ${axiosMessage}`);
       setUploadProgress({});
     }
   };
 
   const handleDeleteFile = async (fileId: number) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) return;
+    const ok = await confirm({
+      title: "Delete file",
+      message: "Are you sure you want to delete this file?",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!ok) return;
 
     console.log("Attempting to delete file ID:", fileId); // Debug log
 
     try {
       await deleteFile(fileId);
-      alert("File deleted successfully.");
+      success("File deleted successfully.");
       setFiles(files.filter((f) => f.file_id !== fileId));
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosMessage = getAxiosErrorMessage(error);
       console.error("Error deleting file:", error);
-      console.error("Error response:", error.response); // Thêm log này
-      alert(
-        `Failed to delete file: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      showError(`Failed to delete file: ${axiosMessage}`);
     }
   };
 
@@ -268,15 +292,9 @@ const Files: React.FC = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
+      const axiosMessage = getAxiosErrorMessage(error);
       console.error("Error downloading file:", error);
-      alert(
-        `Failed to download file: ${
-          errorObject.response?.data?.message || errorObject.message
-        }`
-      );
+      showError(`Failed to download file: ${axiosMessage}`);
     }
   };
 
@@ -285,22 +303,7 @@ const Files: React.FC = () => {
     setShowPreviewModal(true);
   };
 
-  const handleLinkToGoal = async (goalId: number) => {
-    if (!selectedFileForLink) return;
-    try {
-      await linkFileToGoal(selectedFileForLink.file_id, goalId);
-      fetchFiles();
-      setShowLinkModal(false);
-      setSelectedFileForLink(null);
-      alert("File linked to goal successfully!");
-    } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
-      console.error("Error linking file to goal:", error);
-      alert(`Error linking file to goal: ${error.message}`);
-    }
-  };
+  // Goal linking removed
 
   const handleLinkToNote = async (noteId: number) => {
     if (!selectedFileForLink) return;
@@ -309,53 +312,33 @@ const Files: React.FC = () => {
       fetchFiles();
       setShowLinkModal(false);
       setSelectedFileForLink(null);
-      alert("File linked to note successfully!");
+      success("File linked to note successfully!");
     } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
       console.error("Error linking file to note:", error);
-      alert(`Error linking file to note: ${error.message}`);
+      const axiosMessage = getAxiosErrorMessage(error);
+      showError(`Error linking file to note: ${axiosMessage}`);
     }
   };
 
-  const handleUnlinkFromGoal = async (fileId: number, goalId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to unlink this file from the goal?"
-      )
-    )
-      return;
-    try {
-      await unlinkFileFromGoal(fileId, goalId);
-      fetchFiles();
-      alert("File unlinked from goal successfully!");
-    } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
-      console.error("Error unlinking file from goal:", error);
-      alert(`Error unlinking file from goal: ${error.message}`);
-    }
-  };
+  // Goal unlink removed
 
   const handleUnlinkFromNote = async (fileId: number, noteId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to unlink this file from the note?"
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: "Unlink file",
+      message: "Are you sure you want to unlink this file from the note?",
+      confirmText: "Unlink",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await unlinkFileFromNote(fileId, noteId);
       fetchFiles();
-      alert("File unlinked from note successfully!");
+      success("File unlinked from note successfully!");
     } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
       console.error("Error unlinking file from note:", error);
-      alert(`Error unlinking file from note: ${errorObject.message}`);
+      const axiosMessage = getAxiosErrorMessage(error);
+      showError(`Error unlinking file from note: ${axiosMessage}`);
     }
   };
 
@@ -380,12 +363,17 @@ const Files: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
   const filteredFiles = files
     .filter((file) => {
       const matchesType =
         filterType === "all" ||
         file.file_type.toLowerCase().includes(filterType);
-      return matchesType;
+      const matchesSearch =
+        normalizedSearch === "" ||
+        file.file_name.toLowerCase().includes(normalizedSearch);
+      return matchesType && matchesSearch;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -408,10 +396,7 @@ const Files: React.FC = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  const viewOptions = [
-    { value: "grid" as const, label: "Grid" },
-    { value: "list" as const, label: "List" },
-  ];
+  // View options removed as label is not used
 
   const filterOptions = [
     { value: "all", label: "All Files" },
@@ -431,8 +416,8 @@ const Files: React.FC = () => {
     { value: "size-asc", label: "Smallest First" },
   ];
 
-  const currentViewLabel =
-    viewOptions.find((option) => option.value === viewMode)?.label || "Grid";
+  // const currentViewLabel =
+  //   viewOptions.find((option) => option.value === viewMode)?.label || "Grid";
   const currentFilterLabel =
     filterOptions.find((option) => option.value === filterType)?.label ||
     "All Files";
@@ -576,8 +561,10 @@ const Files: React.FC = () => {
                       className="files-filter-dropdown-item"
                       onClick={() => {
                         const [sortField, order] = option.value.split("-");
-                        setSortBy(sortField as any);
-                        setSortOrder(order as any);
+                        setSortBy(
+                          sortField as "name" | "date" | "size" | "type"
+                        );
+                        setSortOrder(order as "asc" | "desc");
                         setIsSortDropdownOpen(false);
                       }}
                     >
@@ -616,28 +603,9 @@ const Files: React.FC = () => {
                         {new Date(file.uploaded_at).toLocaleDateString()}
                       </span>
                     </div>
-                    
-                    {(file.goals?.length && file.notes?.length) && (
 
+                    {file.notes?.length ? (
                       <div className="file-links">
-                        {file.goals?.map((goal) => (
-                          <span key={goal.goal_id} className="link-tag">
-                            <span className="link-label">Goal:</span>
-                            {goal.title}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUnlinkFromGoal(
-                                  file.file_id,
-                                  goal.goal_id
-                                );
-                              }}
-                              className="unlink-btn"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
                         {file.notes?.map((note) => (
                           <span key={note.note_id} className="link-tag">
                             <span className="link-label">Note:</span>
@@ -657,7 +625,7 @@ const Files: React.FC = () => {
                           </span>
                         ))}
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="file-actions">
@@ -688,7 +656,7 @@ const Files: React.FC = () => {
                         setShowLinkModal(true);
                       }}
                       className="action-btn link-btn"
-                      title="Link to goal/note"
+                      title="Link to note"
                     >
                       <AiOutlineLink />
                     </button>
@@ -731,9 +699,7 @@ const Files: React.FC = () => {
       {showLinkModal && selectedFileForLink && (
         <LinkModal
           file={selectedFileForLink}
-          goals={goals}
           notes={notes}
-          onLinkToGoal={handleLinkToGoal}
           onLinkToNote={handleLinkToNote}
           onClose={() => {
             setShowLinkModal(false);

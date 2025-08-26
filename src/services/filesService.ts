@@ -1,4 +1,3 @@
-// src/services/filesService.ts
 import apiClient from "../api/apiClient";
 
 // =================================
@@ -48,6 +47,25 @@ export const downloadFile = async (fileId: number) => {
 export const deleteFile = async (fileId: number) => {
   console.log("Deleting file with ID:", fileId);
   const response = await apiClient.delete(`/api/files/${fileId}`);
+  return response.data;
+};
+
+// =================================
+// --- File Trash API ---
+// =================================
+
+export const getTrashedFiles = async () => {
+  const response = await apiClient.get("/api/files-trash");
+  return response;
+};
+
+export const restoreFileFromTrash = async (fileId: string | number) => {
+  const response = await apiClient.post(`/api/files/${fileId}/restore`);
+  return response.data;
+};
+
+export const forceDeleteFileFromTrash = async (fileId: string | number) => {
+  const response = await apiClient.delete(`/api/files-trash/${fileId}`);
   return response.data;
 };
 

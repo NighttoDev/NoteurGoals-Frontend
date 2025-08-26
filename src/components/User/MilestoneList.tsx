@@ -59,7 +59,7 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
     if (!editForm.title || !editForm.deadline) return;
     // Validate deadline within goal range
     if (!isWithinGoalRange(editForm.deadline)) {
-      alert("Deadline của milestone phải nằm trong khoảng thời gian của goal");
+      alert("Deadline of milestone must be within the goal's time range");
       return;
     }
 
@@ -110,12 +110,12 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
   const handleAddMilestone = async () => {
     console.log("Adding milestone:", goalId, newMilestone);
     if (!newMilestone.title.trim() || !newMilestone.deadline) {
-      alert("Vui lòng điền đầy đủ thông tin");
+      alert("Please fill in all information");
       return;
     }
     // Validate deadline within goal range
     if (!isWithinGoalRange(newMilestone.deadline)) {
-      alert("Deadline của milestone phải nằm trong khoảng thời gian của goal");
+      alert("Deadline of milestone must be within the goal's time range");
       return;
     }
 
@@ -134,7 +134,7 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
         // Có thể thêm toast notification ở đây
       }
     } catch (err: unknown) {
-      let errorMessage = "Lỗi khi thêm milestone";
+      let errorMessage = "Error when adding milestone";
 
       if (typeof err === "object" && err !== null && "response" in err) {
         const response = (
@@ -143,14 +143,14 @@ const MilestoneList: React.FC<MilestoneListProps> = ({
           }
         ).response;
         if (response?.status === 403) {
-          errorMessage = "Bạn không có quyền thực hiện hành động này";
+          errorMessage = "You do not have permission to perform this action";
         } else if (response?.data?.message) {
           errorMessage = response.data.message;
         }
       }
 
       alert(errorMessage);
-      console.error("Chi tiết lỗi:", err);
+      console.error("Error details:", err);
     } finally {
       setLoading(false);
     }
