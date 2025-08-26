@@ -29,6 +29,8 @@ const RegisterPage: React.FC = () => {
     const newErrors: any = {};
     if (!name.trim()) {
       newErrors.display_name = ["Please enter your full name."];
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(name.trim())) {
+      newErrors.display_name = ["Please enter a valid full name."];
     }
     if (!email.trim()) {
       newErrors.email = ["Please enter your email."];

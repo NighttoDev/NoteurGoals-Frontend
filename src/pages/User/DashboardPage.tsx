@@ -101,7 +101,6 @@ const DashboardPage = () => {
         const friendsRes = await getFriendsData();
         const { requests } = friendsRes.data;
 
-
         // 4. Get user info from localStorage (or a separate API if available)
         const userInfo = JSON.parse(localStorage.getItem("user_info") || "{}");
         setCurrentUser({
@@ -231,7 +230,6 @@ const DashboardPage = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-
       return `Today, ${date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -321,7 +319,6 @@ const DashboardPage = () => {
                       <FiTarget /> {task.project}
                     </span>
                     <span className={`dsd-priority dsd-${task.priority}`}>
-
                       {task.priority === "high" && "High Priority"}
                       {task.priority === "medium" && "Medium Priority"}
                       {task.priority === "low" && "Low Priority"}
@@ -385,11 +382,12 @@ const DashboardPage = () => {
                 <FiStar />
               </div>
               <div className="dsd-premium-text">
-
                 <h3>Upgrade to Premium</h3>
                 <p>Unlock all powerful features.</p>
               </div>
-              <a href="/settings#subscription" className="dsd-upgrade-btn">Upgrade Now</a>
+              <a href="/settings#subscription" className="dsd-upgrade-btn">
+                Upgrade Now
+              </a>
             </div>
           )}
 
