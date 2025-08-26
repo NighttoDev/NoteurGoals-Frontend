@@ -34,6 +34,13 @@ import {
   getFiles,
   deleteFile,
   downloadFile,
+  isImageFile,
+  isPdfFile,
+  isWordFile,
+  isExcelFile,
+  isPowerPointFile,
+  linkFileToGoal,
+  unlinkFileFromGoal,
   linkFileToNote,
   unlinkFileFromNote,
   getNotes,
@@ -111,7 +118,6 @@ const Files: React.FC = () => {
   // Refs for dropdowns
   const filterDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
-  // const viewDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -303,7 +309,22 @@ const Files: React.FC = () => {
     setShowPreviewModal(true);
   };
 
-  // Goal linking removed
+  const handleLinkToGoal = async (goalId: number) => {
+    if (!selectedFileForLink) return;
+    try {
+      await linkFileToGoal(selectedFileForLink.file_id, goalId);
+      fetchFiles();
+      setShowLinkModal(false);
+      setSelectedFileForLink(null);
+      alert("File linked to goal successfully!");
+    } catch (error: unknown) {
+      const errorObject = error as {
+        response?: { data?: { message?: string }; status?: number };
+      };
+      console.error("Error linking file to goal:", error);
+      alert(`Error linking file to goal: ${errorObject.response?.data?.message || "Unknown error"}`);
+    }
+  };
 
   const handleLinkToNote = async (noteId: number) => {
     if (!selectedFileForLink) return;
@@ -314,13 +335,31 @@ const Files: React.FC = () => {
       setSelectedFileForLink(null);
       success("File linked to note successfully!");
     } catch (error: unknown) {
-      console.error("Error linking file to note:", error);
       const axiosMessage = getAxiosErrorMessage(error);
+      console.error("Error linking file to note:", error);
       showError(`Error linking file to note: ${axiosMessage}`);
     }
   };
 
-  // Goal unlink removed
+  const handleUnlinkFromGoal = async (fileId: number, goalId: number) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to unlink this file from the goal?"
+      )
+    )
+      return;
+    try {
+      await unlinkFileFromGoal(fileId, goalId);
+      fetchFiles();
+      alert("File unlinked from goal successfully!");
+    } catch (error: unknown) {
+      const errorObject = error as {
+        response?: { data?: { message?: string }; status?: number };
+      };
+      console.error("Error unlinking file from goal:", error);
+      alert(`Error unlinking file from goal: ${errorObject.response?.data?.message || "Unknown error"}`);
+    }
+  };
 
   const handleUnlinkFromNote = async (fileId: number, noteId: number) => {
     const ok = await confirm({
@@ -336,20 +375,21 @@ const Files: React.FC = () => {
       fetchFiles();
       success("File unlinked from note successfully!");
     } catch (error: unknown) {
-      console.error("Error unlinking file from note:", error);
       const axiosMessage = getAxiosErrorMessage(error);
+      console.error("Error unlinking file from note:", error);
       showError(`Error unlinking file from note: ${axiosMessage}`);
     }
   };
 
-  const getFileIcon = (fileType: string) => {
+  const getFileIcon = (fileType: string, fileName?: string) => {
+    if (isImageFile(fileType)) return <AiOutlineFileImage />;
+    if (isPdfFile(fileType)) return <AiOutlineFilePdf />;
+    if (isWordFile(fileType, fileName)) return <AiOutlineFileWord />;
+    if (isExcelFile(fileType, fileName)) return <AiOutlineFileExcel />;
+    if (isPowerPointFile(fileType, fileName)) return <AiOutlineFileWord />; // PowerPoint uses similar icon
+    
+    // Fallback to legacy detection for other types
     const type = fileType.toLowerCase();
-    if (type.includes("image")) return <AiOutlineFileImage />;
-    if (type.includes("pdf")) return <AiOutlineFilePdf />;
-    if (type.includes("word") || type.includes("document"))
-      return <AiOutlineFileWord />;
-    if (type.includes("excel") || type.includes("spreadsheet"))
-      return <AiOutlineFileExcel />;
     if (type.includes("zip") || type.includes("archive"))
       return <AiOutlineFileZip />;
     return <AiOutlineFile />;
@@ -396,7 +436,6 @@ const Files: React.FC = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  // View options removed as label is not used
 
   const filterOptions = [
     { value: "all", label: "All Files" },
@@ -416,8 +455,7 @@ const Files: React.FC = () => {
     { value: "size-asc", label: "Smallest First" },
   ];
 
-  // const currentViewLabel =
-  //   viewOptions.find((option) => option.value === viewMode)?.label || "Grid";
+
   const currentFilterLabel =
     filterOptions.find((option) => option.value === filterType)?.label ||
     "All Files";
@@ -591,7 +629,7 @@ const Files: React.FC = () => {
             ? renderEmptyState()
             : filteredFiles.map((file) => (
                 <div key={file.file_id} className="file-item">
-                  <div className="file-icon">{getFileIcon(file.file_type)}</div>
+                  <div className="file-icon">{getFileIcon(file.file_type, file.file_name)}</div>
 
                   <div className="file-info">
                     <h3 className="file-name">{file.file_name}</h3>

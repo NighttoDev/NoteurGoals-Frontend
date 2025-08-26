@@ -91,6 +91,66 @@ export const isTextFile = (fileType: string) => {
   return fileType.startsWith("text/");
 };
 
+// Microsoft Office file type detection
+export const isWordFile = (fileType: string, fileName?: string) => {
+  const wordMimeTypes = [
+    "application/msword", // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  ];
+  const isWordMime = wordMimeTypes.includes(fileType);
+  
+  // Fallback to file extension if mime type is generic
+  if (fileName && (fileType === "application/octet-stream" || fileType === "application/vnd.ms-office")) {
+    const ext = fileName.toLowerCase();
+    return ext.endsWith(".doc") || ext.endsWith(".docx");
+  }
+  
+  return isWordMime;
+};
+
+export const isExcelFile = (fileType: string, fileName?: string) => {
+  const excelMimeTypes = [
+    "application/vnd.ms-excel", // .xls
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+  ];
+  const isExcelMime = excelMimeTypes.includes(fileType);
+  
+  // Fallback to file extension if mime type is generic
+  if (fileName && (fileType === "application/octet-stream" || fileType === "application/vnd.ms-office")) {
+    const ext = fileName.toLowerCase();
+    return ext.endsWith(".xls") || ext.endsWith(".xlsx");
+  }
+  
+  return isExcelMime;
+};
+
+export const isPowerPointFile = (fileType: string, fileName?: string) => {
+  const powerPointMimeTypes = [
+    "application/vnd.ms-powerpoint", // .ppt
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+  ];
+  const isPowerPointMime = powerPointMimeTypes.includes(fileType);
+  
+  // Fallback to file extension if mime type is generic
+  if (fileName && (fileType === "application/octet-stream" || fileType === "application/vnd.ms-office")) {
+    const ext = fileName.toLowerCase();
+    return ext.endsWith(".ppt") || ext.endsWith(".pptx");
+  }
+  
+  return isPowerPointMime;
+};
+
+export const isOfficeFile = (fileType: string, fileName?: string) => {
+  return isWordFile(fileType, fileName) || 
+         isExcelFile(fileType, fileName) || 
+         isPowerPointFile(fileType, fileName);
+};
+
+export const isDocxFile = (fileType: string, fileName?: string) => {
+  return fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+         (fileName && fileName.toLowerCase().endsWith(".docx"));
+};
+
 // =================================
 // --- Linking API ---
 // =================================
