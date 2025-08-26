@@ -325,7 +325,7 @@ html {
 
 /* --- 4. CONTENT AREA STYLES - CONNECTED TO TABS --- */
 .friends-content-area {
-  margin-bottom: 2rem;
+  margin-bottom: 18px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -508,11 +508,7 @@ html {
 }
 
 .friends-action-btn-reject {
-  background-image: linear-gradient(
-    135deg,
-    var(--accent-red) 0%,
-    #dc2626 100%
-  );
+  background-image: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%);
   color: white;
   padding: 0.6rem 1rem;
   border-radius: var(--border-radius-md);
@@ -962,11 +958,11 @@ html {
   .friends-container-section {
     padding: 1.5rem 2rem;
   }
-  
+
   .friends-list {
     max-height: calc(100vh - 250px);
   }
-  
+
   .collaborators-grid {
     max-height: calc(100vh - 250px);
   }
@@ -977,11 +973,11 @@ html {
     padding: 1.5rem;
     min-height: calc(100vh - 3rem);
   }
-  
+
   .friends-list {
     max-height: calc(100vh - 200px);
   }
-  
+
   .collaborators-grid {
     max-height: calc(100vh - 200px);
   }
@@ -992,17 +988,17 @@ html {
     overflow-x: auto;
     padding-bottom: 0;
   }
-  
+
   .friends-tab {
     min-width: 100px;
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
-  
+
   .friends-content-area {
     padding: 1rem;
   }
-  
+
   .friends-list-item {
     flex-direction: column;
     align-items: flex-start;
@@ -1018,18 +1014,213 @@ html {
 }
 
 @media (max-width: 480px) {
-  .friends-modal-content {
+  .friends-container-section {
+    padding: 0.5rem 0.2rem;
+    min-height: unset;
+  }
+  .friends-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .friends-page-title {
+    font-size: 1.2rem;
+  }
+  .friends-page-title::after {
+    width: 32px;
+    height: 2px;
+    bottom: -3px;
+  }
+  .friends-content-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .friends-search-bar {
+    min-width: unset;
     width: 100%;
+    padding: 0 0.5rem;
+  }
+  .friends-search-bar input {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.3rem;
+  }
+  .friends-btn,
+  .friends-btn-primary,
+  .friends-btn-secondary {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    gap: 0.4rem;
+  }
+  .friends-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0;
+  }
+  .friends-tab {
+    min-width: 80px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  .friends-content-area {
+    padding: 0.5rem 0;
+  }
+  .friends-grid {
+    gap: 0.7rem;
+    grid-template-columns: 1fr;
+    padding-bottom: 1rem;
+  }
+  .friends-card {
+    padding: 1rem;
+  }
+  .friends-avatar {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 0.7rem;
+  }
+  .friends-name {
+    font-size: 1rem;
+    gap: 4px;
+  }
+  .friends-mutual,
+  .friends-email,
+  .friends-stats {
+    font-size: 0.75rem;
+  }
+  .friends-actions {
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+  .friends-action-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+    gap: 0.3rem;
+  }
+  .friends-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.5rem 0.6rem;
+    gap: 0.5rem;
+  }
+  .friends-list-item__avatar {
+    width: 38px;
+    height: 38px;
+  }
+  .friends-list-item__name {
+    font-size: 0.95rem;
+    gap: 3px;
+  }
+  .friends-list-item__email,
+  .friends-list-item__stats {
+    font-size: 0.7rem;
+  }
+  .friends-list-item__actions {
+    width: 100%;
+    margin-top: 0.3rem;
+    gap: 0.3rem;
+  }
+  .friends-list-item__actions .friends-action-btn {
+    flex-grow: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .friends-modal-content {
+    width: 100vw;
+    max-width: 100vw;
     max-height: 100vh;
     border-radius: 0;
+    padding: 0;
   }
-  .friends-container-section {
-    padding: 1rem;
-    min-height: calc(100vh - 2rem);
+  .friends-modal-header,
+  .friends-modal-footer {
+    padding: 0.7rem 0.5rem;
   }
-  
-  .friends-page-title {
-    font-size: 1.75rem;
+  .friends-modal-body {
+    padding: 0.7rem 0.5rem;
+  }
+  .friends-empty-state,
+  .friends-loading {
+    padding: 1.2rem 0.2rem;
+    min-height: 180px;
+  }
+  .friends-empty-image {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 0.7rem;
+  }
+  .friends-empty-title {
+    font-size: 1rem;
+  }
+  .friends-empty-message {
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+  /* Collaborators */
+  .collaborators-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    padding: 0.5rem 0;
+  }
+  .collaborator-card {
+    padding: 0.7rem;
+  }
+  .collaborator-card-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .collaborator-avatar {
+    width: 38px;
+    height: 38px;
+  }
+  .collaborator-info h3 {
+    font-size: 1rem;
+  }
+  .collaborator-info p,
+  .collaborator-email {
+    font-size: 0.75rem;
+  }
+  .collaborator-actions {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .collaborator-actions button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.7rem;
+  }
+  .shared-goal-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.7rem;
+  }
+  .goal-info h5 {
+    font-size: 0.95rem;
+  }
+  .goal-meta {
+    gap: 0.3rem;
+    font-size: 0.7rem;
+  }
+  .goal-status,
+  .goal-role {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+  }
+  .goal-progress {
+    gap: 0.3rem;
+  }
+  .progress-bar {
+    height: 4px;
+  }
+  .btn-view-goal {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    padding: 0.2rem;
   }
 }
 
@@ -1045,7 +1236,9 @@ html {
 }
 
 @keyframes friendsDotBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -1213,7 +1406,11 @@ html {
 }
 
 .btn-view-details {
-  background-image: linear-gradient(135deg, var(--primary-main) 0%, var(--primary-deep) 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--primary-main) 0%,
+    var(--primary-deep) 100%
+  );
   color: white;
 }
 
@@ -1222,7 +1419,11 @@ html {
 }
 
 .btn-message {
-  background-image: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-blue) 0%,
+    #1d4ed8 100%
+  );
   color: white;
 }
 
@@ -1231,7 +1432,11 @@ html {
 }
 
 .btn-add-friend {
-  background-image: linear-gradient(135deg, var(--accent-green) 0%, #16a34a 100%);
+  background-image: linear-gradient(
+    135deg,
+    var(--accent-green) 0%,
+    #16a34a 100%
+  );
   color: white;
 }
 
@@ -1526,7 +1731,11 @@ html {
   content: "";
   width: 4px;
   height: 20px;
-  background: linear-gradient(135deg, var(--primary-main), var(--primary-light));
+  background: linear-gradient(
+    135deg,
+    var(--primary-main),
+    var(--primary-light)
+  );
   border-radius: 2px;
 }
 
@@ -1677,7 +1886,6 @@ html {
 .btn-view-goal:hover {
   background: var(--primary-deep);
   transform: translateY(-1px);
-}
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0; /* Remove space for scrollbar since it's hidden */
@@ -1825,48 +2033,237 @@ html {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .collaborator-actions {
     flex-direction: column;
   }
-  
+
   .collaborator-actions button {
     flex: none;
   }
-  
+
   .collaborator-modal-content {
     max-width: 95vw;
     margin: 1rem;
   }
-  
+
   .collaborator-summary {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .collaboration-stats {
     justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .friends-container-section {
+    padding: 0.5rem 0.2rem;
+    min-height: unset;
+  }
+  .friends-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .friends-page-title {
+    font-size: 1.2rem;
+  }
+  .friends-page-title::after {
+    width: 32px;
+    height: 2px;
+    bottom: -3px;
+  }
+  .friends-content-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .friends-search-bar {
+    min-width: unset;
+    width: 100%;
+    padding: 0 0.5rem;
+  }
+  .friends-search-bar input {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.3rem;
+  }
+  .friends-btn,
+  .friends-btn-primary,
+  .friends-btn-secondary {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    gap: 0.4rem;
+  }
+  .friends-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0;
+  }
+  .friends-tab {
+    min-width: 80px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  .friends-content-area {
+    padding: 0.5rem 0;
+  }
+  .friends-grid {
+    gap: 0.7rem;
+    grid-template-columns: 1fr;
+    padding-bottom: 1rem;
+  }
+  .friends-card {
+    padding: 1rem;
+  }
+  .friends-avatar {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 0.7rem;
+  }
+  .friends-name {
+    font-size: 1rem;
+    gap: 4px;
+  }
+  .friends-mutual,
+  .friends-email,
+  .friends-stats {
+    font-size: 0.75rem;
+  }
+  .friends-actions {
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+  .friends-action-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+    gap: 0.3rem;
+  }
+  .friends-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.5rem 0.6rem;
+    gap: 0.5rem;
+  }
+  .friends-list-item__avatar {
+    width: 38px;
+    height: 38px;
+  }
+  .friends-list-item__name {
+    font-size: 0.95rem;
+    gap: 3px;
+  }
+  .friends-list-item__email,
+  .friends-list-item__stats {
+    font-size: 0.7rem;
+  }
+  .friends-list-item__actions {
+    width: 100%;
+    margin-top: 0.3rem;
+    gap: 0.3rem;
+  }
+  .friends-list-item__actions .friends-action-btn {
+    flex-grow: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .friends-modal-content {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 0;
+  }
+  .friends-modal-header,
+  .friends-modal-footer {
+    padding: 0.7rem 0.5rem;
+  }
+  .friends-modal-body {
+    padding: 0.7rem 0.5rem;
+  }
+  .friends-empty-state,
+  .friends-loading {
+    padding: 1.2rem 0.2rem;
+    min-height: 180px;
+  }
+  .friends-empty-image {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 0.7rem;
+  }
+  .friends-empty-title {
+    font-size: 1rem;
+  }
+  .friends-empty-message {
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+  /* Collaborators */
+  .collaborators-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    padding: 0.5rem 0;
+  }
+  .collaborator-card {
+    padding: 0.7rem;
+  }
   .collaborator-card-header {
     flex-direction: column;
     align-items: center;
-    text-align: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
-  
+  .collaborator-avatar {
+    width: 38px;
+    height: 38px;
+  }
+  .collaborator-info h3 {
+    font-size: 1rem;
+  }
+  .collaborator-info p,
+  .collaborator-email {
+    font-size: 0.75rem;
+  }
+  .collaborator-actions {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .collaborator-actions button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.7rem;
+  }
   .shared-goal-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    padding: 0.7rem;
   }
-  
+  .goal-info h5 {
+    font-size: 0.95rem;
+  }
   .goal-meta {
-    flex-wrap: wrap;
+    gap: 0.3rem;
+    font-size: 0.7rem;
   }
-  
+  .goal-status,
+  .goal-role {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+  }
+  .goal-progress {
+    gap: 0.3rem;
+  }
+  .progress-bar {
+    height: 4px;
+  }
   .btn-view-goal {
-    align-self: flex-end;
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    padding: 0.2rem;
   }
 }

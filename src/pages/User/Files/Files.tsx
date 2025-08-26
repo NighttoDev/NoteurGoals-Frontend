@@ -38,11 +38,8 @@ import {
   isImageFile,
   isPdfFile,
   isTextFile,
-  linkFileToGoal,
-  unlinkFileFromGoal,
   linkFileToNote,
   unlinkFileFromNote,
-  getGoals,
   getNotes,
   uploadFiles,
 } from "../../../services/filesService";
@@ -55,19 +52,10 @@ interface FileItem {
   file_size: number;
   uploaded_at: string;
   box_file_id?: string;
-  goals?: Array<{
-    goal_id: number;
-    title: string;
-  }>;
   notes?: Array<{
     note_id: number;
     title: string;
   }>;
-}
-
-interface Goal {
-  goal_id: number;
-  title: string;
 }
 
 interface Note {
@@ -77,10 +65,8 @@ interface Note {
 
 const Files: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterType, setFilterType] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "date" | "size" | "type">(
     "date"
@@ -111,7 +97,7 @@ const Files: React.FC = () => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        await Promise.all([fetchFiles(), fetchGoalsAndNotes()]);
+        await Promise.all([fetchFiles(), fetchNotes()]);
       } catch (error) {
         console.error("Failed to load initial data:", error);
       } finally {
@@ -159,16 +145,12 @@ const Files: React.FC = () => {
     }
   };
 
-  const fetchGoalsAndNotes = async () => {
+  const fetchNotes = async () => {
     try {
-      const [goalsData, notesData] = await Promise.all([
-        getGoals(),
-        getNotes(),
-      ]);
-      setGoals(goalsData.data || []);
+      const notesData = await getNotes();
       setNotes(notesData.data || []);
     } catch (error) {
-      console.error("Error fetching goals and notes:", error);
+      console.error("Error fetching notes:", error);
     }
   };
 
@@ -285,23 +267,6 @@ const Files: React.FC = () => {
     setShowPreviewModal(true);
   };
 
-  const handleLinkToGoal = async (goalId: number) => {
-    if (!selectedFileForLink) return;
-    try {
-      await linkFileToGoal(selectedFileForLink.file_id, goalId);
-      fetchFiles();
-      setShowLinkModal(false);
-      setSelectedFileForLink(null);
-      alert("File linked to goal successfully!");
-    } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
-      console.error("Error linking file to goal:", error);
-      alert(`Error linking file to goal: ${error.message}`);
-    }
-  };
-
   const handleLinkToNote = async (noteId: number) => {
     if (!selectedFileForLink) return;
     try {
@@ -316,26 +281,6 @@ const Files: React.FC = () => {
       };
       console.error("Error linking file to note:", error);
       alert(`Error linking file to note: ${error.message}`);
-    }
-  };
-
-  const handleUnlinkFromGoal = async (fileId: number, goalId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to unlink this file from the goal?"
-      )
-    )
-      return;
-    try {
-      await unlinkFileFromGoal(fileId, goalId);
-      fetchFiles();
-      alert("File unlinked from goal successfully!");
-    } catch (error: unknown) {
-      const errorObject = error as {
-        response?: { data?: { message?: string }; status?: number };
-      };
-      console.error("Error unlinking file from goal:", error);
-      alert(`Error unlinking file from goal: ${error.message}`);
     }
   };
 
@@ -408,11 +353,6 @@ const Files: React.FC = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  const viewOptions = [
-    { value: "grid" as const, label: "Grid" },
-    { value: "list" as const, label: "List" },
-  ];
-
   const filterOptions = [
     { value: "all", label: "All Files" },
     { value: "image", label: "Images" },
@@ -431,8 +371,6 @@ const Files: React.FC = () => {
     { value: "size-asc", label: "Smallest First" },
   ];
 
-  const currentViewLabel =
-    viewOptions.find((option) => option.value === viewMode)?.label || "Grid";
   const currentFilterLabel =
     filterOptions.find((option) => option.value === filterType)?.label ||
     "All Files";
@@ -499,25 +437,7 @@ const Files: React.FC = () => {
           <h1 className="files-page-title">My Files</h1>
 
           <div className="files-action-buttons">
-            <div className="files-toolbar-group">
-              <button
-                className={`files-btn-icon ${
-                  viewMode === "grid" ? "active" : ""
-                }`}
-                onClick={() => setViewMode("grid")}
-              >
-                <FontAwesomeIcon icon={faThLarge} />
-              </button>
-              <button
-                className={`files-btn-icon ${
-                  viewMode === "list" ? "active" : ""
-                }`}
-                onClick={() => setViewMode("list")}
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            </div>
-
+            {/* Giữ lại các nút filter, sort, upload như cũ */}
             <div className="files-filter-dropdown" ref={filterDropdownRef}>
               <button
                 className="files-filter-dropdown-button"
@@ -597,7 +517,8 @@ const Files: React.FC = () => {
           </div>
         </div>
 
-        <div className={`files-main-container ${viewMode}-view`}>
+        {/* Luôn dùng grid-view */}
+        <div className={`files-main-container grid-view`}>
           {showLoading
             ? renderLoading()
             : filteredFiles.length === 0
@@ -617,26 +538,8 @@ const Files: React.FC = () => {
                       </span>
                     </div>
 
-                    {(file.goals?.length > 0 || file.notes?.length > 0) && (
+                    {file.notes?.length > 0 && (
                       <div className="file-links">
-                        {file.goals?.map((goal) => (
-                          <span key={goal.goal_id} className="link-tag">
-                            <span className="link-label">Goal:</span>
-                            {goal.title}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUnlinkFromGoal(
-                                  file.file_id,
-                                  goal.goal_id
-                                );
-                              }}
-                              className="unlink-btn"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
                         {file.notes?.map((note) => (
                           <span key={note.note_id} className="link-tag">
                             <span className="link-label">Note:</span>
@@ -687,7 +590,7 @@ const Files: React.FC = () => {
                         setShowLinkModal(true);
                       }}
                       className="action-btn link-btn"
-                      title="Link to goal/note"
+                      title="Link to note"
                     >
                       <AiOutlineLink />
                     </button>
@@ -730,9 +633,7 @@ const Files: React.FC = () => {
       {showLinkModal && selectedFileForLink && (
         <LinkModal
           file={selectedFileForLink}
-          goals={goals}
           notes={notes}
-          onLinkToGoal={handleLinkToGoal}
           onLinkToNote={handleLinkToNote}
           onClose={() => {
             setShowLinkModal(false);

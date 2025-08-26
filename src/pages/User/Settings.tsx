@@ -536,8 +536,8 @@ const SettingsPage = () => {
                     disabled
                   />
                   <p
-                    className="settings-text-light"
-                    style={{ fontSize: "0.8rem", marginTop: "4px" }}
+                    className="settings-form-notice"
+                    style={{ fontSize: "0.8rem" }}
                   >
                     Email address cannot be changed at this time.
                   </p>
