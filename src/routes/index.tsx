@@ -39,9 +39,17 @@ import Files from "../pages/User/Files/Files";
 // --- AUTHENTICATION HELPERS ---
 const isAuthenticated = (): boolean => !!localStorage.getItem("auth_token");
 
-// --- PROTECTED ROUTE COMPONENTS ---
+// --- ROUTE GUARDS ---
 const RequireAuth: React.FC = () => {
   return isAuthenticated() ? <Outlet /> : <Navigate to="/login" replace />;
+};
+
+const OnlyGuests: React.FC = () => {
+  return isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Outlet />;
+};
+
+const HomeGate: React.FC = () => {
+  return isAuthenticated() ? <Navigate to="/dashboard" replace /> : <HomeLayout />;
 };
 
 // --- ROUTER CONFIGURATION ---
@@ -51,17 +59,22 @@ const router = createBrowserRouter([
   // =======================================================
   {
     path: "/",
-    element: <HomeLayout />,
+    element: <HomeGate />,
   },
   {
-    element: <AuthLayout />,
+    element: <OnlyGuests />,
     children: [
-      { path: "/login", element: <LoginPage /> },
-      { path: "/register", element: <RegisterPage /> },
-      { path: "/verify-email", element: <VerifyEmailPage /> },
-      { path: "/forgot-password", element: <ForgotPasswordPage /> },
-      { path: "/reset-password", element: <ResetPasswordPage /> },
-      { path: "/auth/social-callback", element: <SocialAuthCallback /> },
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: "/login", element: <LoginPage /> },
+          { path: "/register", element: <RegisterPage /> },
+          { path: "/verify-email", element: <VerifyEmailPage /> },
+          { path: "/forgot-password", element: <ForgotPasswordPage /> },
+          { path: "/reset-password", element: <ResetPasswordPage /> },
+          { path: "/auth/social-callback", element: <SocialAuthCallback /> },
+        ],
+      },
     ],
   },
 

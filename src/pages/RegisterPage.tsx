@@ -29,8 +29,8 @@ const RegisterPage: React.FC = () => {
     const newErrors: any = {};
     if (!name.trim()) {
       newErrors.display_name = ["Please enter your full name."];
-    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(name.trim())) {
-      newErrors.display_name = ["Please enter a valid full name."];
+    } else if (/\d/.test(name)) {
+      newErrors.display_name = ["Full name must not contain numbers."];
     }
     if (!email.trim()) {
       newErrors.email = ["Please enter your email."];
@@ -109,7 +109,7 @@ const RegisterPage: React.FC = () => {
       {error && <p className="form-error">{error}</p>}
 
       {/* THAY ĐỔI: Thêm noValidate vào form */}
-      <form onSubmit={handleRegister} noValidate>
+      <form onSubmit={handleRegister}>
         <div className="form-group">
           <label htmlFor="name">Full Name</label>
           <input
@@ -120,6 +120,9 @@ const RegisterPage: React.FC = () => {
             onChange={(e) => setName(e.target.value)}
             disabled={loading}
             required
+            pattern="^(?!.*\\d).+$"
+            title="Full name must not contain numbers."
+            inputMode="text"
           />
           {getError("display_name") && (
             <small className="form-field-error">
