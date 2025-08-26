@@ -616,8 +616,9 @@ const Files: React.FC = () => {
                         {new Date(file.uploaded_at).toLocaleDateString()}
                       </span>
                     </div>
+                    
+                    {(file.goals?.length && file.notes?.length) && (
 
-                    {(file.goals?.length > 0 || file.notes?.length > 0) && (
                       <div className="file-links">
                         {file.goals?.map((goal) => (
                           <span key={goal.goal_id} className="link-tag">

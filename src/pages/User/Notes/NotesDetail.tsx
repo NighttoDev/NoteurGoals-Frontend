@@ -134,12 +134,12 @@ const NoteDetailPage: React.FC = () => {
       console.log("Setting selected goal IDs:", linkedGoalIds);
       console.log(
         "Available goals IDs:",
-        mappedGoals.map((g) => g.id)
+        mappedGoals.map((g: GoalOption) => g.id)
       );
 
       // Debug: So sánh IDs
       linkedGoalIds.forEach((linkedId) => {
-        const found = mappedGoals.find((g) => g.id === linkedId);
+        const found = mappedGoals.find((g: GoalOption) => g.id === linkedId);
         console.log(`Linked goal ${linkedId} found in goals list:`, found);
       });
 
