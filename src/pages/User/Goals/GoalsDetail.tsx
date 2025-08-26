@@ -148,12 +148,10 @@ const GoalDetailPage: React.FC = () => {
       setLoading(false);
       return;
     }
-
-    // Prevent multiple fetches
+    
     if (hasFetchedRef.current) {
       return;
     }
-
     hasFetchedRef.current = true;
     setLoading(true);
     setError("");
@@ -270,7 +268,6 @@ const GoalDetailPage: React.FC = () => {
   // Delete goal
   const handleDeleteGoal = async () => {
     if (!goalId) return;
-
     const confirmed = await confirm?.({
       title: "Delete Goal",
       message:
@@ -337,7 +334,6 @@ const GoalDetailPage: React.FC = () => {
   // Remove collaborator
   const handleRemoveCollaborator = async (userId: string) => {
     if (!goalId) return;
-
     const confirmed = await confirm?.({
       title: "Remove Collaborator",
       message: "Are you sure you want to remove this collaborator?",

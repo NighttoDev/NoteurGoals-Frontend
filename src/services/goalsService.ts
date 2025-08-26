@@ -22,10 +22,9 @@ axiosAuth.interceptors.request.use((config) => {
 // CÁC HÀM CRUD CƠ BẢN
 // =================================================================
 
-export const getGoals = (p0: {
-  status: "all" | "in_progress" | "completed" | "new" | "cancelled";
-  search: string;
-}) => axiosAuth.get("/goals");
+
+export const getGoals = (page: number = 0, status: "all" | "in_progress" | "completed" | "new" | "cancelled" = "all", search: string = "") =>
+  axiosAuth.get(`/goals?page=${page}&status=${status}&search=${search}`);
 
 export const getGoal = (id: string) => axiosAuth.get(`/goals/${id}`);
 
