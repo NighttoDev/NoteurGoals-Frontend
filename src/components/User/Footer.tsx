@@ -4,14 +4,16 @@ const Footer: React.FC = () => {
   return (
     <footer
       style={{
-        position: "fixed",
+        position: "absolute",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-end",
         bottom: 0,
         width: "100%",
         backgroundColor: "var(--primary-main)",
         padding: "5px",
         textAlign: "center",
-        zIndex: 1000,
-        opacity: 0.8,
+        zIndex: 100,
       }}
       className="footer"
     >

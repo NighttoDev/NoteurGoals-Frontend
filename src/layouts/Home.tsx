@@ -1,18 +1,18 @@
-import "../assets/css/home.css"; // Assuming you have a CSS file for styles
+import "../assets/css/home.css";
 const HomeLayout = () => {
   return (
-    <>
-      <header>
-        <div className="container">
-          <nav className="navbar">
-            <a href="/" className="logo">
+    <div className="home-page">
+      <header className="home-header">
+        <div className="home-container">
+          <nav className="home-navbar">
+            <a href="/" className="home-logo">
               <i className="fas fa-bullseye"></i> NoteurGoals
             </a>
-            <div className="auth-buttons">
-              <a href="/login" className="btn btn-outline">
+            <div className="home-auth-buttons">
+              <a href="/login" className="home-btn home-btn-outline">
                 <i className="fas fa-right-to-bracket"></i> Log In
               </a>
-              <a href="/register" className="btn btn-primary">
+              <a href="/register" className="home-btn home-btn-primary">
                 <i className="fas fa-rocket"></i> Sign Up Free
               </a>
             </div>
@@ -20,42 +20,46 @@ const HomeLayout = () => {
         </div>
       </header>
 
-      <main>
-        <section style={{ padding: "120px 0" }} className="hero">
-          <div className="container">
+      <main className="home-main">
+        <section style={{ padding: "120px 0" }} className="home-hero">
+          <div className="home-container">
             <h1>Achieve Your Ambitions with AI-Powered Precision</h1>
             <p>
               The all-in-one platform that transforms your goals into
               achievements. Harness the power of AI, seamless collaboration, and
               smart planning to unlock your full potential.
             </p>
-            <div className="hero-buttons">
-              <a href="/login" className="btn btn-primary btn-lg">
+            <div className="home-hero-buttons">
+              <a
+                href="/login"
+                className="home-btn home-btn-primary home-btn-lg"
+              >
                 Start Your Free Trial
               </a>
             </div>
-            <div className="hero-image">
+            <div className="home-hero-image">
               <img
-                src="../../../public/image.png"
-                alt="NoteurGoals Dashboard"
+                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                alt="NoteurGoals Dashboard Preview"
+                loading="lazy"
               />
             </div>
           </div>
         </section>
 
-        <section className="power-features" id="features">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">Our Features</span>
-              <h2>Why NoteurGoals is Different</h2>
+        <section className="home-power-features" id="features">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">Our Features</span>
+              <h2 style={{ color: "white" }}>Why NoteurGoals is Different</h2>
               <p>
                 We provide a comprehensive suite of tools built for success, not
                 just task management.
               </p>
             </div>
 
-            <div className="feature-showcase">
-              <div className="feature-content">
+            <div className="home-feature-showcase">
+              <div className="home-feature-content">
                 <h3>Let AI Be Your Strategic Partner</h3>
                 <p>
                   Stop guessing, start achieving. Our intelligent assistant
@@ -79,16 +83,17 @@ const HomeLayout = () => {
                   </li>
                 </ul>
               </div>
-              <div className="feature-image">
+              <div className="home-feature-image">
                 <img
-                  src="https://i.imgur.com/r62aHw1.png"
-                  alt="AI powered suggestions"
+                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                  alt="AI-Powered Goal Suggestions"
+                  loading="lazy"
                 />
               </div>
             </div>
 
-            <div className="feature-showcase">
-              <div className="feature-content">
+            <div className="home-feature-showcase">
+              <div className="home-feature-content">
                 <h3>Achieve More, Together</h3>
                 <p>
                   Collaboration is built into our core. Invite your team,
@@ -112,16 +117,17 @@ const HomeLayout = () => {
                   </li>
                 </ul>
               </div>
-              <div className="feature-image">
+              <div className="home-feature-image">
                 <img
-                  src="https://i.imgur.com/2s45V6c.png"
-                  alt="Team Collaboration"
+                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                  alt="Team Collaboration Dashboard"
+                  loading="lazy"
                 />
               </div>
             </div>
 
-            <div className="feature-showcase">
-              <div className="feature-content">
+            <div className="home-feature-showcase">
+              <div className="home-feature-content">
                 <h3>Integrate Plans Into Your Life</h3>
                 <p>
                   Connect your goals to your daily schedule. NoteurGoals works
@@ -145,30 +151,35 @@ const HomeLayout = () => {
                   </li>
                 </ul>
               </div>
-              <div className="feature-image">
+              <div className="home-feature-image">
                 <img
-                  src="https://i.imgur.com/gK2vW7S.png"
-                  alt="Calendar Integration"
+                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                  alt="Calendar Integration Preview"
+                  loading="lazy"
                 />
               </div>
             </div>
           </div>
         </section>
 
-        <section className="for-everyone" id="for-who">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">For Everyone</span>
+        <section className="home-for-everyone" id="for-who">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">For Everyone</span>
               <h2>A Perfect Fit for Your Ambition</h2>
               <p>
                 Whether you're a student, a professional, or leading a team,
                 NoteurGoals adapts to your needs.
               </p>
             </div>
-            <div className="for-everyone-grid">
-              <div className="audience-card">
-                <div className="audience-icon">
-                  <i className="fas fa-user-graduate"></i>
+            <div className="home-for-everyone-grid">
+              <div className="home-audience-card">
+                <div className="home-audience-image round">
+                  <img
+                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Students & Learners"
+                    loading="lazy"
+                  />
                 </div>
                 <h3>Students & Learners</h3>
                 <p>
@@ -177,9 +188,13 @@ const HomeLayout = () => {
                   academically.
                 </p>
               </div>
-              <div className="audience-card">
-                <div className="audience-icon">
-                  <i className="fas fa-user-tie"></i>
+              <div className="home-audience-card">
+                <div className="home-audience-image round">
+                  <img
+                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Professionals"
+                    loading="lazy"
+                  />
                 </div>
                 <h3>Professionals</h3>
                 <p>
@@ -187,9 +202,13 @@ const HomeLayout = () => {
                   collaborate with colleagues to drive results and growth.
                 </p>
               </div>
-              <div className="audience-card">
-                <div className="audience-icon">
-                  <i className="fas fa-users"></i>
+              <div className="home-audience-card">
+                <div className="home-audience-image round">
+                  <img
+                    src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Teams & Groups"
+                    loading="lazy"
+                  />
                 </div>
                 <h3>Teams & Groups</h3>
                 <p>
@@ -202,10 +221,10 @@ const HomeLayout = () => {
           </div>
         </section>
 
-        <section className="courses-section" id="courses">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">Premium Courses</span>
+        <section className="home-courses-section" id="courses">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">Premium Courses</span>
               <h2>Learn and Grow with Integrated Courses</h2>
               <p>
                 Don't just set goals—learn how to achieve them. Our curated
@@ -213,11 +232,16 @@ const HomeLayout = () => {
                 ambitions.
               </p>
             </div>
-            <div className="course-highlight">
-              <div className="course-image">
-                <i className="fas fa-layer-group"></i>
+            <div className="home-course-highlight">
+              <div className="home-course-image">
+                <img
+                  src="https://img.icons8.com/?size=100&id=Vi4yU3hEPGoI&format=png&color=FFFFFF"
+                  alt="From Aspiration to Expertise"
+                  style={{ maxWidth: "200px", height: "auto" }}
+                  loading="lazy"
+                />
               </div>
-              <div className="course-content">
+              <div className="home-course-content">
                 <h3>From Aspiration to Expertise</h3>
                 <p>
                   Choose from a library of courses on productivity, leadership,
@@ -225,7 +249,7 @@ const HomeLayout = () => {
                   complete with milestones and resources, ready for you to
                   start.
                 </p>
-                <a href="#pricing" className="btn btn-primary">
+                <a href="#pricing" className="home-btn home-btn-primary">
                   Explore Premium Plans
                 </a>
               </div>
@@ -233,90 +257,93 @@ const HomeLayout = () => {
           </div>
         </section>
 
-        <section className="testimonials" id="testimonials">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">Testimonials</span>
+        <section className="home-testimonials" id="testimonials">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">Testimonials</span>
               <h2>Loved by Ambitious People Worldwide</h2>
               <p>
                 What our successful users are saying about their journey with
                 NoteurGoals.
               </p>
             </div>
-            <div className="testimonials-grid">
-              <div className="testimonial-card">
-                <div className="stars">
+            <div className="home-testimonials-grid">
+              <div className="home-testimonial-card">
+                <div className="home-stars">
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                 </div>
-                <p className="testimonial-text">
+                <p className="home-testimonial-text">
                   "The AI goal breakdown is pure magic. It took my vague idea of
                   'start a business' and turned it into a concrete, actionable
                   plan. I accomplished more in 3 months than I did in the past
                   year."
                 </p>
-                <div className="testimonial-header">
+                <div className="home-testimonial-header">
                   <img
-                    src="https://randomuser.me/api/portraits/women/32.jpg"
-                    alt="User"
-                    className="testimonial-avatar"
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                    alt="Jane D."
+                    className="home-testimonial-avatar"
+                    loading="lazy"
                   />
-                  <div className="testimonial-author">
+                  <div className="home-testimonial-author">
                     <h4>Jane D.</h4>
                     <p>Entrepreneur</p>
                   </div>
                 </div>
               </div>
-              <div className="testimonial-card">
-                <div className="stars">
+              <div className="home-testimonial-card">
+                <div className="home-stars">
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                 </div>
-                <p className="testimonial-text">
+                <p className="home-testimonial-text">
                   "As a project manager, the collaboration features are a
                   lifesaver. My team is finally on the same page, and I can see
                   who's doing what without endless meetings. Best tool we've
                   adopted."
                 </p>
-                <div className="testimonial-header">
+                <div className="home-testimonial-header">
                   <img
-                    src="https://randomuser.me/api/portraits/men/45.jpg"
-                    alt="User"
-                    className="testimonial-avatar"
+                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                    alt="John S."
+                    className="home-testimonial-avatar"
+                    loading="lazy"
                   />
-                  <div className="testimonial-author">
+                  <div className="home-testimonial-author">
                     <h4>John S.</h4>
                     <p>Project Manager</p>
                   </div>
                 </div>
               </div>
-              <div className="testimonial-card">
-                <div className="stars">
+              <div className="home-testimonial-card">
+                <div className="home-stars">
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                   <i className="fas fa-star"></i>
                 </div>
-                <p className="testimonial-text">
+                <p className="home-testimonial-text">
                   "I used the 'Master Public Speaking' course and it was
                   phenomenal. The structured milestones and linked notes kept me
                   accountable. I aced my final presentation. Thank you,
                   NoteurGoals!"
                 </p>
-                <div className="testimonial-header">
+                <div className="home-testimonial-header">
                   <img
-                    src="https://randomuser.me/api/portraits/women/68.jpg"
-                    alt="User"
-                    className="testimonial-avatar"
+                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                    alt="Sarah L."
+                    className="home-testimonial-avatar"
+                    loading="lazy"
                   />
-                  <div className="testimonial-author">
+                  <div className="home-testimonial-author">
                     <h4>Sarah L.</h4>
                     <p>University Student</p>
                   </div>
@@ -326,24 +353,31 @@ const HomeLayout = () => {
           </div>
         </section>
 
-        <section className="pricing" id="pricing">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">Pricing</span>
+        <section className="home-pricing" id="pricing">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">Pricing</span>
               <h2>The Right Plan for Your Ambition</h2>
               <p>
                 Start for free, no credit card required. Upgrade anytime to
                 unlock your full potential.
               </p>
             </div>
-            <div className="pricing-grid">
-              <div className="pricing-card">
+            <div className="home-pricing-grid">
+              <div className="home-pricing-card">
+                <div className="home-pricing-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Free Plan Illustration"
+                    loading="lazy"
+                  />
+                </div>
                 <h3>Free</h3>
-                <div className="price">
+                <div className="home-price">
                   $0 <span>/ forever</span>
                 </div>
                 <p>Perfect for individuals starting their journey.</p>
-                <ul className="pricing-features">
+                <ul className="home-pricing-features">
                   <li>
                     <i className="fas fa-check-circle"></i> 3 Active Goals
                   </li>
@@ -360,17 +394,24 @@ const HomeLayout = () => {
                     Support
                   </li>
                 </ul>
-                <a href="#" className="btn btn-outline">
+                <a href="#" className="home-btn home-btn-outline">
                   Start for Free
                 </a>
               </div>
-              <div className="pricing-card popular">
+              <div className="home-pricing-card popular">
+                <div className="home-pricing-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Premium Plan Illustration"
+                    loading="lazy"
+                  />
+                </div>
                 <h3>Premium</h3>
-                <div className="price">
+                <div className="home-price">
                   $5 <span>/ month</span>
                 </div>
                 <p>For individuals and teams serious about success.</p>
-                <ul className="pricing-features">
+                <ul className="home-pricing-features">
                   <li>
                     <i className="fas fa-check-circle"></i>
                     <strong>Everything in Free, plus:</strong>
@@ -396,17 +437,24 @@ const HomeLayout = () => {
                     <strong>Priority Support</strong>
                   </li>
                 </ul>
-                <a href="#" className="btn btn-primary">
+                <a href="#" className="home-btn home-btn-primary">
                   Choose Premium
                 </a>
               </div>
-              <div className="pricing-card">
+              <div className="home-pricing-card">
+                <div className="home-pricing-image">
+                  <img
+                    src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"
+                    alt="Premium Yearly Plan Illustration"
+                    loading="lazy"
+                  />
+                </div>
                 <h3>Premium Yearly</h3>
-                <div className="price">
+                <div className="home-price">
                   $50 <span>/ year</span>
                 </div>
                 <p>The best value. Get 2 months free!</p>
-                <ul className="pricing-features">
+                <ul className="home-pricing-features">
                   <li>
                     <i className="fas fa-check-circle"></i>
                     <strong>Everything in Premium</strong>
@@ -424,7 +472,7 @@ const HomeLayout = () => {
                     Attachments
                   </li>
                 </ul>
-                <a href="#" className="btn btn-outline">
+                <a href="#" className="home-btn home-btn-outline">
                   Go Yearly
                 </a>
               </div>
@@ -432,66 +480,69 @@ const HomeLayout = () => {
           </div>
         </section>
 
-        <section className="faq-section" id="faq">
-          <div className="container">
-            <div className="section-title">
-              <span className="tag">FAQ</span>
-              <h2>Frequently Asked Questions</h2>
+        <section className="home-faq-section" id="faq">
+          <div className="home-container">
+            <div className="home-section-title">
+              <span className="home-tag">FAQ</span>
+              <h2 style={{ color: "white" }}>Frequently Asked Questions</h2>
               <p>
                 Have questions? We've got answers. If you can't find what you're
                 looking for, feel free to contact us.
               </p>
             </div>
-            <div className="faq-container">
-              <details className="faq-item">
+            <div className="home-faq-container">
+              <details className="home-faq-item">
                 <summary>
-                  What makes NoteurGoals different from other to-do apps?
+                  <i className="fas fa-question-circle"></i>
+                  What sets NoteurGoals apart from other to-do apps?
                 </summary>
-                <div className="faq-content">
+                <div className="home-faq-content">
                   <p>
-                    NoteurGoals is more than a to-do list. It's a comprehensive
-                    achievement system. Our key differentiators are the
-                    AI-powered strategic planning, deep collaboration features
-                    with roles and permissions, and integrated learning courses
-                    that provide a roadmap for your goals.
+                    NoteurGoals is a comprehensive achievement platform, not
+                    just a to-do list. It offers AI-powered planning, robust
+                    collaboration with roles and permissions, and integrated
+                    courses to guide your goals.
                   </p>
                 </div>
               </details>
-              <details className="faq-item">
-                <summary>How does the AI assistant actually work?</summary>
-                <div className="faq-content">
-                  <p>
-                    Our AI analyzes the goal you set. For complex goals, it
-                    suggests breaking them down into smaller, logical
-                    milestones. It also looks at your deadlines and workload to
-                    help you prioritize tasks and can even forecast your
-                    completion date based on your ongoing progress, helping you
-                    stay realistic and motivated.
-                  </p>
-                </div>
-              </details>
-              <details className="faq-item">
+              <details className="home-faq-item">
                 <summary>
-                  Can I collaborate with people who don't have a Premium plan?
+                  <i className="fas fa-robot"></i>
+                  How does the AI assistant work?
                 </summary>
-                <div className="faq-content">
+                <div className="home-faq-content">
                   <p>
-                    Yes! As a Premium user, you can invite anyone to collaborate
-                    on your goals. They will be able to participate fully in the
-                    goals you share with them, even if they are on the Free
-                    plan. However, they will still be limited by their own
-                    plan's restrictions for creating their own goals. “
+                    Our AI analyzes your goals, breaks them into manageable
+                    milestones, prioritizes tasks based on deadlines and
+                    workload, and forecasts completion dates to keep you on
+                    track.
                   </p>
                 </div>
               </details>
-              <details className="faq-item">
-                <summary>Can I cancel my subscription at any time?</summary>
-                <div className="faq-content">
+              <details className="home-faq-item">
+                <summary>
+                  <i className="fas fa-users"></i>
+                  Can I collaborate with non-Premium users?
+                </summary>
+                <div className="home-faq-content">
                   <p>
-                    Absolutely. You can cancel your subscription at any time
-                    from your account settings. You will retain access to all
-                    premium features until the end of your current billing
-                    period.
+                    Yes, Premium users can invite anyone to collaborate on
+                    shared goals. Non-Premium users can participate fully in
+                    shared goals but are limited by their plan for creating
+                    their own.
+                  </p>
+                </div>
+              </details>
+              <details className="home-faq-item">
+                <summary>
+                  <i className="fas fa-times-circle"></i>
+                  Can I cancel my subscription anytime?
+                </summary>
+                <div className="home-faq-content">
+                  <p>
+                    Yes, you can cancel your subscription at any time from your
+                    account settings. You'll retain premium features until the
+                    end of your billing period.
                   </p>
                 </div>
               </details>
@@ -499,50 +550,72 @@ const HomeLayout = () => {
           </div>
         </section>
 
-        <section className="cta">
-          <div className="container">
+        <section className="home-cta">
+          <div className="home-container">
             <h2>Ready to Unlock Your Full Potential?</h2>
             <p>
               Stop dreaming, start doing. Join thousands of achievers and turn
               your ambitions into reality with NoteurGoals. Your first 14 days
               of Premium are on us.
             </p>
-            <a href="#" className="btn">
+            <a href="#" className="home-btn">
               Start Your Free Premium Trial
             </a>
           </div>
         </section>
       </main>
 
-      <footer>
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-column">
-              <a href="#" className="logo">
-                <i className="fas fa-bullseye"></i> NoteurGoals
+      <footer className="home-footer">
+        <div className="home-container">
+          <div className="home-footer-main">
+            <div className="home-footer-column">
+              <a href="#" className="home-logo">
+                NoteurGoals
               </a>
               <p>
-                The AI-powered platform for goal achievement, team
-                collaboration, and personal growth.
+                Empowering your ambitions with AI-driven goal achievement and
+                collaboration.
               </p>
-              <div className="social-links">
-                <a href="#" title="Facebook">
-                  <i className="fab fa-facebook-f"></i>
+              <div
+                className="home-footer-image"
+                style={{ marginTop: "20px" }}
+              ></div>
+              <div
+                className="home-social-links"
+                style={{ marginTop: "16px", gap: "12px" }}
+              >
+                <a
+                  href="https://www.facebook.com/nguyen.thanh.o.866884"
+                  title="Facebook"
+                >
+                  <i
+                    className="fab fa-facebook-f"
+                    style={{ fontSize: "18px" }}
+                  ></i>
                 </a>
                 <a href="#" title="Twitter">
-                  <i className="fab fa-twitter"></i>
+                  <i
+                    className="fab fa-twitter"
+                    style={{ fontSize: "18px" }}
+                  ></i>
                 </a>
                 <a href="#" title="Instagram">
-                  <i className="fab fa-instagram"></i>
+                  <i
+                    className="fab fa-instagram"
+                    style={{ fontSize: "18px" }}
+                  ></i>
                 </a>
                 <a href="#" title="LinkedIn">
-                  <i className="fab fa-linkedin-in"></i>
+                  <i
+                    className="fab fa-linkedin-in"
+                    style={{ fontSize: "18px" }}
+                  ></i>
                 </a>
               </div>
             </div>
-            <div className="footer-column">
+            <div className="home-footer-column">
               <h3>Product</h3>
-              <ul className="footer-links">
+              <ul className="home-footer-links">
                 <li>
                   <a href="#features">Features</a>
                 </li>
@@ -557,9 +630,9 @@ const HomeLayout = () => {
                 </li>
               </ul>
             </div>
-            <div className="footer-column">
+            <div className="home-footer-column">
               <h3>Resources</h3>
-              <ul className="footer-links">
+              <ul className="home-footer-links">
                 <li>
                   <a href="#">Blog</a>
                 </li>
@@ -574,9 +647,9 @@ const HomeLayout = () => {
                 </li>
               </ul>
             </div>
-            <div className="footer-column">
+            <div className="home-footer-column">
               <h3>Company</h3>
-              <ul className="footer-links">
+              <ul className="home-footer-links">
                 <li>
                   <a href="#">About Us</a>
                 </li>
@@ -592,12 +665,23 @@ const HomeLayout = () => {
               </ul>
             </div>
           </div>
-          <div className="footer-bottom">
+          <div className="home-footer-lower">
+            <div className="home-footer-sub-links">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Cookie Policy</a>
+              <a href="#">
+                <i
+                  className="fas fa-envelope"
+                  style={{ marginRight: "8px" }}
+                ></i>
+                support@noteurgoals.com
+              </a>
+            </div>
             <p>© 2025 NoteurGoals. All Rights Reserved.</p>
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 };
 export default HomeLayout;

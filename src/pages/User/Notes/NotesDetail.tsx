@@ -134,12 +134,12 @@ const NoteDetailPage: React.FC = () => {
       console.log("Setting selected goal IDs:", linkedGoalIds);
       console.log(
         "Available goals IDs:",
-        mappedGoals.map((g) => g.id)
+        mappedGoals.map((g: GoalOption) => g.id)
       );
 
       // Debug: So sánh IDs
       linkedGoalIds.forEach((linkedId) => {
-        const found = mappedGoals.find((g) => g.id === linkedId);
+        const found = mappedGoals.find((g: GoalOption) => g.id === linkedId);
         console.log(`Linked goal ${linkedId} found in goals list:`, found);
       });
 
@@ -168,7 +168,7 @@ const NoteDetailPage: React.FC = () => {
 
     // Validate form
     if (!form.title.trim()) {
-      alert("Vui lòng nhập tiêu đề cho ghi chú");
+      alert("Please enter a title for the note");
       return;
     }
 
@@ -249,7 +249,7 @@ const NoteDetailPage: React.FC = () => {
             disabled={saving}
           >
             <FontAwesomeIcon icon={faSave} />
-            {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            {saving ? "Saving..." : "Save changes"}
           </button>
         </div>
       </div>
@@ -274,7 +274,7 @@ const NoteDetailPage: React.FC = () => {
               <textarea
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-                placeholder="Bắt đầu viết nội dung ghi chú của bạn..."
+                placeholder="Start writing your note..."
                 style={{
                   width: "100%",
                   minHeight: "300px",

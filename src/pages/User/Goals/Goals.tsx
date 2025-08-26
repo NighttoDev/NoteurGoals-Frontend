@@ -98,7 +98,7 @@ const statusTags: { [key: string]: string } = {
 // --- GOAL CARD COMPONENT (Cập nhật để hiển thị collaborators) ---
 const GoalCard = memo(({ goal }: { goal: Goal }) => {
   const navigate = useNavigate();
-  
+
   // Lấy share type một cách an toàn
   const getShareType = (goal: Goal): Sharing => {
     // Kiểm tra nhiều cách có thể có trong API response
@@ -106,9 +106,9 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
     if (goal.shares && goal.shares.length > 0) return goal.shares[0].share_type;
     return "private";
   };
-  
+
   const shareType = getShareType(goal);
-  
+
   return (
     <div
       className={`goals-card${
@@ -184,9 +184,9 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
               {goal.collaborators.map((collaborator) => (
                 <img
                   key={collaborator.collab_id}
-                  src={collaborator.avatar || '/default-avatar.png'}
-                  alt={collaborator.name || 'Collaborator'}
-                  title={collaborator.name || 'Collaborator'}
+                  src={collaborator.avatar || "/default-avatar.png"}
+                  alt={collaborator.name || "Collaborator"}
+                  title={collaborator.name || "Collaborator"}
                   className="goals-collaborator-avatar"
                 />
               ))}
@@ -246,9 +246,9 @@ const GoalsPage: React.FC = () => {
     if (!isInitialLoad) {
       setLoading(true);
     }
-    
+
     try {
-      const res = await getGoals({ status: filter, search: searchTerm });
+      const res = await getGoals(0, filter, searchTerm);
       const goalsData = res.data.data || res.data || [];
       setGoals(goalsData);
       setErrorMsg(""); // Clear error khi load thành công
@@ -273,7 +273,7 @@ const GoalsPage: React.FC = () => {
     };
   }, [fetchGoals]);
 
-  // Move highlight bar 
+  // Move highlight bar
   useEffect(() => {
     const activeBtn = filterTabsRef.current?.querySelector(
       ".goals-active"
@@ -325,14 +325,17 @@ const GoalsPage: React.FC = () => {
   // Đóng dropdown khi click bên ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -340,6 +343,8 @@ const GoalsPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     if (!form.title.trim()) newErrors.title = "Title is required";
+    if (!form.description.trim())
+      newErrors.description = "Description is required";
     if (!form.start_date) newErrors.start_date = "Start date is required";
     if (!form.end_date) newErrors.end_date = "End date is required";
     if (form.start_date && form.end_date && form.start_date > form.end_date)
@@ -384,7 +389,7 @@ const GoalsPage: React.FC = () => {
       await deleteGoal(editingGoal.goal_id);
       closeModal();
       fetchGoals(); // Tải lại danh sách
-    } catch (err) {
+    } catch (err: any) {
       setErrorMsg("Failed to delete the goal.");
     } finally {
       setLoading(false);
@@ -395,10 +400,11 @@ const GoalsPage: React.FC = () => {
     { value: "all" as Status, label: "All" },
     { value: "in_progress" as Status, label: "In Progress" },
     { value: "completed" as Status, label: "Completed" },
-    { value: "new" as Status, label: "New" }
+    { value: "new" as Status, label: "New" },
   ];
 
-  const currentFilterLabel = filterOptions.find(option => option.value === filter)?.label || "All";
+  const currentFilterLabel =
+    filterOptions.find((option) => option.value === filter)?.label || "All";
 
   const renderEmptyState = () => (
     <div className="goals-empty-state">
@@ -456,9 +462,11 @@ const GoalsPage: React.FC = () => {
                   type="button"
                 >
                   <span>{currentFilterLabel}</span>
-                  <FontAwesomeIcon 
-                    icon={faChevronDown} 
-                    className={`goals-dropdown-icon ${isDropdownOpen ? 'goals-dropdown-icon-open' : ''}`}
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className={`goals-dropdown-icon ${
+                      isDropdownOpen ? "goals-dropdown-icon-open" : ""
+                    }`}
                   />
                 </button>
                 {isDropdownOpen && (
@@ -467,7 +475,9 @@ const GoalsPage: React.FC = () => {
                       <button
                         key={option.value}
                         className={`goals-filter-dropdown-item ${
-                          filter === option.value ? "goals-filter-dropdown-item-active" : ""
+                          filter === option.value
+                            ? "goals-filter-dropdown-item-active"
+                            : ""
                         }`}
                         onClick={() => {
                           setFilter(option.value);
@@ -491,12 +501,8 @@ const GoalsPage: React.FC = () => {
           </div>
         </div>
 
-        {errorMsg && (
-          <div className="form-error">
-            {errorMsg}
-          </div>
-        )}
-        
+        {errorMsg && <div className="form-error">{errorMsg}</div>}
+
         {/* Chỉ hiển thị loading spinner nhỏ khi đang filter/search và không phải lần đầu load */}
         {loading && !isInitialLoad && (
           <div className="goals-filter-loading">
@@ -507,15 +513,13 @@ const GoalsPage: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         <div className="goals-grid">
-          {goals.length > 0 ? (
-            goals.map((goal) => (
-              <GoalCard key={goal.goal_id} goal={goal} />
-            ))
-          ) : !loading ? (
-            renderEmptyState()
-          ) : null}
+          {goals.length > 0
+            ? goals.map((goal) => <GoalCard key={goal.goal_id} goal={goal} />)
+            : !loading
+            ? renderEmptyState()
+            : null}
         </div>
       </section>
 
@@ -551,7 +555,12 @@ const GoalsPage: React.FC = () => {
                   />
                 </div>
                 <div className="goals-form-group">
-                  <label htmlFor="goal-description-input">Description</label>
+                  <label htmlFor="goal-description-input">
+                    Description
+                    {errors.description && (
+                      <span className="error-text">({errors.description})</span>
+                    )}
+                  </label>
                   <textarea
                     id="goal-description-input"
                     value={form.description}
