@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import "../../assets/css/User/friends.css";
+import "../../assets/css/User/friends.pro.css";
 import {
   getFriendsData,
   getUserSuggestions,
