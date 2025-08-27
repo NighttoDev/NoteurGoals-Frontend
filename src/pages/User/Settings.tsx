@@ -103,6 +103,8 @@ const SettingsPage = () => {
   const [mySubscription, setMySubscription] = useState<UserSubscription | null>(
     null
   );
+  const [autoRenewEnabled, setAutoRenewEnabled] = useState<boolean>(false);
+
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
     {}
@@ -141,12 +143,14 @@ const SettingsPage = () => {
   const fetchSubscriptionData = useCallback(async () => {
     setSubscriptionLoading(true);
     try {
-      const [plansResponse, mySubResponse] = await Promise.all([
+      const [plansResponse, mySubResponse, autoRes] = await Promise.all([
         api.get("/subscriptions/plans"),
         api.get("/subscriptions/my-current"),
+        api.get("/subscriptions/auto-renewal"),
       ]);
       setAllPlans(plansResponse.data);
       setMySubscription(mySubResponse.data);
+      setAutoRenewEnabled(!!autoRes.data?.enabled);
     } catch (err) {
       console.error("Failed to fetch subscription data:", err);
     } finally {
@@ -765,6 +769,30 @@ const SettingsPage = () => {
                     Your plan will automatically renew. You can cancel anytime.
                   </p>
                 </div>
+                <label className="settings-toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={autoRenewEnabled}
+                    onChange={async (e) => {
+                      try {
+                        if (!mySubscription) {
+                          toast.error("You need an active subscription to change auto-renewal.");
+                          return;
+                        }
+                        const enabled = e.currentTarget.checked;
+                        const planId = mySubscription?.plan_id;
+                        const res = await (await import("../../services/subscriptionsService")).toggleAutoRenewal(enabled, planId);
+                        setAutoRenewEnabled(res.data?.enabled ?? enabled);
+                        toast.success(res.data?.message || "Updated auto-renewal settings.");
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.message || "Failed to update auto-renewal.");
+                      } finally {
+                        // refresh subscription/auto-renewal status if needed
+                      }
+                    }}
+                  />
+                  <span className="settings-slider"></span>
+                </label>
               </div>
 
               <h3 style={{ fontWeight: 500, marginTop: "2rem" }}>

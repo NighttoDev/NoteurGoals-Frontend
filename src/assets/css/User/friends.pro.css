@@ -1,0 +1,299 @@
+/* Professional overrides for Friends (Add Friends, Suggestions, Friends list, Modals)
+   These styles are layered on top of friends.css to polish visuals, spacing, and interactions. */
+
+:root {
+  --fg-bg: #0b0f19;
+  --fg-card: #ffffff;
+  --fg-text: #0f172a; /* slate-900 */
+  --fg-muted: #64748b; /* slate-500 */
+  --fg-border: #e2e8f0; /* slate-200 */
+  --fg-border-strong: #cbd5e1; /* slate-300 */
+  --fg-primary: #2563eb; /* blue-600 */
+  --fg-primary-700: #1d4ed8; /* blue-700 */
+  --fg-primary-50: #eff6ff; /* blue-50 */
+  --fg-success: #16a34a; /* green-600 */
+  --fg-danger: #dc2626; /* red-600 */
+  --fg-warning: #d97706; /* amber-600 */
+  --fg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --fg-shadow-md: 0 6px 18px rgba(2, 8, 23, 0.08);
+  --fg-shadow-lg: 0 14px 30px rgba(2, 8, 23, 0.12);
+  --fg-radius-sm: 8px;
+  --fg-radius-md: 12px;
+  --fg-radius-lg: 16px;
+  --fg-transition: 180ms ease;
+}
+
+/* Header */
+/* Remove long white bar by making header minimal and transparent */
+.friends-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 0 12px 0; /* minimal padding, no full-width white bar */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.friends-page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--fg-text);
+}
+
+/* Tabs */
+.friends-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--fg-border);
+  border-radius: 9999px;
+  box-shadow: var(--fg-shadow-sm);
+}
+
+.friends-tab {
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: color var(--fg-transition), background-color var(--fg-transition), transform var(--fg-transition);
+}
+
+.friends-tab:hover { color: var(--fg-text); background: #f8fafc; }
+.friends-tab:active { transform: translateY(1px); }
+
+.friends-tab.friends-tab-active {
+  color: var(--fg-primary);
+  background: var(--fg-primary-50);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+/* Buttons */
+.friends-btn,
+.friends-action-btn,
+.btn-view-details,
+.btn-message,
+.btn-add-friend,
+.btn-remove-collaborator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--fg-border);
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--fg-text);
+  transition: box-shadow var(--fg-transition), transform var(--fg-transition), border-color var(--fg-transition), background-color var(--fg-transition);
+}
+
+.friends-btn:hover,
+.friends-action-btn:hover,
+.btn-view-details:hover,
+.btn-message:hover,
+.btn-add-friend:hover,
+.btn-remove-collaborator:hover {
+  box-shadow: var(--fg-shadow-sm);
+  border-color: var(--fg-border-strong);
+}
+
+.friends-btn:active,
+.friends-action-btn:active,
+.btn-view-details:active,
+.btn-message:active,
+.btn-add-friend:active,
+.btn-remove-collaborator:active { transform: translateY(1px); }
+
+.friends-btn:disabled,
+.friends-action-btn:disabled,
+.btn-add-friend:disabled,
+.btn-remove-collaborator:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Primary variant */
+.friends-btn-primary,
+.btn-view-details,
+.btn-message {
+  background: var(--fg-primary);
+  border-color: var(--fg-primary);
+  color: #fff;
+}
+.friends-btn-primary:hover,
+.btn-view-details:hover,
+.btn-message:hover { background: var(--fg-primary-700); border-color: var(--fg-primary-700); }
+
+/* Danger variant */
+.friends-action-btn-reject,
+.btn-remove-collaborator {
+  border-color: #fecaca; /* red-200 */
+  color: var(--fg-danger);
+  background: #fff;
+}
+.friends-action-btn-reject:hover,
+.btn-remove-collaborator:hover {
+  background: #fee2e2; /* red-100 */
+}
+
+/* Cards */
+.friends-card,
+.friends-list-item,
+.collaborator-card {
+  background: var(--fg-card) !important;
+  border: 1px solid var(--fg-border) !important;
+  border-radius: var(--fg-radius-md) !important;
+  box-shadow: var(--fg-shadow-sm) !important;
+  transition: box-shadow var(--fg-transition), transform var(--fg-transition), border-color var(--fg-transition);
+}
+
+.friends-card:hover,
+.friends-list-item:hover,
+.collaborator-card:hover {
+  box-shadow: var(--fg-shadow-md) !important;
+  border-color: var(--fg-border-strong) !important;
+}
+
+.friends-avatar,
+.friends-list-item__avatar,
+.collaborator-avatar,
+.collaborator-modal-avatar {
+  border: 2px solid var(--fg-border);
+}
+
+/* Stats badges */
+.friends-list-item__stats span,
+.friends-stats span,
+.collaborator-stats .stat-item,
+.collaboration-stats span,
+.goal-meta .goal-status,
+.goal-meta .goal-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9; /* slate-100 */
+  color: var(--fg-muted);
+  border: 1px solid var(--fg-border);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+/* Content area */
+.friends-content-area { margin-top: 16px; }
+.friends-list { display: flex; flex-direction: column; gap: 12px; }
+
+/* Suggestions grid (when using grid view) */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 1024px) { .friends-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .friends-grid { grid-template-columns: 1fr; } }
+
+/* Modal */
+.friends-modal-overlay {
+  background: rgba(2, 6, 23, 0.45) !important;
+  backdrop-filter: saturate(180%) blur(6px);
+}
+
+.friends-modal-content,
+.collaborator-modal-content {
+  border-radius: var(--fg-radius-lg) !important;
+  border: 1px solid var(--fg-border) !important;
+  box-shadow: var(--fg-shadow-lg) !important;
+}
+
+.friends-modal-header { border-bottom: 1px solid var(--fg-border); }
+.friends-modal-close-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--fg-border);
+  background: #fff; color: var(--fg-muted);
+}
+.friends-modal-close-btn:hover { color: var(--fg-text); box-shadow: var(--fg-shadow-sm); }
+
+/* Search bar and results */
+.friends-modal-group input[type=\"text\"],
+#friend-search {
+  width: 100%;
+  border: 1px solid var(--fg-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition: box-shadow var(--fg-transition), border-color var(--fg-transition);
+}
+
+.friends-modal-group input[type=\"text\"]:focus,
+#friend-search:focus {
+  border-color: var(--fg-primary);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+}
+
+/* Styled search results in Add Friend modal */
+.search-results-list {
+  list-style: none;
+  margin: 10px 0 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.search-result-item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--fg-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--fg-shadow-sm);
+  transition: border-color var(--fg-transition), box-shadow var(--fg-transition), transform var(--fg-transition);
+}
+
+.search-result-item:hover { border-color: var(--fg-border-strong); box-shadow: var(--fg-shadow-md); }
+
+.search-result-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--fg-border);
+}
+
+.search-result-info { display: flex; flex-direction: column; }
+.search-result-name { font-weight: 600; color: var(--fg-text); line-height: 1.2; }
+.search-result-email { color: var(--fg-muted); font-size: 0.9rem; }
+
+.search-no-results {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: var(--fg-muted);
+  border: 1px solid var(--fg-border);
+}
+
+/* Loading dots */
+.friends-loading .friends-loading-dots div {
+  background: var(--fg-primary);
+}
+
+/* Accessibility focus ring for clickables */
+.friends-tab:focus,
+.friends-btn:focus,
+.friends-action-btn:focus,
+.btn-view-details:focus,
+.btn-message:focus,
+.btn-add-friend:focus,
+.btn-remove-collaborator:focus,
+.friends-modal-close-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
