@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -147,8 +147,7 @@ const GoalDetailPage: React.FC = () => {
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState("");
   const [shareType, setShareType] = useState<Sharing>("private");
   const [actionLoading, setActionLoading] = useState(false);
-  const hasFetchedRef = useRef(false);
-
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   // Fetch goal details
   const fetchGoalDetails = useCallback(async () => {
     if (!goalId) {
@@ -157,10 +156,6 @@ const GoalDetailPage: React.FC = () => {
       return;
     }
 
-    if (hasFetchedRef.current) {
-      return;
-    }
-    hasFetchedRef.current = true;
     setLoading(true);
     setError("");
     try {
@@ -170,8 +165,6 @@ const GoalDetailPage: React.FC = () => {
       if (!goalData || typeof goalData !== "object") {
         throw new Error("Invalid data structure received from API.");
       }
-
-      console.log("Fetched goal data:", goalData);
 
       setGoal(goalData);
       setFormData({
@@ -206,15 +199,8 @@ const GoalDetailPage: React.FC = () => {
   }, [goalId, toast]);
 
   useEffect(() => {
-    // Reset the fetch flag when goalId changes
-    hasFetchedRef.current = false;
     fetchGoalDetails();
-
-    // Cleanup function to reset the ref when component unmounts
-    return () => {
-      hasFetchedRef.current = false;
-    };
-  }, [fetchGoalDetails]);
+  }, [goalId]);
 
   // Handle form input changes
   const handleInputChange = (
@@ -259,8 +245,7 @@ const GoalDetailPage: React.FC = () => {
       const response = await updateGoal(goalId, formData);
       const updatedGoal = response.data.data || response.data;
 
-      // Cập nhật state trực tiếp thay vì load lại
-      setGoal((prev) => (prev ? { ...prev, ...updatedGoal } : null));
+      setGoal(updatedGoal);
       toast?.success("Goal updated successfully!");
       setEditMode(false);
     } catch (err: unknown) {
@@ -588,6 +573,8 @@ const GoalDetailPage: React.FC = () => {
                     name="start_date"
                     value={formData.start_date}
                     onChange={handleInputChange}
+                    min={new Date().toISOString().split("T")[0]}
+                    max={formData.end_date || undefined}
                   />
                 ) : (
                   <span>{formatDateForDisplay(goal.start_date)}</span>
@@ -602,6 +589,7 @@ const GoalDetailPage: React.FC = () => {
                     name="end_date"
                     value={formData.end_date}
                     onChange={handleInputChange}
+                    min={formData.start_date || undefined}
                   />
                 ) : (
                   <span>{formatDateForDisplay(goal.end_date)}</span>
@@ -709,7 +697,12 @@ const GoalDetailPage: React.FC = () => {
             <MilestoneList
               milestones={goal.milestones || []}
               goalId={goal.goal_id}
-              onRefresh={fetchGoalDetails}
+              onRefresh={() => {
+                // Chỉ refresh milestones, không fetch toàn bộ goal
+                if (goal?.milestones) {
+                  setMilestones([...goal.milestones]);
+                }
+              }}
               goalStartDate={goal.start_date}
               goalEndDate={goal.end_date}
             />
