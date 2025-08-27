@@ -755,7 +755,9 @@ body {
 }
 
 @keyframes notesDotBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -932,15 +934,15 @@ body {
   .notes-modal-content {
     width: 100%;
     max-height: 100vh;
-    border-radius: 0;
+    border-radius: 15px;
   }
-  
+
   .notes-container-section {
     padding: 1rem;
     /* Adjust minimum height for very small screens */
     min-height: calc(100vh - 2rem);
   }
-  
+
   .notes-page-title {
     font-size: 1.75rem;
   }

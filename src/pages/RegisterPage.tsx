@@ -90,7 +90,7 @@ const RegisterPage: React.FC = () => {
         }
       } else {
         setError("Unable to connect to server. Please try again later.");
-        console.error("Lỗi đăng ký không xác định:", err);
+        console.error("An error occurred when registering.", err);
       }
     } finally {
       setLoading(false);

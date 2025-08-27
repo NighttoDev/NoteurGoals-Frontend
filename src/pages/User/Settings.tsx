@@ -219,30 +219,11 @@ const SettingsPage = () => {
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading((prev) => ({ ...prev, profile: true }));
     setError({});
 
-    const displayNameTrimmed = profileData.displayName.trim();
-
-    // Client validation: required and no digits
-    if (!displayNameTrimmed) {
-      setError({
-        type: "profile",
-        errors: { display_name: ["Please enter your display name."] },
-      });
-      return;
-    }
-    if (/\d/.test(displayNameTrimmed)) {
-      setError({
-        type: "profile",
-        errors: { display_name: ["Display name must not contain numbers."] },
-      });
-      return;
-    }
-
-    setLoading((prev) => ({ ...prev, profile: true }));
-
     const formData = new FormData();
-    formData.append("display_name", displayNameTrimmed);
+    formData.append("display_name", profileData.displayName);
     if (avatarFile) formData.append("avatar", avatarFile);
 
     try {
@@ -455,7 +436,7 @@ const SettingsPage = () => {
               <h2>Public Profile</h2>
               <p>This information will be displayed on your public profile.</p>
             </div>
-            <form onSubmit={handleProfileSubmit} noValidate>
+            <form onSubmit={handleProfileSubmit}>
               <div className="settings-section-body">
                 {error.type === "profile" && error.message && !error.errors && (
                   <p className="settings-form-error">{error.message}</p>
@@ -513,9 +494,6 @@ const SettingsPage = () => {
                         displayName: e.target.value,
                       })
                     }
-                    pattern="^(?!.*\\d).+$"
-                    title="Display name must not contain numbers."
-                    inputMode="text"
                   />
                   {error.type === "profile" && error.errors?.display_name && (
                     <small className="settings-form-field-error">
@@ -558,8 +536,8 @@ const SettingsPage = () => {
                     disabled
                   />
                   <p
-                    className="settings-text-light"
-                    style={{ fontSize: "0.8rem", marginTop: "4px" }}
+                    className="settings-form-notice"
+                    style={{ fontSize: "0.8rem" }}
                   >
                     Email address cannot be changed at this time.
                   </p>

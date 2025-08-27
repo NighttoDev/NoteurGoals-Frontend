@@ -825,37 +825,347 @@
     padding: 40px;
   }
 }
+
+/* Mobile Responsive Styles */
 @media (max-width: 768px) {
-  .home-page .home-auth-buttons .home-btn-outline {
-    display: none;
+  /* Container adjustments */
+  .home-page .home-container {
+    padding: 0 16px;
   }
+
+  /* Header mobile optimizations */
+  .home-page .home-navbar {
+    height: 70px;
+  }
+
+  .home-page .home-logo {
+    font-size: 20px;
+  }
+
   .home-page .home-auth-buttons {
-    flex-grow: 1;
-    justify-content: flex-end;
+    gap: 8px;
   }
+
+  .home-page .home-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .home-page .home-btn i {
+    margin-right: 6px;
+  }
+
+  /* Hero section mobile */
   .home-page .home-hero {
-    padding-top: 140px;
+    padding-top: 120px;
     padding-bottom: 60px;
   }
+
   .home-page .home-hero h1 {
-    font-size: 42px;
+    font-size: 36px;
+    line-height: 1.2;
+    margin-bottom: 20px;
   }
+
+  .home-page .home-hero p {
+    font-size: 16px;
+    margin-bottom: 30px;
+  }
+
   .home-page .home-hero-buttons {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    margin-bottom: 50px;
   }
-  .home-page .home-btn {
+
+  .home-page .home-btn-lg {
     width: 100%;
-    max-width: 300px;
-    text-align: center;
+    max-width: 280px;
   }
-  .home-page .home-footer-column .home-logo img {
-    max-width: 40px;
+
+  /* Section titles mobile */
+  .home-page .home-section-title {
+    margin-bottom: 50px;
   }
+
+  .home-page .home-section-title h2 {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .home-page .home-section-title p {
+    font-size: 16px;
+  }
+
+  /* Features section mobile */
+  .home-page .home-power-features {
+    padding: 60px 0;
+  }
+
+  .home-page .home-feature-showcase {
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .home-page .home-feature-content h3 {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .home-page .home-feature-content p {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .home-page .home-feature-content li {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .home-page .home-feature-content li i {
+    font-size: 16px;
+  }
+
+  /* For everyone section mobile */
+  .home-page .home-for-everyone-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .home-page .home-audience-card {
+    padding: 24px;
+  }
+
+  .home-page .home-audience-image.round img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .home-page .home-audience-card h3 {
+    font-size: 20px;
+  }
+
+  /* Courses section mobile */
+  .home-page .home-course-highlight {
+    padding: 30px 20px;
+    gap: 30px;
+  }
+
+  .home-page .home-course-content h3 {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .home-page .home-course-content p {
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+
+  .home-page .home-course-image img {
+    max-width: 150px;
+  }
+
+  /* Testimonials mobile */
+  .home-page .home-testimonials-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .home-page .home-testimonial-card {
+    padding: 24px;
+  }
+
+  .home-page .home-testimonial-text {
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+
+  .home-page .home-testimonial-header {
+    gap: 12px;
+    padding-top: 20px;
+  }
+
+  .home-page .home-testimonial-avatar {
+    width: 45px;
+    height: 45px;
+  }
+
+  /* Pricing mobile */
+  .home-page .home-pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .home-page .home-pricing-card {
+    padding: 30px 20px;
+  }
+
+  .home-page .home-pricing-card.popular {
+    transform: none;
+  }
+
+  .home-page .home-pricing-card h3 {
+    font-size: 22px;
+  }
+
+  .home-page .home-price {
+    font-size: 40px;
+  }
+
+  .home-page .home-pricing-features li {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* FAQ mobile */
+  .home-page .home-faq-section {
+    padding: 60px 0;
+  }
+
+  .home-page .home-faq-container {
+    max-width: 100%;
+  }
+
+  .home-page .home-faq-item summary {
+    padding: 16px;
+    font-size: 16px;
+  }
+
+  .home-page .home-faq-item .home-faq-content {
+    padding: 0 16px 16px;
+    font-size: 14px;
+  }
+
+  /* CTA mobile */
+  .home-page .home-cta {
+    padding: 80px 0;
+  }
+
+  .home-page .home-cta h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+  }
+
+  .home-page .home-cta p {
+    font-size: 16px;
+    margin-bottom: 30px;
+  }
+
+  .home-page .home-cta .home-btn {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+
+  /* Footer mobile */
+  .home-page .home-footer {
+    padding: 60px 0 20px;
+  }
+
+  .home-page .home-footer-main {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+
+  .home-page .home-footer-column h3 {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .home-page .home-footer-links li {
+    margin-bottom: 10px;
+  }
+
+  .home-page .home-footer-links a {
+    font-size: 14px;
+  }
+
+  .home-page .home-social-links {
+    gap: 12px;
+  }
+
+  .home-page .home-social-links a {
+    width: 35px;
+    height: 35px;
+  }
+
   .home-page .home-footer-sub-links {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .home-page .home-footer-sub-links a {
+    font-size: 13px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .home-page .home-container {
+    padding: 0 12px;
+  }
+
+  .home-page .home-hero h1 {
+    font-size: 32px;
+  }
+
+  .home-page .home-hero p {
+    font-size: 15px;
+  }
+
+  .home-page .home-section-title h2 {
+    font-size: 24px;
+  }
+
+  .home-page .home-feature-content h3 {
+    font-size: 22px;
+  }
+
+  .home-page .home-course-content h3 {
+    font-size: 22px;
+  }
+
+  .home-page .home-cta h2 {
+    font-size: 28px;
+  }
+
+  .home-page .home-pricing-card {
+    padding: 24px 16px;
+  }
+
+  .home-page .home-price {
+    font-size: 36px;
+  }
+
+  .home-page .home-course-highlight {
+    padding: 24px 16px;
+  }
+
+  .home-page .home-testimonial-card {
+    padding: 20px;
+  }
+
+  .home-page .home-faq-item summary {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .home-page .home-faq-item .home-faq-content {
+    padding: 0 14px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Hide outline button on very small screens */
+@media (max-width: 480px) {
+  .home-page .home-auth-buttons .home-btn-outline {
+    display: none;
+  }
+
+  .home-page .home-auth-buttons {
+    justify-content: flex-end;
   }
 }
 

@@ -580,6 +580,7 @@ const GoalsPage: React.FC = () => {
                       )}
                     </label>
                     <input
+                      min={new Date().toISOString().split("T")[0]}
                       type="date"
                       id="goal-start-date"
                       value={form.start_date}
@@ -596,6 +597,7 @@ const GoalsPage: React.FC = () => {
                       )}
                     </label>
                     <input
+                      min={new Date().toISOString().split("T")[0]}
                       type="date"
                       id="goal-end-date"
                       value={form.end_date}

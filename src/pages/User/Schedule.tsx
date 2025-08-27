@@ -22,6 +22,7 @@ import {
 import { useSearch } from "../../hooks/searchContext";
 import { useNotifications } from "../../hooks/notificationContext";
 import { useToastHelpers } from "../../hooks/toastContext";
+import { useConfirm } from "../../hooks/confirmContext";
 
 interface Event {
   event_id: string;
@@ -51,6 +52,7 @@ type EventApiItem = {
 const Schedule: React.FC = () => {
   const toast = useToastHelpers();
   const { addNotification, removeNotification } = useNotifications();
+  const confirm = useConfirm();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -78,49 +80,46 @@ const Schedule: React.FC = () => {
 
   const fetchEvents = useCallback(async () => {
     try {
-      console.log("Bắt đầu tải danh sách sự kiện...");
+      console.log("Start loading events list...");
       const response = await getEvents();
-      console.log("API response nhận được:", response);
+      console.log("API response received:", response);
 
       // Bước 1: Kiểm tra xem response hoặc response.data có tồn tại không
       if (!response || !response.data) {
         console.error(
-          "Response từ API không hợp lệ hoặc không có thuộc tính 'data'.",
+          "Invalid API response or missing 'data' property.",
           response
         );
-        throw new Error("Dữ liệu nhận được từ API không hợp lệ.");
+        throw new Error("Invalid data received from API.");
       }
 
       // Bước 2: Xác định vị trí của mảng sự kiện một cách an toàn
       let eventsArray: EventApiItem[] = [];
       if (Array.isArray(response.data)) {
         eventsArray = response.data as EventApiItem[];
-        console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data'");
+        console.log("Detected events array in 'response.data'");
       } else if (
         response.data &&
         Array.isArray((response.data as { data?: unknown }).data as unknown[])
       ) {
         eventsArray = (response.data as { data: EventApiItem[] }).data;
-        console.log("Phát hiện dữ liệu sự kiện nằm trong 'response.data.data'");
+        console.log("Detected events array in 'response.data.data'");
       } else {
         console.warn(
-          "Không tìm thấy mảng sự kiện trong response. Vui lòng kiểm tra cấu trúc dữ liệu trả về từ API.",
+          "Events array not found in response. Please verify API response structure.",
           response.data
         );
         setEvents([]);
         return;
       }
 
-      console.log("Dữ liệu thô sẽ được xử lý:", eventsArray);
+      console.log("Raw events to be processed:", eventsArray);
 
       // Bước 3: Ánh xạ dữ liệu một cách an toàn
       const formattedEvents = eventsArray
         .map((item: EventApiItem | null) => {
           if (!item || item.event_id === undefined || !item.event_time) {
-            console.warn(
-              "Bỏ qua một item không hợp lệ trong mảng sự kiện:",
-              item
-            );
+            console.warn("Skip an invalid item in events array:", item);
             return null;
           }
           return {
@@ -134,21 +133,21 @@ const Schedule: React.FC = () => {
         })
         .filter((e): e is Event => Boolean(e));
 
-      console.log("Sự kiện đã được định dạng thành công:", formattedEvents);
+      console.log("Events formatted successfully:", formattedEvents);
       setEvents(formattedEvents);
     } catch (error: unknown) {
       toast.error(
-        "Không thể tải danh sách sự kiện! Vui lòng kiểm tra Console (F12) để biết chi tiết."
+        "Failed to load events! Please check Console (F12) for details."
       );
 
       if (axios.isAxiosError(error)) {
-        console.error("LỖI API KHI TẢI SỰ KIỆN:", {
-          message: "Server đã phản hồi với một mã lỗi.",
+        console.error("API ERROR WHEN LOADING EVENTS:", {
+          message: "Server responded with an error code.",
           status: error.response?.status,
           data: error.response?.data,
         });
       } else {
-        console.error("LỖI JAVASCRIPT KHI TẢI SỰ KIỆN:", error);
+        console.error("JAVASCRIPT ERROR WHEN LOADING EVENTS:", error);
       }
       setEvents([]);
     }
@@ -186,7 +185,7 @@ const Schedule: React.FC = () => {
           addNotification({
             id: finishedId,
             type: "event_finished",
-            message: `Sự kiện "${event.title}" đã kết thúc.`,
+            message: `Event "${event.title}" has finished.`,
             link: "/schedule",
           });
           // Dọn dẹp thông báo "đang diễn ra" nếu có
@@ -198,7 +197,7 @@ const Schedule: React.FC = () => {
           addNotification({
             id: ongoingId,
             type: "event_ongoing",
-            message: `Sự kiện "${event.title}" đang diễn ra.`,
+            message: `Event "${event.title}" is ongoing.`,
             link: "/schedule",
           });
           // Dọn dẹp thông báo "sắp diễn ra" nếu có
@@ -210,7 +209,7 @@ const Schedule: React.FC = () => {
           addNotification({
             id: upcomingId,
             type: "event_upcoming",
-            message: `Sự kiện "${event.title}" sắp bắt đầu trong ít phút.`,
+            message: `Event "${event.title}" will start soon.`,
             link: "/schedule",
           });
         }
@@ -418,40 +417,21 @@ const Schedule: React.FC = () => {
 
   const handleDelete = async () => {
     // Thêm hộp thoại xác nhận ở đây
-    if (
-      editingEvent &&
-      window.confirm("Are you sure you want to move this event to the trash?")
-    ) {
+    if (editingEvent) {
+      const ok = await confirm({
+        title: "Confirm delete",
+        message: "Are you sure you want to move this event to the trash?",
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        variant: "danger",
+      });
+      if (!ok) return;
       setIsDeleting(true);
       try {
         // Logic xóa mềm không thay đổi
         await deleteEvent(editingEvent.event_id);
-        alert("Event moved to trash successfully."); // Thông báo thành công
+        toast.success("Event moved to trash successfully.");
         closeEditModal();
-        await fetchEvents();
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          alert(
-            (err.response?.data as { message?: string } | undefined)?.message ||
-              "Failed to delete the event!"
-          );
-        } else {
-          alert("Failed to delete the event!");
-        }
-      } finally {
-        // Dùng finally để đảm bảo isDeleting luôn được reset
-        setIsDeleting(false);
-      }
-    }
-  };
-
-  const handleQuickDelete = async (event: Event, e: React.MouseEvent) => {
-    e.stopPropagation(); // Ngăn không cho mở modal edit
-    
-    if (window.confirm(`Are you sure you want to delete "${event.title}"?`)) {
-      try {
-        await deleteEvent(event.event_id);
-        toast.success("Event deleted successfully!");
         await fetchEvents();
       } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
@@ -462,6 +442,36 @@ const Schedule: React.FC = () => {
         } else {
           toast.error("Failed to delete the event!");
         }
+      } finally {
+        // Dùng finally để đảm bảo isDeleting luôn được reset
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  const handleQuickDelete = async (event: Event, e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn không cho mở modal edit
+
+    const ok = await confirm({
+      title: "Confirm delete",
+      message: `Are you sure you want to delete "${event.title}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!ok) return;
+    try {
+      await deleteEvent(event.event_id);
+      toast.success("Event deleted successfully!");
+      await fetchEvents();
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          (err.response?.data as { message?: string } | undefined)?.message ||
+            "Failed to delete the event!"
+        );
+      } else {
+        toast.error("Failed to delete the event!");
       }
     }
   };
@@ -538,7 +548,9 @@ const Schedule: React.FC = () => {
                         >
                           <div className="schedule-event-content">
                             <FontAwesomeIcon icon={faBullseye} />
-                            <span className="schedule-event-title">{event.title}</span>
+                            <span className="schedule-event-title">
+                              {event.title}
+                            </span>
                           </div>
                           <button
                             className="schedule-event-delete-btn"
@@ -587,7 +599,9 @@ const Schedule: React.FC = () => {
                     })}
                     - {event.event_time.slice(11, 16)}
                   </p>
-                  <p className="schedule-agenda-item-desc">{event.description}</p>
+                  <p className="schedule-agenda-item-desc">
+                    {event.description}
+                  </p>
                 </div>
                 <button
                   className="schedule-agenda-delete-btn"
@@ -685,28 +699,7 @@ const Schedule: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="schedule-modal-group">
-                  <label htmlFor="schedule-event-link-goal-select-add">
-                    Link to Goal
-                  </label>
-                  <input
-                    type="text"
-                    id="schedule-event-link-goal-select-add"
-                    value={addForm.linkedGoal}
-                    onChange={(e) =>
-                      setAddForm((f) => ({
-                        ...f,
-                        linkedGoal: e.target.value,
-                      }))
-                    }
-                    placeholder="Goal ID (nếu có)"
-                  />
-                  {addErrors.linkedGoal && (
-                    <div className="schedule-form-error">
-                      {addErrors.linkedGoal}
-                    </div>
-                  )}
-                </div>
+
                 <div className="schedule-modal-footer">
                   <button
                     className="schedule-btn schedule-btn-secondary"
@@ -817,28 +810,7 @@ const Schedule: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="schedule-modal-group">
-                  <label htmlFor="schedule-event-link-goal-select-edit">
-                    Link to Goal
-                  </label>
-                  <input
-                    type="text"
-                    id="schedule-event-link-goal-select-edit"
-                    value={editForm.linkedGoal}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        linkedGoal: e.target.value,
-                      }))
-                    }
-                    placeholder="Goal ID (nếu có)"
-                  />
-                  {editErrors.linkedGoal && (
-                    <div className="schedule-form-error">
-                      {editErrors.linkedGoal}
-                    </div>
-                  )}
-                </div>
+
                 <div className="schedule-modal-footer">
                   <button
                     className="schedule-btn schedule-btn-danger"

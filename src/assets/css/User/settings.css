@@ -53,7 +53,7 @@
 
   /* Bỏ display: flex và flex-direction: column */
   /* Bỏ overflow: hidden */
-  
+
   /* Thêm overflow-y: scroll để cho phép cuộn */
   overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
@@ -65,11 +65,11 @@
 }
 
 .settings-page-title {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.025em;
-  margin: 1rem 1.5rem 0.5rem;
+  margin: 29px 0 0 40px;
   position: relative;
   display: inline-block;
 
@@ -93,10 +93,10 @@
   /* Bỏ flex: 1 */
   gap: 1.5rem;
   align-items: stretch;
-  padding: 0 1.5rem 1.5rem;
+  padding: 2rem 2rem;
 
   /* Bỏ overflow: hidden */
-  
+
   /* Thêm min-height để đảm bảo container có chiều cao tối thiểu */
   min-height: calc(100vh - 4rem);
 }
@@ -113,7 +113,9 @@
 }
 
 @keyframes settingsDotBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -225,18 +227,171 @@
 }
 
 @media (max-width: 480px) {
-  .settings-loading-container::before {
-    width: 150px;
-    height: 150px;
+  .settings-main-content {
+    min-height: 100vh;
+    width: 100vw;
+    padding: 0;
+    font-size: 0.97rem;
   }
 
-  .settings-loading-spinner div {
-    width: 8px;
-    height: 8px;
+  .settings-page-title {
+    font-size: 1.1rem;
+    margin: 30px 0 0 40px;
   }
-
-  .settings-loading-spinner {
+  .settings-page-title::after {
+    width: 32px;
+    height: 2px;
+    bottom: -3px;
+  }
+  .settings-container {
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0 0.3rem 0.7rem;
+    min-height: unset;
+  }
+  .settings-nav {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    padding: 0.7rem;
+    border-radius: 10px;
+    width: 100%;
+    min-width: unset;
+    max-width: 100vw;
+    font-size: 0.97rem;
+  }
+  .settings-nav-link,
+  .settings-nav-link.settings-logout-link {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.97rem;
+    gap: 0.5rem;
+  }
+  .settings-content {
+    margin-top: 10px;
+    padding-bottom: 1rem;
+  }
+  .settings-section {
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+  .settings-section-header,
+  .settings-section-body,
+  .settings-section-footer {
+    padding: 0.7rem;
+  }
+  .settings-section-header > h2 {
+    font-size: 1.1rem;
+  }
+  .settings-section-footer {
+    padding: 0.7rem 0.7rem;
+    gap: 0.4rem;
+    font-size: 0.97rem;
+  }
+  .settings-form-group {
+    margin-bottom: 1rem;
+  }
+  .settings-form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+  .settings-form-group input {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.97rem;
+  }
+  .settings-form-error {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+  .settings-form-field-error {
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+  }
+  .settings-avatar-upload-group {
+    gap: 0.7rem;
+  }
+  .settings-avatar-preview,
+  .settings-avatar-preview img,
+  .settings-avatar-upload-btn {
+    width: 56px;
+    height: 56px;
+  }
+  .settings-btn,
+  .settings-btn-primary,
+  .settings-btn-secondary,
+  .settings-btn-danger {
+    padding: 0.6rem 1rem;
+    font-size: 0.97rem;
+    gap: 0.5rem;
+    border-radius: 8px;
+  }
+  .settings-toggle-switch {
+    width: 36px;
+    height: 20px;
+  }
+  .settings-slider:before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+  }
+  input:checked + .settings-slider:before {
+    transform: translateX(16px);
+  }
+  .settings-notification-item {
+    padding: 0.7rem 0;
     gap: 0.3rem;
+  }
+  .settings-notification-text h3 {
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+  }
+  .settings-notification-text p {
+    font-size: 0.8rem;
+  }
+  .settings-plans-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+  }
+  .settings-plan-card {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  .settings-plan-card h3 {
+    font-size: 1rem;
+  }
+  .settings-plan-card .settings-price {
+    font-size: 1.2rem;
+    margin: 0.3rem 0;
+  }
+  .settings-plan-card .settings-price span {
+    font-size: 0.8rem;
+  }
+  .settings-plan-card ul {
+    margin: 0.7rem 0;
+  }
+  .settings-plan-card ul li {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    gap: 0.3rem;
+  }
+  .settings-danger-zone {
+    border-radius: 10px;
+  }
+  /* Loading spinner mobile */
+  .settings-loading-container::before {
+    width: 100px;
+    height: 100px;
+  }
+  .settings-loading-spinner div {
+    width: 7px;
+    height: 7px;
+  }
+  .settings-loading-spinner {
+    gap: 0.2rem;
+  }
+  .settings-loading-container p {
+    font-size: 0.9rem;
   }
 }
 
@@ -357,7 +512,7 @@
   flex-grow: 1;
   /* Bỏ overflow-y: auto */
   /* Bỏ padding-bottom: 2rem */
-  
+
   /* Thêm padding-bottom để tạo khoảng cách cuối trang */
   padding-bottom: 2rem;
 }
@@ -382,7 +537,7 @@
   border-bottom: 1px solid var(--border-main);
 }
 
-.settings-section-header h2 {
+.settings-section-header > h2 {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
@@ -403,10 +558,46 @@
   margin-top: 0.5rem;
 }
 
+/* Sửa lỗi màu trắng cho mọi thẻ không phải h2 trong section-header */
+.settings-section-header p,
+.settings-section-header span,
+.settings-section-header .settings-form-notice,
+.settings-section-header h3 {
+  color: var(--text-main) !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
+/* Nếu vẫn chưa được, thêm cả cho mọi thẻ con trừ h2 */
+.settings-section-header *:not(h2) {
+  color: var(--text-main) !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
 .settings-section-body {
   padding: 1.5rem;
   flex: 1;
   /* Bỏ overflow-y: auto vì không cần nữa */
+}
+
+/* Đảm bảo các tiêu đề nhỏ và thông báo luôn có màu chữ tối */
+.settings-section-body h2,
+.settings-section-body h3,
+.settings-form-notice,
+.settings-section-body .settings-form-notice {
+  color: var(--text-main) !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
+/* Nếu thông báo là thẻ p hoặc span bên trong .settings-form-notice */
+.settings-form-notice p,
+.settings-form-notice span {
+  color: var(--text-main) !important;
 }
 
 /* --- Form Elements --- */
@@ -446,12 +637,7 @@
 }
 
 .settings-form-notice {
-  color: var(--text-light);
-  background-color: #f9fafb;
-  padding: 0.75rem 1rem;
-  border-radius: var(--border-radius-md);
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+  margin-left: 5px; /* hoặc 16px nếu input có padding lớn hơn */
 }
 
 .settings-form-error {
@@ -696,6 +882,15 @@ input:checked + .settings-slider:before {
   color: var(--text-main);
 }
 
+/* Đảm bảo màu cho các tiêu đề trong plan card */
+.settings-plan-card h3,
+.settings-section-body > h3 {
+  color: var(--text-main) !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
 .settings-plan-card .settings-price {
   font-size: 1.75rem;
   font-weight: 700;
@@ -806,5 +1001,173 @@ input:checked + .settings-slider:before {
 
   .settings-page-title {
     margin: 1rem 1rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-main-content {
+    min-height: 100vh;
+    width: 100vw;
+    padding: 0;
+    font-size: 0.97rem;
+  }
+  .settings-page-title {
+    font-size: 1.1rem;
+    margin: 0.7rem 0.5rem 0.3rem;
+  }
+  .settings-page-title::after {
+    width: 32px;
+    height: 2px;
+    bottom: -3px;
+  }
+  .settings-container {
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0 0.3rem 0.7rem;
+    min-height: unset;
+  }
+  .settings-nav {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    padding: 0.7rem;
+    border-radius: 10px;
+    width: 100%;
+    min-width: unset;
+    max-width: 100vw;
+    font-size: 0.97rem;
+  }
+  .settings-nav-link,
+  .settings-nav-link.settings-logout-link {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.97rem;
+    gap: 0.5rem;
+  }
+  .settings-content {
+    margin-top: 10px;
+    padding-bottom: 1rem;
+  }
+  .settings-section {
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+  .settings-section-header,
+  .settings-section-body,
+  .settings-section-footer {
+    padding: 0.7rem;
+  }
+  .settings-section-header > h2 {
+    font-size: 1.1rem;
+  }
+  .settings-section-footer {
+    padding: 0.7rem 0.7rem;
+    gap: 0.4rem;
+    font-size: 0.97rem;
+  }
+  .settings-form-group {
+    margin-bottom: 1rem;
+  }
+  .settings-form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+  .settings-form-group input {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.97rem;
+  }
+  .settings-form-error {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+  .settings-form-field-error {
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+  }
+  .settings-avatar-upload-group {
+    gap: 0.7rem;
+  }
+  .settings-avatar-preview,
+  .settings-avatar-preview img,
+  .settings-avatar-upload-btn {
+    width: 56px;
+    height: 56px;
+  }
+  .settings-btn,
+  .settings-btn-primary,
+  .settings-btn-secondary,
+  .settings-btn-danger {
+    padding: 0.6rem 1rem;
+    font-size: 0.97rem;
+    gap: 0.5rem;
+    border-radius: 8px;
+  }
+  .settings-toggle-switch {
+    width: 36px;
+    height: 20px;
+  }
+  .settings-slider:before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+  }
+  input:checked + .settings-slider:before {
+    transform: translateX(16px);
+  }
+  .settings-notification-item {
+    padding: 0.7rem 0;
+    gap: 0.3rem;
+  }
+  .settings-notification-text h3 {
+    font-size: 1rem;
+    margin-bottom: 0.15rem;
+  }
+  .settings-notification-text p {
+    font-size: 0.8rem;
+  }
+  .settings-plans-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+  }
+  .settings-plan-card {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  .settings-plan-card h3 {
+    font-size: 1rem;
+  }
+  .settings-plan-card .settings-price {
+    font-size: 1.2rem;
+    margin: 0.3rem 0;
+  }
+  .settings-plan-card .settings-price span {
+    font-size: 0.8rem;
+  }
+  .settings-plan-card ul {
+    margin: 0.7rem 0;
+  }
+  .settings-plan-card ul li {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    gap: 0.3rem;
+  }
+  .settings-danger-zone {
+    border-radius: 10px;
+  }
+  /* Loading spinner mobile */
+  .settings-loading-container::before {
+    width: 100px;
+    height: 100px;
+  }
+  .settings-loading-spinner div {
+    width: 7px;
+    height: 7px;
+  }
+  .settings-loading-spinner {
+    gap: 0.2rem;
+  }
+  .settings-loading-container p {
+    font-size: 0.9rem;
   }
 }

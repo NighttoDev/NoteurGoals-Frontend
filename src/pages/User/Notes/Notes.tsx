@@ -159,13 +159,13 @@ const NotesPage: React.FC = () => {
     }
   };
 
-  const handleGoalSelectionChange = (goalId: string) => {
-    setSelectedGoalIds((prev) =>
-      prev.includes(goalId)
-        ? prev.filter((id) => id !== goalId)
-        : [...prev, goalId]
-    );
-  };
+  // const handleGoalSelectionChange = (goalId: string) => {
+  //   setSelectedGoalIds((prev) =>
+  //     prev.includes(goalId)
+  //       ? prev.filter((id) => id !== goalId)
+  //       : [...prev, goalId]
+  //   );
+  // };
 
   const openAddModal = () => {
     setAddForm({ title: "", content: "" });
@@ -303,25 +303,25 @@ const NotesPage: React.FC = () => {
       note.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const renderGoalsCheckboxes = () => (
-    <div className="notes-modal-group">
-      <label>Liên kết với Goal</label>
-      <div className="notes-checkbox-group">
-        {goals.map((goal) => (
-          <div key={goal.id} className="notes-checkbox-item">
-            <input
-              type="checkbox"
-              id={`goal-checkbox-${goal.id}`}
-              value={goal.id}
-              checked={selectedGoalIds.includes(goal.id)}
-              onChange={() => handleGoalSelectionChange(goal.id)}
-            />
-            <label htmlFor={`goal-checkbox-${goal.id}`}>{goal.title}</label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  // const renderGoalsCheckboxes = () => (
+  //   <div className="notes-modal-group">
+  //     <label>Liên kết với Goal</label>
+  //     <div className="notes-checkbox-group">
+  //       {goals.map((goal) => (
+  //         <div key={goal.id} className="notes-checkbox-item">
+  //           <input
+  //             type="checkbox"
+  //             id={`goal-checkbox-${goal.id}`}
+  //             value={goal.id}
+  //             checked={selectedGoalIds.includes(goal.id)}
+  //             onChange={() => handleGoalSelectionChange(goal.id)}
+  //           />
+  //           <label htmlFor={`goal-checkbox-${goal.id}`}>{goal.title}</label>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   </div>
+  // );
 
   const renderLoading = () => (
     <div className="notes-loading-container">
@@ -474,7 +474,7 @@ const NotesPage: React.FC = () => {
                     }
                   ></textarea>
                 </div>
-                {renderGoalsCheckboxes()}
+
                 <div className="notes-modal-footer">
                   <button
                     type="button"
@@ -543,7 +543,6 @@ const NotesPage: React.FC = () => {
                     }
                   ></textarea>
                 </div>
-                {renderGoalsCheckboxes()}
                 <div className="notes-modal-footer">
                   <button
                     type="button"

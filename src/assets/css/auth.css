@@ -318,3 +318,312 @@ a.forgot-password:hover,
     margin: 0;
   }
 }
+
+/* Mobile Responsive Styles - Detailed and UX-friendly */
+@media (max-width: 768px) {
+  /* Container adjustments for mobile */
+  .login-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px;
+    gap: 0;
+    max-height: 100vh;
+    align-items: stretch;
+  }
+
+  /* Form panel mobile optimizations */
+  .form-panel {
+    padding: 24px 16px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    margin: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .form-content {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  /* Typography adjustments for mobile */
+  .form-content h2 {
+    font-size: 22px;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .form-content .subtitle {
+    font-size: 13px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  /* Form groups mobile spacing */
+  .form-group {
+    margin-bottom: 6px;
+  }
+
+  .form-group label {
+    font-size: 12px;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 8px;
+    border-width: 1.5px;
+  }
+
+  .form-group input:focus {
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+  }
+
+  /* Form options mobile layout */
+  .form-options {
+    margin-top: 6px;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  .remember-me {
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .remember-me label {
+    line-height: 1.4;
+    margin-top: 1px;
+  }
+
+  #remember,
+  #terms {
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+  }
+
+  .form-options .forgot-password {
+    margin-top: -18px;
+    font-size: 12px;
+  }
+
+  /* Button mobile optimizations */
+  .signin-btn {
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-top: 4px;
+    min-height: 44px; /* Better touch target */
+  }
+
+  /* Separator mobile */
+  .separator {
+    margin: 12px 0;
+    font-size: 11px;
+  }
+
+  .separator span {
+    padding: 0 8px;
+  }
+
+  /* Social buttons mobile */
+  .social-login-buttons {
+    gap: 6px;
+  }
+
+  .social-btn {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    min-height: 44px;
+    gap: 8px;
+  }
+
+  /* Signup link mobile */
+  .signup-link {
+    font-size: 13px;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+
+  /* Error messages mobile */
+  .form-field-error {
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  .form-error,
+  .form-success {
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 12px;
+  }
+
+  .form-panel {
+    padding: 20px 12px;
+    border-radius: 12px;
+  }
+
+  .form-content {
+    max-width: 100%;
+  }
+
+  .form-content h2 {
+    font-size: 20px;
+  }
+
+  .form-content .subtitle {
+    font-size: 12px;
+  }
+
+  .form-group input {
+    padding: 11px 12px;
+    font-size: 16px;
+  }
+
+  .signin-btn {
+    padding: 13px;
+    font-size: 16px;
+  }
+
+  .social-btn {
+    padding: 11px;
+    font-size: 15px;
+  }
+
+  .form-options {
+    font-size: 11px;
+  }
+
+  .form-field-error {
+    font-size: 10px;
+  }
+
+  .form-error,
+  .form-success {
+    font-size: 11px;
+    padding: 8px;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .login-container {
+    padding: 8px;
+  }
+
+  .form-panel {
+    padding: 16px 8px;
+  }
+
+  .form-content h2 {
+    font-size: 18px;
+  }
+
+  .form-content .subtitle {
+    font-size: 11px;
+  }
+
+  .form-group input {
+    padding: 10px 10px;
+  }
+
+  .signin-btn {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .social-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  .login-container {
+    padding: 12px;
+    min-height: auto;
+  }
+
+  .form-panel {
+    padding: 16px 12px;
+  }
+
+  .form-content h2 {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .form-content .subtitle {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .form-group {
+    margin-bottom: 4px;
+  }
+
+  .form-group input {
+    padding: 8px 10px;
+  }
+
+  .signin-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .social-btn {
+    padding: 8px;
+    font-size: 13px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .form-group input {
+    border-width: 0.5px;
+  }
+
+  .form-group input:focus {
+    border-width: 1px;
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  /* Keep existing styles - no color changes as requested */
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .signin-btn,
+  .social-btn {
+    transition: none;
+  }
+
+  .form-group input:focus {
+    transition: none;
+  }
+}

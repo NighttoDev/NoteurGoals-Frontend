@@ -90,7 +90,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("user_info", JSON.stringify(user));
         navigate("/dashboard"); // Chuyển hướng đến dashboard
       } else {
-        setError(response.data.message || "Có lỗi không xác định xảy ra.");
+        setError(response.data.message || "An error occurred when logging in.");
       }
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {

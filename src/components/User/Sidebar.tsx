@@ -8,6 +8,8 @@ import {
   AiOutlineLogout,
   AiOutlineDelete, // Thêm icon thùng rác
   AiOutlineFolder, // Thêm icon folder cho Files
+  AiOutlineMenu, // Thêm icon hamburger menu
+  AiOutlineClose, // Thêm icon đóng menu
 } from "react-icons/ai";
 import { FaCrown } from "react-icons/fa";
 import { BsFlag, BsCalendar3, BsCalendarCheck } from "react-icons/bs";
@@ -36,17 +38,13 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const [showUserDropdown, setShowUserDropdown] = React.useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] =
     React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const userDropdownRef = React.useRef<HTMLDivElement>(null);
   const notificationRef = React.useRef<HTMLDivElement>(null);
+  const mobileMenuRef = React.useRef<HTMLDivElement>(null);
 
   const newNotificationCount = notifications.filter((n) => !n.seen).length;
-
-  const [loading, setLoading] = useState({
-    profile: false,
-    password: false,
-    delete: false,
-  });
 
   // BỘ LẮNG NGHE SỰ KIỆN TOÀN CỤC
   useEffect(() => {
@@ -55,37 +53,47 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       const channel = echo.private(userChannel);
 
       // LẮNG NGHE THÔNG BÁO CÓ TIN NHẮN MỚI
-      channel.listen("NewMessageNotification", (data: any) => {
-        const { sender_id, sender_name, message_content } = data;
-        const notificationId = `new-message-${sender_id}`;
+      channel.listen(
+        "NewMessageNotification",
+        (data: {
+          sender_id: string;
+          sender_name: string;
+          message_content: string;
+        }) => {
+          const { sender_id, sender_name, message_content } = data;
+          const notificationId = `new-message-${sender_id}`;
 
-        // Rút gọn tin nhắn để hiển thị preview
-        const shortMessage =
-          message_content.length > 30
-            ? `${message_content.substring(0, 30)}...`
-            : message_content;
+          // Rút gọn tin nhắn để hiển thị preview
+          const shortMessage =
+            message_content.length > 30
+              ? `${message_content.substring(0, 30)}...`
+              : message_content;
 
-        // Thêm thông báo vào context
-        addNotification({
-          id: notificationId,
-          type: "new_message",
-          message: `New message from ${sender_name}: "${shortMessage}"`,
-          link: "/friends", // Chuyển hướng đến trang chat khi click
-        });
-      });
+          // Thêm thông báo vào context
+          addNotification({
+            id: notificationId,
+            type: "new_message",
+            message: `New message from ${sender_name}: "${shortMessage}"`,
+            link: "/friends", // Chuyển hướng đến trang chat khi click
+          });
+        }
+      );
 
       // Lắng nghe lời mời kết bạn được chấp nhận
-      channel.listen("FriendRequestAccepted", (data: any) => {
-        const { accepter_id, accepter_name } = data;
-        const notificationId = `friend-accepted-${accepter_id}`;
+      channel.listen(
+        "FriendRequestAccepted",
+        (data: { accepter_id: string; accepter_name: string }) => {
+          const { accepter_id, accepter_name } = data;
+          const notificationId = `friend-accepted-${accepter_id}`;
 
-        addNotification({
-          id: notificationId,
-          type: "friend_request_accepted",
-          message: `${accepter_name} has accepted your friend request.`,
-          link: "/friends",
-        });
-      });
+          addNotification({
+            id: notificationId,
+            type: "friend_request_accepted",
+            message: `${accepter_name} has accepted your friend request.`,
+            link: "/friends",
+          });
+        }
+      );
 
       // Hàm dọn dẹp khi component unmount
       return () => {
@@ -93,6 +101,35 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       };
     }
   }, [user, addNotification]);
+
+  // Quản lý body scroll khi mobile menu mở
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.classList.add("menu-open");
+    } else {
+      document.body.classList.remove("menu-open");
+    }
+
+    return () => {
+      document.body.classList.remove("menu-open");
+    };
+  }, [isMobileMenuOpen]);
+
+  // Quản lý body scroll khi dropdowns mở trên mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768;
+    const hasDropdownOpen = showUserDropdown || showNotificationDropdown;
+
+    if (isMobile && hasDropdownOpen) {
+      document.body.classList.add("dropdown-open");
+    } else {
+      document.body.classList.remove("dropdown-open");
+    }
+
+    return () => {
+      document.body.classList.remove("dropdown-open");
+    };
+  }, [showUserDropdown, showNotificationDropdown]);
 
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
     return isActive ? "nav-link active" : "nav-link";
@@ -116,12 +153,23 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       ) {
         setShowNotificationDropdown(false);
       }
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Đóng mobile menu khi click vào nav link
+  const handleNavLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   const handleBellClick = () => {
     setShowNotificationDropdown((prev) => !prev);
@@ -175,23 +223,41 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   };
 
   const handleLogout = useCallback(async (isForced = false) => {
-    setLoading((prev) => ({ ...prev, logout: true }));
     if (!isForced) {
       try {
-        await api.post("/logout");
-      } catch (err) {
-        console.error("Logout API failed, but logging out locally anyway.");
+        // await api.post("/logout");
+        console.log("Logout API call would be made here");
+      } catch (error) {
+        console.error(
+          "Logout API failed, but logging out locally anyway.",
+          error
+        );
       }
     }
     // removeItem tất cả trong localStorage
     localStorage.clear();
     window.location.href = "/login";
   }, []);
+
   return (
     <header className="main-header">
       <div className="header-left">
-        <div className="logo">NoteurGoals</div>
-        <nav className="main-nav">
+        {/* Mobile Hamburger Menu Button */}
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle mobile menu"
+        >
+          {isMobileMenuOpen ? <AiOutlineClose /> : <AiOutlineMenu />}
+        </button>
+
+        {/* Logo - Ẩn trên mobile khi menu mở */}
+        <div className={`logo ${isMobileMenuOpen ? "logo--hidden" : ""}`}>
+          NoteurGoals
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="main-nav desktop-nav">
           <NavLink to="/dashboard" end className={getNavLinkClass}>
             <AiOutlineHome /> HOME
           </NavLink>
@@ -213,8 +279,107 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           <NavLink to="/settings" className={getNavLinkClass}>
             <AiOutlineSetting /> SETTINGS
           </NavLink>
-          {/* Xóa mục TRASH khỏi navigation */}
         </nav>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`mobile-menu-overlay ${
+          isMobileMenuOpen ? "mobile-menu-overlay--active" : ""
+        }`}
+      >
+        <div className="mobile-menu" ref={mobileMenuRef}>
+          <div className="mobile-menu-header">
+            <div className="mobile-menu-logo">NoteurGoals</div>
+            <button
+              className="mobile-menu-close"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close mobile menu"
+            >
+              <AiOutlineClose />
+            </button>
+          </div>
+
+          <nav className="mobile-nav">
+            <NavLink
+              to="/dashboard"
+              end
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <AiOutlineHome /> HOME
+            </NavLink>
+            <NavLink
+              to="/goals"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <BsFlag /> GOALS
+            </NavLink>
+            <NavLink
+              to="/notes"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <BiNote /> NOTES
+            </NavLink>
+            <NavLink
+              to="/files"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <AiOutlineFolder /> FILES
+            </NavLink>
+            <NavLink
+              to="/schedule"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <BsCalendar3 /> SCHEDULE
+            </NavLink>
+            <NavLink
+              to="/friends"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <FiUsers /> FRIENDS
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={getNavLinkClass}
+              onClick={handleNavLinkClick}
+            >
+              <AiOutlineSetting /> SETTINGS
+            </NavLink>
+          </nav>
+
+          {/* Mobile User Info */}
+          <div className="mobile-user-info">
+            <div className="mobile-user-avatar">
+              <img
+                src={avatarUrl}
+                alt={user?.display_name || "User Avatar"}
+                onError={(e) => {
+                  e.currentTarget.src = "/default-avatar.png";
+                }}
+              />
+              {isPro && (
+                <span className="mobile-avatar-crown">
+                  <FaCrown />
+                </span>
+              )}
+            </div>
+            <div className="mobile-user-details">
+              <div className="mobile-username">
+                {user?.display_name || "User"}
+                {isPro && <span className="mobile-premium-indicator">✨</span>}
+              </div>
+              <div className="mobile-email">
+                {user?.email || "user@example.com"}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="header-right">
@@ -297,7 +462,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </div>
 
         <div
-          className={`user-avatar ${isPro ? 'premium' : ''}`}
+          className={`user-avatar ${isPro ? "premium" : ""}`}
           onClick={() => setShowUserDropdown(!showUserDropdown)}
           ref={userDropdownRef}
         >
@@ -324,7 +489,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   <img src={avatarUrl} alt="User" className="dropdown-avatar" />
                   {isPro && (
                     <>
-                      <span className="avatar-crown avatar-crown--dropdown" title="Premium user">
+                      <span
+                        className="avatar-crown avatar-crown--dropdown"
+                        title="Premium user"
+                      >
                         <FaCrown />
                       </span>
                       <span className="dropdown-premium-badge">Premium</span>
@@ -334,7 +502,11 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                 <div className="dropdown-user-info">
                   <div className="dropdown-username">
                     {user?.display_name || "User"}
-                    {isPro && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>✨</span>}
+                    {isPro && (
+                      <span style={{ marginLeft: "8px", color: "#f59e0b" }}>
+                        ✨
+                      </span>
+                    )}
                   </div>
                   <div className="dropdown-email">
                     {user?.email || "user@example.com"}
