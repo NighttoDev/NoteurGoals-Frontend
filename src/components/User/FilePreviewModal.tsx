@@ -4,6 +4,11 @@ import {
   isPdfFile,
   isTextFile,
   downloadFile,
+  isWordFile,
+  isExcelFile,
+  isPowerPointFile,
+  isOfficeFile,
+  isDocxFile,
 } from "../../services/filesService";
 
 interface FilePreviewModalProps {
@@ -35,6 +40,8 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     blobType?: string;
     blobSize?: number;
   } | null>(null);
+  const [officePreviewUrl, setOfficePreviewUrl] = useState<string | null>(null);
+  const [useOfficeOnline, setUseOfficeOnline] = useState<boolean>(false);
   const docxContainerRef = useRef<HTMLDivElement>(null);
   const docxScriptLoadingRef = useRef<Promise<void> | null>(null);
   const docxModuleRef = useRef<{
@@ -55,17 +62,26 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     if (!docxModuleRef.current) {
       try {
         console.log("[Preview] Attempt dynamic import of docx-preview (ESM)");
-        const mod = (await import(
-          /* @vite-ignore */ "https://esm.sh/docx-preview@0.3.1"
-        )) as unknown as {
+        let mod: {
           default?: {
             renderAsync: (b: Blob, el: HTMLElement) => Promise<void>;
           };
           renderAsync?: (b: Blob, el: HTMLElement) => Promise<void>;
-        };
-        docxModuleRef.current = {
-          renderAsync: mod.renderAsync || mod.default?.renderAsync,
-        };
+        } | null = null;
+        
+        try {
+          // Dynamic import with proper error handling
+          const importResult = await (new Function('return import("https://esm.sh/docx-preview@0.3.1")')());
+          mod = importResult as typeof mod;
+        } catch (importError) {
+          console.warn("[Preview] Failed to import docx-preview", importError);
+          mod = null;
+        }
+        if (mod) {
+          docxModuleRef.current = {
+            renderAsync: (mod as any).renderAsync || (mod as any).default?.renderAsync,
+          };
+        }
       } catch (e) {
         console.warn("[Preview] ESM import failed, will try script tag", e);
       }
@@ -102,6 +118,19 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     await docxScriptLoadingRef.current;
   };
 
+  // Helper function to create Office Online preview URL
+  const createOfficeOnlineUrl = (fileUrl: string) => {
+    const encodedUrl = encodeURIComponent(fileUrl);
+    return `https://view.officeapps.live.com/op/view.aspx?src=${encodedUrl}`;
+  };
+
+  // Helper function to get public file URL for Office Online
+  const getPublicFileUrl = (fileId: number) => {
+    // This should be your public file URL that Office Online can access
+    const baseUrl = (import.meta as ImportMeta).env.VITE_API_BASE_URL || "http://localhost:8000";
+    return `${baseUrl}/api/files/${fileId}/preview`;
+  };
+
   useEffect(() => {
     let cancelled = false;
     let objectUrl: string | null = null;
@@ -111,12 +140,37 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       setDebug(null);
       setPreviewUrl(null);
       setTextContent(null);
+      setOfficePreviewUrl(null);
+      setUseOfficeOnline(false);
+      
       try {
         console.log("[Preview] Start", {
           fileId: file.file_id,
           fileName: file.file_name,
           fileType: file.file_type,
         });
+
+        // Check if this is an Office file that can use Office Online
+        // Only use Office Online for production environments
+        const isProduction = !window.location.hostname.includes('localhost') && 
+                           !window.location.hostname.includes('127.0.0.1') &&
+                           !window.location.hostname.includes('dev');
+                           
+        if (isOfficeFile(file.file_type, file.file_name) && isProduction) {
+          try {
+            // Try Office Online for production environments
+            const publicUrl = getPublicFileUrl(file.file_id);
+            const officeUrl = createOfficeOnlineUrl(publicUrl);
+            setOfficePreviewUrl(officeUrl);
+            setUseOfficeOnline(true);
+            console.log("[Preview] Using Office Online for", file.file_name);
+            return; // Early return for Office Online
+          } catch (officeError) {
+            console.warn("[Preview] Office Online failed, falling back to local preview", officeError);
+            // Continue to local preview logic
+          }
+        }
+
         const response = await downloadFile(file.file_id);
         const status: number | undefined = (
           response as unknown as { status?: number }
@@ -140,7 +194,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           blobSize: blob?.size,
         });
 
-        if (file.file_name.toLowerCase().endsWith(".docx")) {
+        if (isDocxFile(file.file_type, file.file_name)) {
           // Render .docx with docx-preview (CDN)
           try {
             await ensureDocxPreviewLoaded();
@@ -239,6 +293,60 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         </div>
       );
     }
+
+    // Office Online preview
+    if (useOfficeOnline && officePreviewUrl) {
+      return (
+        <div className="office-preview">
+          <iframe
+            src={officePreviewUrl}
+            title={file.file_name}
+            style={{ 
+              width: "100%", 
+              height: "70vh", 
+              border: "none",
+              borderRadius: "4px"
+            }}
+            onError={() => {
+              console.error("[Preview] Office Online iframe failed to load");
+              setError("Office Online preview failed. Please download the file to view it.");
+              setUseOfficeOnline(false);
+            }}
+          />
+          <div style={{ 
+            fontSize: 12, 
+            color: "#666", 
+            textAlign: "center", 
+            marginTop: 8, 
+            padding: "8px" 
+          }}>
+            Powered by Microsoft Office Online
+            {!useOfficeOnline && (
+              <button 
+                onClick={() => {
+                  setUseOfficeOnline(false);
+                  setOfficePreviewUrl(null);
+                  // Trigger reload with local preview
+                  window.location.reload();
+                }} 
+                style={{ 
+                  marginLeft: 8, 
+                  fontSize: 10,
+                  padding: "2px 6px",
+                  border: "1px solid #ccc",
+                  borderRadius: "3px",
+                  background: "white",
+                  cursor: "pointer"
+                }}
+              >
+                Try local preview
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (error) {
       return (
         <div className="no-preview">
@@ -259,6 +367,26 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 )}
               </div>
             )}
+            {isOfficeFile(file.file_type, file.file_name) && !useOfficeOnline && (() => {
+              const isProduction = !window.location.hostname.includes('localhost') && 
+                                 !window.location.hostname.includes('127.0.0.1') &&
+                                 !window.location.hostname.includes('dev');
+              return isProduction;
+            })() && (
+              <button 
+                onClick={() => {
+                  setUseOfficeOnline(true);
+                  setError(null);
+                  const publicUrl = getPublicFileUrl(file.file_id);
+                  const officeUrl = createOfficeOnlineUrl(publicUrl);
+                  setOfficePreviewUrl(officeUrl);
+                }} 
+                className="download-btn"
+                style={{ marginRight: 8 }}
+              >
+                Try Office Online
+              </button>
+            )}
             <button onClick={onDownload} className="download-btn">
               Download
             </button>
@@ -267,7 +395,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       );
     }
 
-    if (file.file_name.toLowerCase().endsWith(".docx")) {
+    if (isDocxFile(file.file_type, file.file_name)) {
       return (
         <div
           ref={docxContainerRef}
@@ -321,6 +449,58 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           >
             {textContent}
           </pre>
+        </div>
+      );
+    }
+
+    // Check if this is an Office file that could be previewed
+    if (isOfficeFile(file.file_type, file.file_name)) {
+      const isProduction = !window.location.hostname.includes('localhost') && 
+                           !window.location.hostname.includes('127.0.0.1') &&
+                           !window.location.hostname.includes('dev');
+      
+      return (
+        <div className="no-preview">
+          <div className="no-preview-content">
+            <h3>{isWordFile(file.file_type, file.file_name) ? "Word Document" : 
+                  isExcelFile(file.file_type, file.file_name) ? "Excel Spreadsheet" :
+                  isPowerPointFile(file.file_type, file.file_name) ? "PowerPoint Presentation" :
+                  "Office Document"}</h3>
+            <p>This {file.file_name.split('.').pop()?.toUpperCase()} file cannot be previewed locally.</p>
+            
+            {!isProduction && (
+              <div style={{ 
+                background: "#fff3cd", 
+                border: "1px solid #ffeaa7", 
+                padding: "8px 12px", 
+                borderRadius: "4px", 
+                margin: "8px 0",
+                fontSize: "14px"
+              }}>
+                💡 <strong>Development Mode:</strong> Office Online doesn't work with localhost. In production, this file can be previewed online.
+              </div>
+            )}
+            
+            {isProduction && (
+              <button 
+                onClick={() => {
+                  setUseOfficeOnline(true);
+                  setError(null);
+                  const publicUrl = getPublicFileUrl(file.file_id);
+                  const officeUrl = createOfficeOnlineUrl(publicUrl);
+                  setOfficePreviewUrl(officeUrl);
+                }} 
+                className="download-btn"
+                style={{ marginRight: 8 }}
+              >
+                📄 Preview with Office Online
+              </button>
+            )}
+            
+            <button onClick={onDownload} className="download-btn">
+              📥 Download to view
+            </button>
+          </div>
         </div>
       );
     }
