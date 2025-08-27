@@ -9,11 +9,8 @@ import {
   FaUserCircle,
   FaShieldAlt,
   FaGem,
-  FaBell,
-  FaUserShield,
   FaCamera,
   FaCheckCircle,
-  FaCogs,
   FaSignOutAlt,
 } from "react-icons/fa";
 
@@ -81,13 +78,6 @@ const SettingsPage = () => {
     new_password_confirmation: "",
   });
 
-  const [notifications, setNotifications] = useState({
-    eventReminders: true,
-    goalProgress: true,
-    friendActivity: false,
-    aiSuggestions: true,
-    autoRenewal: true,
-  });
   const [loading, setLoading] = useState({
     profile: false,
     password: false,
@@ -172,10 +162,7 @@ const SettingsPage = () => {
 
   useEffect(() => {
     const hash = window.location.hash.substring(1);
-    if (
-      hash &&
-      ["profile", "account", "subscription", "notifications"].includes(hash)
-    ) {
+    if (hash && ["profile", "account", "subscription"].includes(hash)) {
       setActiveTab(hash);
     }
   }, []);
@@ -321,9 +308,6 @@ const SettingsPage = () => {
     }
   };
 
-  const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
   const handleGoToCheckout = (planId: number) => {
     navigate(`/checkout/${planId}`);
   };
@@ -397,20 +381,6 @@ const SettingsPage = () => {
                 }}
               >
                 <FaGem /> Subscription
-              </a>
-            </li>
-            <li>
-              <a
-                href="#notifications"
-                className={`settings-nav-link ${
-                  activeTab === "notifications" ? "settings-active" : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleTabChange("notifications");
-                }}
-              >
-                <FaBell /> Notifications
               </a>
             </li>
 
@@ -835,84 +805,6 @@ const SettingsPage = () => {
                   </div>
                 );
               })()}
-            </div>
-          </section>
-
-          <section
-            id="notifications"
-            className={`settings-section ${
-              activeTab === "notifications" ? "settings-active" : ""
-            }`}
-          >
-            <div className="settings-section-header">
-              <h2>Notifications</h2>
-              <p>Choose how you want to be notified.</p>
-            </div>
-            <div className="settings-section-body">
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Event Reminders</h3>
-                  <p>Receive notifications for your upcoming events.</p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.eventReminders}
-                    onChange={() => handleNotificationToggle("eventReminders")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Goal Progress Updates</h3>
-                  <p>
-                    Get notified when a collaborator makes progress on a shared
-                    goal.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.goalProgress}
-                    onChange={() => handleNotificationToggle("goalProgress")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>Friend Activity</h3>
-                  <p>
-                    Receive notifications for new friend requests and
-                    acceptances.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.friendActivity}
-                    onChange={() => handleNotificationToggle("friendActivity")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
-              <div className="settings-notification-item">
-                <div className="settings-notification-text">
-                  <h3>AI Suggestions</h3>
-                  <p>
-                    Allow our AI to send you helpful suggestions and insights.
-                  </p>
-                </div>
-                <label className="settings-toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={notifications.aiSuggestions}
-                    onChange={() => handleNotificationToggle("aiSuggestions")}
-                  />
-                  <span className="settings-slider"></span>
-                </label>
-              </div>
             </div>
           </section>
         </div>

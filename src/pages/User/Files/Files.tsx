@@ -322,7 +322,11 @@ const Files: React.FC = () => {
         response?: { data?: { message?: string }; status?: number };
       };
       console.error("Error linking file to goal:", error);
-      alert(`Error linking file to goal: ${errorObject.response?.data?.message || "Unknown error"}`);
+      alert(
+        `Error linking file to goal: ${
+          errorObject.response?.data?.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -357,7 +361,11 @@ const Files: React.FC = () => {
         response?: { data?: { message?: string }; status?: number };
       };
       console.error("Error unlinking file from goal:", error);
-      alert(`Error unlinking file from goal: ${errorObject.response?.data?.message || "Unknown error"}`);
+      alert(
+        `Error unlinking file from goal: ${
+          errorObject.response?.data?.message || "Unknown error"
+        }`
+      );
     }
   };
 
@@ -387,7 +395,7 @@ const Files: React.FC = () => {
     if (isWordFile(fileType, fileName)) return <AiOutlineFileWord />;
     if (isExcelFile(fileType, fileName)) return <AiOutlineFileExcel />;
     if (isPowerPointFile(fileType, fileName)) return <AiOutlineFileWord />; // PowerPoint uses similar icon
-    
+
     // Fallback to legacy detection for other types
     const type = fileType.toLowerCase();
     if (type.includes("zip") || type.includes("archive"))
@@ -436,7 +444,6 @@ const Files: React.FC = () => {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-
   const filterOptions = [
     { value: "all", label: "All Files" },
     { value: "image", label: "Images" },
@@ -454,7 +461,6 @@ const Files: React.FC = () => {
     { value: "size-desc", label: "Largest First" },
     { value: "size-asc", label: "Smallest First" },
   ];
-
 
   const currentFilterLabel =
     filterOptions.find((option) => option.value === filterType)?.label ||
@@ -629,7 +635,9 @@ const Files: React.FC = () => {
             ? renderEmptyState()
             : filteredFiles.map((file) => (
                 <div key={file.file_id} className="file-item">
-                  <div className="file-icon">{getFileIcon(file.file_type, file.file_name)}</div>
+                  <div className="file-icon">
+                    {getFileIcon(file.file_type, file.file_name)}
+                  </div>
 
                   <div className="file-info">
                     <h3 className="file-name">{file.file_name}</h3>

@@ -24,7 +24,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../../hooks/searchContext";
 import { useToastHelpers } from "../../../hooks/toastContext";
-import { useConfirm } from "../../../hooks/confirmContext";
 
 // --- INTERFACES ---
 type Status = "all" | "in_progress" | "completed" | "new" | "cancelled";
@@ -213,7 +212,6 @@ const GoalCard = memo(({ goal }: { goal: Goal }) => {
 // --- GOALS PAGE COMPONENT ---
 const GoalsPage: React.FC = () => {
   const toast = useToastHelpers();
-  const confirm = useConfirm();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [filter, setFilter] = useState<Status>("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -248,7 +246,7 @@ const GoalsPage: React.FC = () => {
     }
 
     try {
-      const res = await getGoals(0, filter, searchTerm);
+      const res = await getGoals(0);
       const goalsData = res.data.data || res.data || [];
       setGoals(goalsData);
       setErrorMsg(""); // Clear error khi load thành công
@@ -260,17 +258,10 @@ const GoalsPage: React.FC = () => {
       // Set isInitialLoad = false sau lần load đầu tiên
       setIsInitialLoad(false);
     }
-  }, [filter, searchTerm]); // BỎ isInitialLoad ra khỏi đây
+  }, []); // BỎ isInitialLoad, searchTerm và filter ra khỏi đây
 
   useEffect(() => {
-    // Thêm debounce để tránh gọi API liên tục khi gõ search
-    const handler = setTimeout(() => {
-      fetchGoals();
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    fetchGoals();
   }, [fetchGoals]);
 
   // Move highlight bar
@@ -361,21 +352,32 @@ const GoalsPage: React.FC = () => {
 
     const goalData = {
       ...form,
+      sharing_type: form.share_type, // Map share_type to sharing_type for backend
       milestones: milestones,
     };
 
     try {
       if (modalMode === "add") {
         await createGoal(goalData);
+        toast?.success("Goal created successfully!");
       } else if (editingGoal) {
         // Trong chế độ edit, không gửi milestones vì đã có trang detail để quản lý
-        const { milestones: _, ...updateData } = goalData;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { milestones, sharing_type, ...updateData } = goalData;
+        // Remove milestones and sharing_type from update data as they're not needed for editing
         await updateGoal(editingGoal.goal_id, updateData);
+        toast?.success("Goal updated successfully!");
       }
       closeModal();
       fetchGoals(); // Tải lại danh sách goals sau khi lưu
-    } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || "Failed to save the goal.");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : (error as { response?: { data?: { message?: string } } })?.response
+              ?.data?.message || "Failed to save the goal.";
+      setErrorMsg(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -389,8 +391,12 @@ const GoalsPage: React.FC = () => {
       await deleteGoal(editingGoal.goal_id);
       closeModal();
       fetchGoals(); // Tải lại danh sách
-    } catch (err: any) {
-      setErrorMsg("Failed to delete the goal.");
+      toast?.success("Goal deleted successfully!");
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const errorMessage = "Failed to delete the goal.";
+      setErrorMsg(errorMessage);
+      toast?.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -402,6 +408,17 @@ const GoalsPage: React.FC = () => {
     { value: "completed" as Status, label: "Completed" },
     { value: "new" as Status, label: "New" },
   ];
+
+  // Lọc goals theo searchTerm và status (client-side filtering như Notes)
+  const filteredGoals = goals.filter(
+    (goal) =>
+      // Lọc theo searchTerm
+      (!searchTerm ||
+        goal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        goal.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      // Lọc theo status
+      (filter === "all" || goal.status === filter)
+  );
 
   const currentFilterLabel =
     filterOptions.find((option) => option.value === filter)?.label || "All";
@@ -503,7 +520,7 @@ const GoalsPage: React.FC = () => {
 
         {errorMsg && <div className="form-error">{errorMsg}</div>}
 
-        {/* Chỉ hiển thị loading spinner nhỏ khi đang filter/search và không phải lần đầu load */}
+        {/* Chỉ hiển thị loading spinner nhỏ khi đang load lần đầu */}
         {loading && !isInitialLoad && (
           <div className="goals-filter-loading">
             <div className="goals-loading-spinner">
@@ -515,8 +532,10 @@ const GoalsPage: React.FC = () => {
         )}
 
         <div className="goals-grid">
-          {goals.length > 0
-            ? goals.map((goal) => <GoalCard key={goal.goal_id} goal={goal} />)
+          {filteredGoals.length > 0
+            ? filteredGoals.map((goal) => (
+                <GoalCard key={goal.goal_id} goal={goal} />
+              ))
             : !loading
             ? renderEmptyState()
             : null}
@@ -606,6 +625,26 @@ const GoalsPage: React.FC = () => {
                       }
                     />
                   </div>
+                </div>
+
+                <div className="goals-form-group">
+                  <select
+                    hidden
+                    id="goal-share-type"
+                    value={form.share_type}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        share_type: e.target.value as Sharing,
+                      }))
+                    }
+                  >
+                    <option selected value="private">
+                      Private
+                    </option>
+                    <option value="friends">Friends Only</option>
+                    <option value="public">Public</option>
+                  </select>
                 </div>
 
                 <div className="goals-modal-footer">

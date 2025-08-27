@@ -99,18 +99,67 @@ const TrashList: React.FC<TrashListProps> = ({ type }) => {
         deleted_at: string;
       }
 
+      // Helper to compute canonical id from raw item
+      const getCanonicalId = (item: TrashApiItem) =>
+        item.goal_id?.toString() ??
+        item.note_id?.toString() ??
+        item.event_id?.toString() ??
+        item.file_id?.toString() ??
+        item.id?.toString() ??
+        "";
+
+      // Auto purge items older than 30 days
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+      const nowMs = Date.now();
+
+      const expiredIds = (rawItems as TrashApiItem[])
+        .filter((ri) => {
+          const deletedAtMs = new Date(ri.deleted_at).getTime();
+          return (
+            !Number.isNaN(deletedAtMs) && nowMs - deletedAtMs >= THIRTY_DAYS_MS
+          );
+        })
+        .map((ri) => getCanonicalId(ri))
+        .filter((id) => id);
+
+      if (expiredIds.length > 0) {
+        try {
+          const deleteCalls = expiredIds.map((id) => {
+            switch (type) {
+              case TrashableItems.Notes:
+                return forceDeleteNoteFromTrash(id);
+              case TrashableItems.Schedule:
+                return forceDeleteEvent(id);
+              case TrashableItems.Goals:
+                return forceDeleteGoalFromTrash(id);
+              case TrashableItems.Files:
+                return forceDeleteFileFromTrash(id);
+              default:
+                return Promise.resolve();
+            }
+          });
+          await Promise.allSettled(deleteCalls);
+        } catch (purgeErr) {
+          console.error(
+            "Auto-purge of expired trashed items failed:",
+            purgeErr
+          );
+        }
+      }
+
       const mappedItems = (rawItems as TrashApiItem[]).map((item) => ({
-        id:
-          item.goal_id?.toString() ??
-          item.note_id?.toString() ??
-          item.event_id?.toString() ??
-          item.file_id?.toString() ??
-          item.id?.toString() ??
-          "",
+        id: getCanonicalId(item),
         title: item.title ?? item.file_name ?? "",
         deleted_at: new Date(item.deleted_at).toLocaleString("en-US"), // English date format
       }));
-      setItems(mappedItems);
+
+      // Exclude expired items from the list after purge
+      const expiredIdSet = new Set(expiredIds);
+      const visibleItems = expiredIds.length
+        ? mappedItems.filter((mi) => !expiredIdSet.has(mi.id))
+        : mappedItems;
+
+      setItems(visibleItems);
     } catch (error) {
       console.error(`Failed to fetch trashed ${type}:`, error);
     } finally {
